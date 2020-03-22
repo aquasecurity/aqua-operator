@@ -1,0 +1,7 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaGateway
+metadata:
+  name: example-aquagateway
+spec:
+  # Add fields here
+  size: 3

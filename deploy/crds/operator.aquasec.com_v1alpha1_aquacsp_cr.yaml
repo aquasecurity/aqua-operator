@@ -1,0 +1,7 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaCsp
+metadata:
+  name: example-aquacsp
+spec:
+  # Add fields here
+  size: 3

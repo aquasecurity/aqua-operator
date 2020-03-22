@@ -1,0 +1,7 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaEnforcer
+metadata:
+  name: example-aquaenforcer
+spec:
+  # Add fields here
+  size: 3

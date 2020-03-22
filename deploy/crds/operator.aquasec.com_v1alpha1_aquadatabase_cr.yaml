@@ -1,0 +1,7 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaDatabase
+metadata:
+  name: example-aquadatabase
+spec:
+  # Add fields here
+  size: 3
