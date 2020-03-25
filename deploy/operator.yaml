@@ -15,8 +15,7 @@ spec:
       serviceAccountName: aqua-operator
       containers:
         - name: aqua-operator
-          # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: "aquasec/aqua-operator:1.0.1"
           command:
           - aqua-operator
           imagePullPolicy: Always

@@ -5,6 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: aqua-operator
+  # namespace: aqua # optional
 roleRef:
   kind: Role
   name: aqua-operator

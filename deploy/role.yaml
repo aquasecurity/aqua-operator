@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: aqua-operator
@@ -9,35 +9,33 @@ rules:
   resources:
   - pods
   - services
-  - services/finalizers
   - endpoints
   - persistentvolumeclaims
   - events
   - configmaps
   - secrets
+  - serviceaccounts
+  - nodes
   verbs:
-  - create
-  - delete
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
   - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - apps
+  - extensions
   resources:
+  - '*'
   - deployments
   - daemonsets
   - replicasets
   - statefulsets
+  - podsecuritypolicies
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - '*'
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -46,40 +44,30 @@ rules:
   - get
   - create
 - apiGroups:
-  - apps
-  resourceNames:
-  - aqua-operator
-  resources:
-  - deployments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  - deployments
-  verbs:
-  - get
-- apiGroups:
   - operator.aquasec.com
   resources:
   - '*'
   - aquagateways
   - aquaservers
+  - aquacsps
   - aquaenforcers
   - aquascanners
-  - aquacsps
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - '*'
+- apiGroups:
+  - rbac.authorization.k8s.io
+  - authorization.k8s.io
+  resources:
+  - '*'
+  - clusterroles
+  - clusterrolebindings
+  verbs:
+  - '*'
+- apiGroups:
+  - policy
+  resources:
+  - '*'
+  - podsecuritypolicies
+  verbs:
+  - '*'
+  

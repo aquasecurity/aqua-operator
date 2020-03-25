@@ -36,6 +36,23 @@ spec:
           type: object
       type: object
   version: v1alpha1
+  additionalPrinterColumns:
+    - name: Replicas
+      type: integer
+      description: Replicas Number
+      JSONPath: .spec.deploy.replicas
+    - name: Age
+      type: date
+      description: Aqua Server Age
+      JSONPath: .metadata.creationTimestamp
+    - name: Status
+      type: string
+      description: Aqua Server status
+      JSONPath: .status.state
+    - name: Nodes
+      type: string
+      description: List Of Nodes (Pods)
+      JSONPath: .status.nodes
   versions:
   - name: v1alpha1
     served: true

@@ -1,0 +1,21 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaServer
+metadata:
+  name: aqua
+spec:
+  infra:                                    
+    serviceAccount: "aqua-sa"               
+    version: "4.6"                          
+  common:
+    databaseSecret:                         
+      name: "aqua-aqua-db"
+      key: "password"     
+  externalDb:                              
+    host: "aqua-db"
+    port: 5432
+    username: postgres                          
+  deploy:                                   
+    replicas: 1                             
+    service: "LoadBalancer"                 
+  adminPassword:                        # Administrator username password for the server ui 
+  licenseToken:                         # Aqua CSP License

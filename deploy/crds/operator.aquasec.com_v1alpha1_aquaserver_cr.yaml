@@ -1,7 +1,0 @@
-apiVersion: operator.aquasec.com/v1alpha1
-kind: AquaServer
-metadata:
-  name: example-aquaserver
-spec:
-  # Add fields here
-  size: 3

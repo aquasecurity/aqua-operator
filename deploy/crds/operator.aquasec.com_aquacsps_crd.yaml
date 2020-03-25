@@ -36,6 +36,15 @@ spec:
           type: object
       type: object
   version: v1alpha1
+  additionalPrinterColumns:
+    - name: Age
+      type: date
+      description: Aqua Csp Age
+      JSONPath: .metadata.creationTimestamp
+    - name: Status
+      type: string
+      description: Aqua Csp status
+      JSONPath: .status.state
   versions:
   - name: v1alpha1
     served: true
