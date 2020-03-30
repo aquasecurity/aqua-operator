@@ -1,0 +1,23 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaDatabase
+metadata:
+  name: aqua
+spec:
+  infra:                                    # Optional: Infrastructure information
+    serviceAccount: "aqua-sa"               # Optional: auto generate if requirment is true
+    version: "4.6"                          # Optional: auto generate if requirment is true to latest version
+  common:
+    storageclass: "default"                 # Optional: if not given then use storage class default
+    imagePullSecret:                        # Optional: if already created image pull secret then mention in here
+    databaseSecret:                         # Optional: if already created database password secret
+      key:
+      name:
+  deploy:                                 # Required: information about aqua gateway deployment
+    replicas: 1                             # Required: number of replicas
+    service: "ClusterIP"                    # Required: service type for aqua server
+    image:                                  # Optional: if not given take the default value and version from infra.version
+      repository: "database"                # Optional: if not given take the default value - database
+      registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
+      tag: "4.6"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
+      pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
+  diskSize: 10                              # Required: size of database disk pvc
