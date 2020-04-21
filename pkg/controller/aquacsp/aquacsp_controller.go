@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
+	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"reflect"
@@ -14,6 +16,7 @@ import (
 	"time"
 
 	syserrors "errors"
+	routev1 "github.com/openshift/api/route/v1"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -99,6 +102,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaEnforcer{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.AquaCsp{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaScanner{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.AquaCsp{},
+	})
+	if err != nil {
+		return err
+	}
+
 	// RBAC
 
 	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForOwner{
@@ -115,6 +134,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	// Openshift Route
+	isOpenshift, _ := ocp.VerifyRouteAPI()
+	if isOpenshift {
+		err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &operatorv1alpha1.AquaCsp{},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -280,6 +311,22 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
+	if instance.Spec.Enforcer != nil {
+		_, err = r.InstallAquaEnforcer(instance)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+	}
+
+	if strings.ToLower(instance.Spec.Infrastructure.Platform) == "openshift" {
+		if instance.Spec.Route {
+			_, err = r.CreateRoute(instance)
+			if err != nil {
+				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+			}
+		}
+	}
+
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
 
@@ -316,6 +363,16 @@ func (r *ReconcileAquaCsp) updateCspObject(cr *operatorv1alpha1.AquaCsp) *operat
 		cr.Spec.DbService = &operatorv1alpha1.AquaService{
 			Replicas:    1,
 			ServiceType: "ClusterIP",
+		}
+	}
+
+	if cr.Spec.Enforcer != nil {
+		if len(cr.Spec.Enforcer.Name) == 0 {
+			cr.Spec.Enforcer.Name = "operator-default"
+		}
+
+		if len(cr.Spec.Enforcer.Gateway) == 0 {
+			cr.Spec.Enforcer.Gateway = fmt.Sprintf("%s-gateway", cr.Name)
 		}
 	}
 
@@ -512,6 +569,38 @@ func (r *ReconcileAquaCsp) InstallAquaScanner(cr *operatorv1alpha1.AquaCsp) (rec
 
 	// AquaScanner already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Scanner Exists", "AquaScanner.Namespace", found.Namespace, "AquaScanner.Name", found.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+}
+
+func (r *ReconcileAquaCsp) InstallAquaEnforcer(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
+	reqLogger := log.WithValues("CSP - AquaEnforcer Phase", "Install Aqua Enforcer")
+	reqLogger.Info("Start installing AquaEnforcer")
+
+	// Define a new AquaEnforcer object
+	cspHelper := newAquaCspHelper(cr)
+	enforcer := cspHelper.newAquaEnforcer(cr)
+
+	// Set AquaCsp instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, enforcer, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this AquaEnforcer already exists
+	found := &operatorv1alpha1.AquaEnforcer{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: enforcer.Name, Namespace: enforcer.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua Enforcer", "AquaEnforcer.Namespace", enforcer.Namespace, "AquaEnforcer.Name", enforcer.Name)
+		err = r.client.Create(context.TODO(), enforcer)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	} else if err != nil {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+	}
+	// AquaEnforcer already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Enforcer Exists", "AquaEnforcer.Namespace", found.Namespace, "AquaEnforcer.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
 

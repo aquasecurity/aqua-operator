@@ -4,6 +4,7 @@ import (
 	"context"
 	syserrors "errors"
 	"fmt"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"reflect"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
@@ -177,6 +178,14 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 			}
 		}
 
+		if instance.Spec.Enforcer != nil {
+			reqLogger.Info("Start Setup Aqua Enforcer Token Secret")
+			_, err = r.CreateEnforcerToken(instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
 		reqLogger.Info("Start Creating Aqua Server Deployment...")
 		_, err = r.InstallServerDeployment(instance)
 		if err != nil {
@@ -206,6 +215,16 @@ func (r *ReconcileAquaServer) updateServerObject(cr *operatorv1alpha1.AquaServer
 
 	cr.Spec.Infrastructure = common.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)
 	cr.Spec.Common = common.UpdateAquaCommon(cr.Spec.Common, cr.Name, admin, license)
+
+	if cr.Spec.Enforcer != nil {
+		if len(cr.Spec.Enforcer.Name) == 0 {
+			cr.Spec.Enforcer.Name = "operator-default"
+		}
+
+		if len(cr.Spec.Enforcer.Gateway) == 0 {
+			cr.Spec.Enforcer.Gateway = fmt.Sprintf("%s-gateway", cr.Name)
+		}
+	}
 
 	return cr
 }
@@ -428,5 +447,51 @@ func (r *ReconcileAquaServer) CreateServerPvc(cr *operatorv1alpha1.AquaServer) (
 
 	// PersistentVolumeClaim already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Server PersistentVolumeClaim Already Exists", "PersistentVolumeClaim.Namespace", found.Namespace, "PersistentVolumeClaim.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+/*	----------------------------------------------------------------------------------------------------------------
+							Enforcer
+	----------------------------------------------------------------------------------------------------------------
+*/
+
+func (r *ReconcileAquaServer) CreateEnforcerToken(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Csp Requirments Phase", "Create Enforcer Token")
+	reqLogger.Info("Start creating aqua default enforcer token secret")
+
+	// Generate token
+	token := extra.CreateRundomPassword()
+
+	// Define a new secret object
+	secret := secrets.CreateSecret(cr.Name,
+		cr.Namespace,
+		fmt.Sprintf("%s-enforcer", cr.Name),
+		"Enforcer token for default enforcer group",
+		fmt.Sprintf("%s-enforcer-token", cr.Name),
+		"token",
+		token)
+
+	// Set AquaCspKind instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, secret, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this secret already exists
+	found := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua Default Enforcer Token Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+		err = r.client.Create(context.TODO(), secret)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Secret already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Default Enforcer Token Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }

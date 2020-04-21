@@ -3,9 +3,9 @@ package aquacsp
 import (
 	"context"
 	"fmt"
-
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
+	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/serviceaccounts"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	routev1 "github.com/openshift/api/route/v1"
 )
 
 /*	----------------------------------------------------------------------------------------------------------------
@@ -135,5 +137,36 @@ func (r *ReconcileAquaCsp) CreateAquaServiceAccount(cr *operatorv1alpha1.AquaCsp
 
 	// Service account already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Service Account Already Exists", "ServiceAccount.Namespace", found.Namespace, "ServiceAccount.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaCsp) CreateRoute(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Csp Requirments Phase", "Create route")
+	reqLogger.Info("Start creating openshift route")
+
+	route := ocp.NewRoute(cr.Name, cr.Namespace, fmt.Sprintf("%s-server", cr.Name), 8080)
+
+	// Set AquaCspKind instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, route, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this route already exists
+	found := &routev1.Route{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua Image Pull Secret", "Secret.Namespace", route.Namespace, "Secret.Name", route.Name)
+		err = r.client.Create(context.TODO(), route)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Route already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Route Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }

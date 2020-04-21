@@ -6,7 +6,7 @@ ENV OPERATOR=/usr/local/bin/aqua-operator \
 
 LABEL name="Aqua Operator" \
       vendor="Aqua Security Software Ltd." \
-      version="v1.0.1" \
+      version="v1.0.2" \
       release="1" \
       summary="Aqua Security Operator." \
       description="The Aqua Security Operator runs within a Openshift (or Kubernetes) cluster, and provides a means to deploy and manage the Aqua Security cluster and components"

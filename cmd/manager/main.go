@@ -5,9 +5,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"os"
 	"runtime"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
@@ -15,6 +15,7 @@ import (
 	"github.com/aquasecurity/aqua-operator/pkg/apis"
 	"github.com/aquasecurity/aqua-operator/pkg/controller"
 	"github.com/aquasecurity/aqua-operator/version"
+	routev1 "github.com/openshift/api/route/v1"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -106,6 +107,14 @@ func main() {
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
+	}
+
+	isOpenshift, _ := ocp.VerifyRouteAPI()
+	if isOpenshift {
+		if err := routev1.AddToScheme(mgr.GetScheme()); err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
 	}
 
 	// Setup all Controllers

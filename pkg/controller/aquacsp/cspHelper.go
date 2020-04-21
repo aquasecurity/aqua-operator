@@ -115,10 +115,48 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 			ExternalDb:     csp.Parameters.AquaCsp.Spec.ExternalDb,
 			LicenseToken:   csp.Parameters.AquaCsp.Spec.LicenseToken,
 			AdminPassword:  csp.Parameters.AquaCsp.Spec.AdminPassword,
+			Enforcer: csp.Parameters.AquaCsp.Spec.Enforcer,
 		},
 	}
 
 	return aquadb
+}
+
+func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaEnforcer {
+	labels := map[string]string{
+		"app":                cr.Name + "-csp",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua Enforcer",
+	}
+	aquaenf := &operatorv1alpha1.AquaEnforcer{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operator.aquasec.com/v1alpha1",
+			Kind:       "AquaEnforcer",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: operatorv1alpha1.AquaEnforcerSpec{
+			Infrastructure:  csp.Parameters.AquaCsp.Spec.Infrastructure,
+			Common:          csp.Parameters.AquaCsp.Spec.Common,
+			Gateway:         &operatorv1alpha1.AquaGatewayInformation{
+				Host: fmt.Sprintf("%s-gateway", cr.Name),
+				Port: 8443,
+			},
+			Secret:           &operatorv1alpha1.AquaSecret{
+				Name: fmt.Sprintf("%s-enforcer-token", cr.Name),
+				Key:  "token",
+			},
+		},
+	}
+
+	return aquaenf
 }
 
 func (csp *AquaCspHelper) newAquaScanner(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaScanner {

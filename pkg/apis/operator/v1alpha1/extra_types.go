@@ -82,6 +82,12 @@ type AquaScannerCliScale struct {
 	ImagesPerScanner int64 `json:"imagesPerScanner"`
 }
 
+type AquaEnforcerDetailes struct {
+	Gateway     string `json:"gateway"`
+	Name        string `json:"name"`
+	EnforceMode bool   `json:"enforceMode"`
+}
+
 type AquaDeploymentState string
 
 const (
@@ -97,4 +103,3 @@ const (
 	// AquaDeploymentStateRunning done
 	AquaDeploymentStateRunning AquaDeploymentState = "Running"
 )
-

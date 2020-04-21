@@ -3,6 +3,7 @@ package aquaserver
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/services"
 
@@ -206,6 +207,49 @@ func (sr *AquaServerHelper) getEnvVars(cr *operatorv1alpha1.AquaServer) []corev1
 		Name:  "AQUA_CONSOLE_RAW_SCAN_RESULTS_STORAGE_SIZE",
 		Value: fmt.Sprintf("%d", cr.Spec.Common.ServerDiskSize),
 	})
+
+	if cr.Spec.Enforcer != nil {
+		enforcerEnvs := []corev1.EnvVar{
+			{
+				Name:  "BATCH_INSTALL_GATEWAY",
+				Value: cr.Spec.Enforcer.Gateway,
+			},
+			{
+				Name:  "BATCH_INSTALL_NAME",
+				Value: cr.Spec.Enforcer.Name,
+			},
+			{
+				Name: "BATCH_INSTALL_TOKEN",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: fmt.Sprintf("%s-enforcer-token", cr.Name),
+						},
+						Key: "token",
+					},
+				},
+			},
+		}
+
+		if cr.Spec.Enforcer.EnforceMode {
+			enforcerEnvs = append(enforcerEnvs, corev1.EnvVar{
+				Name:  "BATCH_INSTALL_ENFORCE_MODE",
+				Value: "true",
+			})
+		}
+
+		orcType := "Kubernetes"
+		if strings.ToLower(cr.Spec.Infrastructure.Platform) == "openshift" || strings.ToLower(cr.Spec.Infrastructure.Platform) == "pks" {
+			orcType = strings.ToLower(cr.Spec.Infrastructure.Platform)
+		}
+
+		enforcerEnvs = append(enforcerEnvs, corev1.EnvVar{
+			Name:  "BATCH_INSTALL_ORCHESTRATOR",
+			Value: orcType,
+		})
+
+		result = append(result, enforcerEnvs...)
+	}
 
 	return result
 }

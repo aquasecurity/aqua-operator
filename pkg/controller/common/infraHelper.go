@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -22,7 +23,12 @@ func UpdateAquaInfrastructure(infra *operatorv1alpha1.AquaInfrastructure, name, 
 		}
 
 		if len(infra.Platform) == 0 {
-			infra.Platform = "openshift"
+			isOpenshift, _ := ocp.VerifyRouteAPI()
+			if isOpenshift {
+				infra.Platform = "openshift"
+			} else {
+				infra.Platform = "kubernetes"
+			}
 		}
 	} else {
 		infra = &operatorv1alpha1.AquaInfrastructure{

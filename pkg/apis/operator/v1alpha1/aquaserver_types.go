@@ -19,6 +19,7 @@ type AquaServerSpec struct {
 	ExternalDb    *AquaDatabaseInformation `json:"externalDb,omitempty"`
 	LicenseToken  string                   `json:"licenseToken,omitempty"`
 	AdminPassword string                   `json:"adminPassword,omitempty"`
+	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
 }
 
 // AquaServerStatus defines the observed state of AquaServer

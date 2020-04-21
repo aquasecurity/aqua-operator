@@ -24,8 +24,10 @@ type AquaCspSpec struct {
 	ScannerService *AquaService         `json:"scanner,omitempty"`
 	Scale          *AquaScannerCliScale `json:"scale,omitempty"`
 
-	LicenseToken  string `json:"licenseToken,omitempty"`
-	AdminPassword string `json:"adminPassword,omitempty"`
+	LicenseToken  string                `json:"licenseToken,omitempty"`
+	AdminPassword string                `json:"adminPassword,omitempty"`
+	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
+	Route         bool                  `json:"route,omitempty"`
 }
 
 // AquaCspStatus defines the observed state of AquaCsp
