@@ -164,7 +164,7 @@ func (r *ReconcileAquaEnforcer) Reconcile(request reconcile.Request) (reconcile.
 
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-		_ = r.client.Update(context.TODO(), instance)
+		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
 	return reconcile.Result{Requeue: true}, nil

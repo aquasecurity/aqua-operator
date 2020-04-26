@@ -172,7 +172,7 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-		_ = r.client.Update(context.TODO(), instance)
+		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
 	return reconcile.Result{Requeue: true}, nil
@@ -286,7 +286,7 @@ func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.A
 		size := deployment.Spec.Replicas
 		if *found.Spec.Replicas != *size {
 			found.Spec.Replicas = size
-			err = r.client.Update(context.TODO(), found)
+			err = r.client.Status().Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Database Aqua: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 				return reconcile.Result{}, err
@@ -311,7 +311,7 @@ func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.A
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
 			cr.Status.Nodes = podNames
-			err := r.client.Update(context.TODO(), cr)
+			err := r.client.Status().Update(context.Background(), cr)
 			if err != nil {
 				return reconcile.Result{}, err
 			}

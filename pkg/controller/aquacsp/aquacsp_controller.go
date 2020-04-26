@@ -279,22 +279,25 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 			reqLogger.Info("CSP Deployment: Waiting internal for aqua to start")
 			if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateWaitingAqua, instance.Status.State) {
 				instance.Status.State = operatorv1alpha1.AquaDeploymentStateWaitingAqua
-				_ = r.client.Update(context.TODO(), instance)
+				_ = r.client.Status().Update(context.Background(), instance)
 			}
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+		} else if gwstatus && srstatus {
+			instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
+			_ = r.client.Status().Update(context.Background(), instance)
 		}
 	} else {
 		reqLogger.Info("CSP Deployment: Waiting internal for database to start")
 		if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateWaitingDB, instance.Status.State) {
 			instance.Status.State = operatorv1alpha1.AquaDeploymentStateWaitingDB
-			_ = r.client.Update(context.TODO(), instance)
+			_ = r.client.Status().Update(context.Background(), instance)
 		}
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 	}
 
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-		_ = r.client.Update(context.TODO(), instance)
+		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
 	if instance.Spec.ScannerService != nil {
@@ -416,7 +419,7 @@ func (r *ReconcileAquaCsp) InstallAquaDatabase(cr *operatorv1alpha1.AquaCsp) (re
 		size := aquadb.Spec.DbService.Replicas
 		if found.Spec.DbService.Replicas != size {
 			found.Spec.DbService.Replicas = size
-			err = r.client.Update(context.TODO(), found)
+			err = r.client.Status().Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua database replicas.", "AquaDatabase.Namespace", found.Namespace, "AquaDatabase.Name", found.Name)
 				return reconcile.Result{}, err
@@ -463,7 +466,7 @@ func (r *ReconcileAquaCsp) InstallAquaGateway(cr *operatorv1alpha1.AquaCsp) (rec
 		size := aquagw.Spec.GatewayService.Replicas
 		if found.Spec.GatewayService.Replicas != size {
 			found.Spec.GatewayService.Replicas = size
-			err = r.client.Update(context.TODO(), found)
+			err = r.client.Status().Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua gateway replicas.", "AquaServer.Namespace", found.Namespace, "AquaServer.Name", found.Name)
 				return reconcile.Result{}, err
@@ -510,7 +513,7 @@ func (r *ReconcileAquaCsp) InstallAquaServer(cr *operatorv1alpha1.AquaCsp) (reco
 		size := aquasr.Spec.ServerService.Replicas
 		if found.Spec.ServerService.Replicas != size {
 			found.Spec.ServerService.Replicas = size
-			err = r.client.Update(context.TODO(), found)
+			err = r.client.Status().Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua server replicas.", "AquaServer.Namespace", found.Namespace, "AquaServer.Name", found.Name)
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
@@ -557,7 +560,7 @@ func (r *ReconcileAquaCsp) InstallAquaScanner(cr *operatorv1alpha1.AquaCsp) (rec
 		size := scanner.Spec.ScannerService.Replicas
 		if found.Spec.ScannerService.Replicas != size {
 			found.Spec.ScannerService.Replicas = size
-			err = r.client.Update(context.TODO(), found)
+			err = r.client.Status().Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua scanner replicas.", "AquaScanner.Namespace", found.Namespace, "AquaScanner.Name", found.Name)
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
@@ -764,7 +767,7 @@ func (r *ReconcileAquaCsp) ScaleScannerCLI(cr *operatorv1alpha1.AquaCsp) (reconc
 
 		if result.Count > 0 {
 			found.Spec.ScannerService.Replicas = scanners
-			err = r.client.Update(context.TODO(), found)
+			err = r.client.Status().Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP Scanner Scale: Failed to update Aqua Scanner.", "AquaScanner.Namespace", found.Namespace, "AquaScanner.Name", found.Name)
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err

@@ -20,5 +20,5 @@ spec:
   server:
     replicas: 1
     service: "LoadBalancer"
-  adminPassword:                        # Administrator username password for the server ui 
+  adminPassword:                        # Administrator username password for the server ui
   licenseToken:                         # Aqua CSP License
