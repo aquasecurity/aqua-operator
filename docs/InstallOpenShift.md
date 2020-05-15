@@ -7,7 +7,7 @@ The Aqua Security Operator is used to deploy and manage the Aqua Security platfo
 * CSP (a simple package that contains the Server, Database, and Gateway)
 
 Use the Aqua-Operator to: 
-* Deploy Aqua Security components on OpenShift
+* Deploy the Aqua Security platform on OpenShift
 * Scale up Aqua Security components with extra replicas
 * Assign metadata tags to Aqua Security components
 * Automatically scale the number of Aqua scanners based on the number of images in the scan queue
