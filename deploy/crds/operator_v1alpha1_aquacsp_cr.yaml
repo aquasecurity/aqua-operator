@@ -73,3 +73,6 @@ spec:
     imagesPerScanner: 200                   # Max number of images to scan per scanner
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
+  enforcer:                                 # Optional: Install also enforcer components
+    enforceMode:                            # Optional: true/false if enforcer mode or audit
+  route:                                    # Optional: true/false create route to aqua server service, please set server service as NodePort or ClusterIP
