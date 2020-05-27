@@ -84,6 +84,10 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 3622,
 								},
+								{
+									Protocol:      corev1.ProtocolTCP,
+									ContainerPort: 8443,
+								},
 							},
 							Env: env_vars,
 						},

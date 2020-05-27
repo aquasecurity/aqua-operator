@@ -86,6 +86,10 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 3622,
 								},
+								{
+									Protocol:      corev1.ProtocolTCP,
+									ContainerPort: 8443,
+								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
