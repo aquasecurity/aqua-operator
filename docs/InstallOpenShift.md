@@ -15,32 +15,38 @@ Use the Aqua-Operator to:
 The Aqua Operator provides a few [Custom Resources](https://github.com/aquasecurity/aqua-operator/tree/master/deploy/crds) to manage the Aqua platform. 
 Please make sure to read the Aqua installation manual (https://docs.aquasec.com/docs) before using the Operator. 
 For advance configurations please consult with Aqua's support team.
-    
-How to deploy Aqua using the Operator -
-1. Install the Aqua Operator from RH's OperatorHub
-2. Manage all the prerequisites as covered in the instructions below (see "Before you begin using the Operator CRDs")
-3. Use the AquaCSP CRD to install Aqua in your cluster. AquaCSP CRD defines how to deploy the Console, Database, Scanner, and Gateway Custom Resources
-4. You can also use the AquaCSP CRD to deploy the default Enforcers and an OpenShift Route to access the console 
-5. You can install the Enforcers using the AquaEnforcer CRD, but you will need to first get a security token.  Access Aqua console and create a new Enforcer Group. Copy the group's 'token' and use it in the AquaEnforcer CRD
-	
 
-## Before You Begin Using the Operator CRDs
-Install the Aqua Operator and obtain access to the Aqua registry - https://www.aquasec.com/about-us/contact-us/
-You will need to supply two secrets during the installation - 
+  
+## Prerquisits 
+Make sure you have a license and access to the Aqua registry. If you want to obtain a new license, please contact us at cloudsales@aquasec.com.
+
+## Deploy the Aqua Opertor
+1. Create a new namespace/project called 'aqua' for the Aqua deployment 
+2. Install the Aqua Operator from RH's OperatorHub and add it to the 'aqua' namespace. The Operator will create a new service-account, called 'aqua-sa' to run the Aqua applicatoin. 
+
+## Before You Deploy AquaCSP's Custom Resources 
+You will need to supply two secrets for the installation - 
 * A secret for the Docker registry
 * A secret for the database
 
-You can list the secrets in the YAML files or you can define secrets in the OpenShift project (see example below) -
+You can list the secrets in the Custome Resources YAML files or you can define secrets in the OpenShift project (see example below) -
 ```bash
-oc create project aqua 
 oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
 oc create secret generic aqua-database-password --from-literal=db-password=<password> -n aqua
 oc secrets add aqua-sa aqua-registry --for=pull -n aqua
 ```
+## Deploying the AquaCSP Custome Resource
+There are multiple options to deploy the AquaCSP Custome Resource. You can review the different options in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/deploy/crds/operator_v1alpha1_aquacsp_cr.yaml).  
+* The AquaCSP CRD defines how to deploy the Console, Database, Scanner, and Gateway. 
+* You can instruct the AquaCSP CR to automatically deploy the Enforcer by setting the 'enforcer' and the 'enforcerMode' properties in the CR file. 
+* If you want to deploy the Enforcers manually, you will need to first get a security token.  Access Aqua console and create a new Enforcer Group. Copy the group's 'token' and use it in the AquaEnforcer CRD (see example below)
+* You can instruct the AquaCSP CR to automaticallly deploy a Route by setting the 'route' property to 'true'.
+* The default Service type for the console and gateway is ClusterIP. Please change if you want a different Service type.
+* You can choose to install a diffentet Aqua versoin by setting the 'version' property 
+	
 
-## Installing AquaCSP
-There are multiple options to deploy the AquaCSP CR. You can review the different options in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/deploy/crds/operator_v1alpha1_aquacsp_cr.yaml). 
 
+## Example 
 Here is an example of a simple deployment  - 
 ```yaml
 ---
@@ -67,9 +73,9 @@ spec:
     service: "ClusterIP"                    
   server:                                   
     replicas: 1                             
-    service: "NodePort" 
+    service: "ClusterIP" 
   enforcer:                                 # Optional: if defined the Operator will create the default Enforcer 
-    enforcerMode: true                      # Defines weather the default enforcer will work in 'enforce' or 'audit' more 
+    enforcerMode: audit                     # Defines weather the default enforcer will work in 'enforce' or 'audit' more 
   route: true                               # Optional: if defines and set to true, the operator will create a Route to enable access to the console
 ```
 
