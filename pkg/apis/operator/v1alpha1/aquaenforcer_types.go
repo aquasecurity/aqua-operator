@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,6 +20,7 @@ type AquaEnforcerSpec struct {
 	Gateway         *AquaGatewayInformation `json:"gateway,required"`
 	Token           string                  `json:"token,required"`
 	Secret          *AquaSecret             `json:"secret,required"`
+	Envs            []corev1.EnvVar         `json:"env,required"`
 }
 
 // AquaEnforcerStatus defines the observed state of AquaEnforcer

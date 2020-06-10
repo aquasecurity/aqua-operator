@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aqua-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: aqua-operator
+  template:
+    metadata:
+      labels:
+        name: aqua-operator
+    spec:
+      serviceAccountName: aqua-operator
+      containers:
+        - name: aqua-operator
+          image: "aquasec/aqua-operator@<digest>"
+          command:
+          - aqua-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "aqua-operator"
+              # Set if for certificate marketplace or not
+              # when value true operator don't create image pull secret
+            - name: CERTIFIED_MARKETPLACE
+              value: "true"
+              # Set the related images name with digest
+            - name: RELATED_IMAGE_DATABASE
+              value: "registry.connect.redhat.com/aquasec/database@<digest>"
+            - name: RELATED_IMAGE_GATEWAY
+              value: "registry.connect.redhat.com/aquasec/gateway@<digest>"
+            - name: RELATED_IMAGE_SERVER
+              value: "registry.connect.redhat.com/aquasec/console@<digest>"
+            - name: RELATED_IMAGE_SCANNER
+              value: "registry.connect.redhat.com/aquasec/scanner@<digest>"
+            - name: RELATED_IMAGE_ENFORCER
+              value: "registry.connect.redhat.com/aquasec/enforcer@<digest>"

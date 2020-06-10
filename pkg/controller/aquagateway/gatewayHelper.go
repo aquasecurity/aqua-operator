@@ -6,9 +6,9 @@ import (
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
+	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/services"
-	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +51,9 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 	annotations := map[string]string{
 		"description": "Deploy the aqua gateway server",
 	}
-	env_vars := gw.getEnvVars(cr)
+
+	envVars := gw.getEnvVars(cr)
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -89,7 +91,7 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 									ContainerPort: 8443,
 								},
 							},
-							Env: env_vars,
+							Env: envVars,
 						},
 					},
 				},
@@ -156,6 +158,12 @@ func (gw *AquaGatewayHelper) getEnvVars(cr *operatorv1alpha1.AquaGateway) []core
 		Name:  "SCALOCK_GATEWAY_PUBLIC_IP",
 		Value: fmt.Sprintf(consts.GatewayServiceName, cr.Name),
 	})
+
+	if cr.Spec.Envs != nil {
+		for _, env := range cr.Spec.Envs {
+			result = extra.AppendEnvVar(result, env)
+		}
+	}
 
 	return result
 }

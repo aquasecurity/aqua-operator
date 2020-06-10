@@ -4,13 +4,16 @@ metadata:
   name: aqua
 spec:
   infra:
+    namespace: "aqua"
+    serviceAccount: "aqua-sa"
+    version: "4.6"
     platform: "openshift"
     requirements: true
   registry:
     url: "registry.aquasec.com"
-    username: "example@company.com"
+    username: "user@example.com"
     password: ""                        # Password to aqua registry or custom registry
-    email: "example@company.com"
+    email: "user@example.com"
   database:
     replicas: 1
     service: "ClusterIP"
@@ -20,5 +23,5 @@ spec:
   server:
     replicas: 1
     service: "LoadBalancer"
-  adminPassword:                        # Administrator username password for the server ui
-  licenseToken:                         # Aqua CSP License
+  #enforcer:
+  #  enforceMode: true

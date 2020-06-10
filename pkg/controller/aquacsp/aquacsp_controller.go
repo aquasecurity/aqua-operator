@@ -2,20 +2,23 @@ package aquacsp
 
 import (
 	"context"
+	"strings"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"strings"
 
-	appsv1 "k8s.io/api/apps/v1"
-	"reflect"
 	"fmt"
+	"reflect"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	syserrors "errors"
+
 	routev1 "github.com/openshift/api/route/v1"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
@@ -193,10 +196,15 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		reqLogger.Info("Start Setup Requirment For Aqua CSP...")
 
 		if instance.Spec.RegistryData != nil {
-			reqLogger.Info("Start Setup Aqua Image Secret Secret")
-			_, err = r.CreateImagePullSecret(instance)
-			if err != nil {
-				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+			marketplace := extra.IsMarketPlace()
+			if !marketplace {
+				reqLogger.Info("Start Setup Aqua Image Secret Secret")
+				_, err = r.CreateImagePullSecret(instance)
+				if err != nil {
+					return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+				}
+			} else {
+				reqLogger.Info("[Marketplace Mode] skipping creating of image pull secret, using images from RedHat repository with digest")
 			}
 		}
 
@@ -273,18 +281,18 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 
 		gwstatus, _ := r.WaitForGateway(instance)
-		srstatus, _ := r.WaitForServer(instance)
+		// _, _ := r.WaitForServer(instance)
 
-		if !gwstatus || !srstatus {
+		if gwstatus {
+			instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
+			_ = r.client.Status().Update(context.Background(), instance)
+		} else {
 			reqLogger.Info("CSP Deployment: Waiting internal for aqua to start")
 			if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateWaitingAqua, instance.Status.State) {
 				instance.Status.State = operatorv1alpha1.AquaDeploymentStateWaitingAqua
 				_ = r.client.Status().Update(context.Background(), instance)
 			}
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
-		} else if gwstatus && srstatus {
-			instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-			_ = r.client.Status().Update(context.Background(), instance)
 		}
 	} else {
 		reqLogger.Info("CSP Deployment: Waiting internal for database to start")
@@ -300,24 +308,28 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
-	if instance.Spec.ScannerService != nil {
-		_, err = r.InstallAquaScanner(instance)
-		if err != nil {
-			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-		}
-
-		if instance.Spec.Scale != nil {
-			_, err = r.ScaleScannerCLI(instance)
-			if err != nil {
-				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-			}
-		}
-	}
-
 	if instance.Spec.Enforcer != nil {
 		_, err = r.InstallAquaEnforcer(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+	}
+
+	if instance.Spec.ScannerService != nil {
+		if len(instance.Spec.AdminPassword) > 0 {
+			_, err = r.InstallAquaScanner(instance)
+			if err != nil {
+				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+			}
+
+			if instance.Spec.Scale != nil {
+				_, err = r.ScaleScannerCLI(instance)
+				if err != nil {
+					return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+				}
+			}
+		} else {
+			reqLogger.Info("[Warning] missing admin password can't deploy scanner")
 		}
 	}
 
@@ -345,6 +357,13 @@ func (r *ReconcileAquaCsp) updateCspObject(cr *operatorv1alpha1.AquaCsp) *operat
 		license = true
 	}
 
+	registry := consts.Registry
+	if cr.Spec.RegistryData != nil {
+		if len(cr.Spec.RegistryData.URL) > 0 {
+			registry = cr.Spec.RegistryData.URL
+		}
+	}
+
 	cr.Spec.Infrastructure = common.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)
 	cr.Spec.Common = common.UpdateAquaCommon(cr.Spec.Common, cr.Name, admin, license)
 
@@ -352,6 +371,9 @@ func (r *ReconcileAquaCsp) updateCspObject(cr *operatorv1alpha1.AquaCsp) *operat
 		cr.Spec.ServerService = &operatorv1alpha1.AquaService{
 			Replicas:    1,
 			ServiceType: "ClusterIP",
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry: registry,
+			},
 		}
 	}
 
@@ -359,6 +381,9 @@ func (r *ReconcileAquaCsp) updateCspObject(cr *operatorv1alpha1.AquaCsp) *operat
 		cr.Spec.GatewayService = &operatorv1alpha1.AquaService{
 			Replicas:    1,
 			ServiceType: "ClusterIP",
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry: registry,
+			},
 		}
 	}
 
@@ -366,6 +391,9 @@ func (r *ReconcileAquaCsp) updateCspObject(cr *operatorv1alpha1.AquaCsp) *operat
 		cr.Spec.DbService = &operatorv1alpha1.AquaService{
 			Replicas:    1,
 			ServiceType: "ClusterIP",
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry: registry,
+			},
 		}
 	}
 

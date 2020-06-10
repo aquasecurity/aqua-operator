@@ -49,24 +49,11 @@ const (
 	// DbPvcName DB PVC Name
 	DbPvcName = "%s-db-pvc"
 
-	// DbPvName DB PV Name
-	DbPvName = "%s-db-pv"
-
-	// ServerPvcName Server PVC Name
-	ServerPvcName = "%s-web-pvc"
-
-	// ServerPvName Server PV Name
-	ServerPvName = "%s-web-pv"
-
-	// ServerPvcSize Server PVC Size
-	ServerPvcSize = 4
-	DbPvcSize     = 10
+	// DbPvcSize Database PVC Size
+	DbPvcSize = 10
 
 	// LatestVersion Latest supported aqua version in operator
 	LatestVersion = "4.6"
-
-	// Privileged use privileged
-	Privileged = true
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter.aquasec.com"

@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -50,7 +51,10 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 		}
 
 		if len(common.ImagePullSecret) == 0 {
-			common.ImagePullSecret = fmt.Sprintf(consts.PullImageSecretName, name)
+			marketplace := extra.IsMarketPlace()
+			if !marketplace {
+				common.ImagePullSecret = fmt.Sprintf(consts.PullImageSecretName, name)
+			}
 		}
 
 		if common.AdminPassword == nil && admin {
@@ -73,10 +77,6 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 				Key:  consts.ScalockDbPasswordSecretKey,
 			}
 		}
-
-		if common.ServerDiskSize == 0 {
-			common.ServerDiskSize = consts.ServerPvcSize
-		}
 	} else {
 		adminPassword := (*operatorv1alpha1.AquaSecret)(nil)
 		aquaLicense := (*operatorv1alpha1.AquaSecret)(nil)
@@ -96,7 +96,6 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 		}
 
 		common = &operatorv1alpha1.AquaCommon{
-			ClusterMode:        false,
 			ActiveActive:       false,
 			CyberCenterAddress: consts.CyberCenterAddress,
 			ImagePullSecret:    fmt.Sprintf(consts.PullImageSecretName, name),
@@ -107,7 +106,6 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 				Key:  consts.ScalockDbPasswordSecretKey,
 			},
 			DbDiskSize:     consts.DbPvcSize,
-			ServerDiskSize: consts.ServerPvcSize,
 		}
 	}
 

@@ -13,7 +13,6 @@ type AquaInfrastructure struct {
 }
 
 type AquaCommon struct {
-	ClusterMode        bool        `json:"clusterMode"`
 	ActiveActive       bool        `json:"activeActive"`
 	StorageClass       string      `json:"storageclass,omitempty"`
 	CyberCenterAddress string      `json:"cybercenterAddress,omitempty"`
@@ -22,7 +21,6 @@ type AquaCommon struct {
 	AquaLicense        *AquaSecret `json:"license,omitempty"`
 	DatabaseSecret     *AquaSecret `json:"databaseSecret,omitempty"`
 	DbDiskSize         int         `json:"dbDiskSize,omitempty"`
-	ServerDiskSize     int         `json:"serverDiskSize,omitempty"`
 }
 
 type AquaDockerRegistry struct {

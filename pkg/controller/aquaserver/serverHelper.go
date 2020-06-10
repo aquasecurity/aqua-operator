@@ -53,7 +53,9 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 	annotations := map[string]string{
 		"description": "Deploy the aqua console server",
 	}
-	envvars := sr.getEnvVars(cr)
+
+	envVars := sr.getEnvVars(cr)
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -84,30 +86,14 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 							Ports: []corev1.ContainerPort{
 								{
 									Protocol:      corev1.ProtocolTCP,
-									ContainerPort: 3622,
+									ContainerPort: 8080,
 								},
 								{
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 8443,
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "aqua-web-pvc",
-									MountPath: "/opt/aquasec/raw-scan-results",
-								},
-							},
-							Env: envvars,
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "aqua-web-pvc",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: fmt.Sprintf(consts.ServerPvcName, cr.Name),
-								},
-							},
+							Env: envVars,
 						},
 					},
 				},
@@ -195,21 +181,9 @@ func (sr *AquaServerHelper) getEnvVars(cr *operatorv1alpha1.AquaServer) []corev1
 		})
 	}
 
-	if cr.Spec.Common.ClusterMode {
-		result = append(result, corev1.EnvVar{
-			Name:  "CLUSTER_MODE",
-			Value: "enable",
-		})
-	}
-
 	result = append(result, corev1.EnvVar{
 		Name:  "AQUA_DOCKERLESS_SCANNING",
 		Value: "1",
-	})
-
-	result = append(result, corev1.EnvVar{
-		Name:  "AQUA_CONSOLE_RAW_SCAN_RESULTS_STORAGE_SIZE",
-		Value: fmt.Sprintf("%d", cr.Spec.Common.ServerDiskSize),
 	})
 
 	if cr.Spec.Enforcer != nil {
@@ -253,6 +227,12 @@ func (sr *AquaServerHelper) getEnvVars(cr *operatorv1alpha1.AquaServer) []corev1
 		})
 
 		result = append(result, enforcerEnvs...)
+	}
+
+	if cr.Spec.Envs != nil {
+		for _, env := range cr.Spec.Envs {
+			result = extra.AppendEnvVar(result, env)
+		}
 	}
 
 	return result

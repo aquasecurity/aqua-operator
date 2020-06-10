@@ -4,22 +4,20 @@ import (
 	"context"
 	syserrors "errors"
 	"fmt"
-	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
-	"reflect"
-	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
-	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/pvcs"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
+	"reflect"
 
-	appsv1 "k8s.io/api/apps/v1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -136,12 +134,6 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 	instance = r.updateServerObject(instance)
 
 	if instance.Spec.ServerService != nil {
-		reqLogger.Info("Start create the server pvc")
-		_, err = r.CreateServerPvc(instance)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
 		reqLogger.Info("Start Setup Aqua Server")
 		_, err = r.InstallServerService(instance)
 		if err != nil {
@@ -409,44 +401,6 @@ func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaS
 
 	// Deployment already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Server Deployment Already Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
-}
-
-func (r *ReconcileAquaServer) CreateServerPvc(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Server Aqua Phase", "Install Server PersistentVolumeClaim")
-	reqLogger.Info("Start installing aqua server pvc")
-
-	// Define a new pvc object
-	pvc := pvcs.CreatePersistentVolumeClaim(cr.Name,
-		cr.Namespace,
-		fmt.Sprintf("%s-server", cr.Name),
-		"Persistent Volume Claim for aqua server",
-		fmt.Sprintf(consts.ServerPvcName, cr.Name),
-		cr.Spec.Common.StorageClass,
-		cr.Spec.Common.ServerDiskSize)
-
-	// Set AquaCspKind instance as the owner and controller
-	if err := controllerutil.SetControllerReference(cr, pvc, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this pvc already exists
-	found := &corev1.PersistentVolumeClaim{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a New Aqua Server PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", pvc.Namespace, "PersistentVolumeClaim.Name", pvc.Name)
-		err = r.client.Create(context.TODO(), pvc)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// PersistentVolumeClaim already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Aqua Server PersistentVolumeClaim Already Exists", "PersistentVolumeClaim.Namespace", found.Namespace, "PersistentVolumeClaim.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }
 

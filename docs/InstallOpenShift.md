@@ -58,7 +58,6 @@ spec:
   common:
     imagePullSecret: "aqua-registry"        # Optional: if already created image pull secret then mention in here
     dbDiskSize: 10       
-    serverDiskSize: 4   
   database:                                 
     replicas: 1                            
     service: "ClusterIP"                    

@@ -43,7 +43,7 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
 	}
-	env_vars := as.getEnvVars(cr)
+
 	annotations := map[string]string{
 		"description": "Deploy the aqua scanner",
 	}
@@ -90,16 +90,15 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 									ContainerPort: 8080,
 								},
 							},
-							Env: env_vars,
-							VolumeMounts: []corev1.VolumeMount{
+							/*VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "docker-socket-mount",
 									MountPath: "/var/run/docker.sock",
 								},
-							},
+							},*/
 						},
 					},
-					Volumes: []corev1.Volume{
+					/*Volumes: []corev1.Volume{
 						{
 							Name: "docker-socket-mount",
 							VolumeSource: corev1.VolumeSource{
@@ -108,7 +107,7 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 								},
 							},
 						},
-					},
+					},*/
 				},
 			},
 		},
@@ -153,16 +152,4 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 	}
 
 	return deployment
-}
-
-func (as *AquaScannerHelper) getEnvVars(cr *operatorv1alpha1.AquaScanner) []corev1.EnvVar {
-
-	result := []corev1.EnvVar{
-		{
-			Name:  "SCANNER_PASSWORD",
-			Value: cr.Spec.Login.Password,
-		},
-	}
-
-	return result
 }

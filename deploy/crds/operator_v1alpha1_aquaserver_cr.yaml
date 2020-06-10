@@ -9,8 +9,7 @@ spec:
     version: "4.6"                          # Optional: auto generate if requirment is true to latest version
     platform: "openshift"                   # Optional: auto generate if requirment is true to openshift
   common:
-    clusterMode: false                      # Optional: if to work with cluster mode if you have more then 1 server, default false
-    activeActive: false                     # Optional: if to work with cluster mode if you have more then 1 server, default false
+    activeActive: false                     # Optional: to work in active active mode if you have more then 1 server, default false
     storageclass: "default"                 # Optional: if not given then use storage class default
     cybercenterAddress:                     # Optional: if not given then use default https://cybercenter.aquasec.com
     imagePullSecret:                        # Optional: if already created image pull secret then mention in here
@@ -23,7 +22,6 @@ spec:
     databaseSecret:                         # Optional: if already created database password secret
       key:
       name:
-    serverDiskSize:                         # Optional: size of aqua server pvc if not given use default value 4
   externalDb:                               # Optional: if want to use external db and not internal database
     host:
     port:

@@ -81,6 +81,13 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 	annotations := map[string]string{
 		"description": "Secret for aqua database password",
 	}
+
+	if !enf.Parameters.Privileged {
+		annotations["container.apparmor.security.beta.kubernetes.io/aqua-agent"] = "unconfined"
+	}
+
+	envVars := enf.getEnvVars(cr)
+
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -151,35 +158,7 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 									MountPath: "/data",
 								},
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "AQUA_TOKEN",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: cr.Spec.Secret.Name,
-											},
-											Key: cr.Spec.Secret.Key,
-										},
-									},
-								},
-								{
-									Name:  "AQUA_SERVER",
-									Value: fmt.Sprintf("%s:%d", cr.Spec.Gateway.Host, cr.Spec.Gateway.Port),
-								},
-								{
-									Name:  "AQUA_INSTALL_PATH",
-									Value: "/var/lib/aquasec",
-								},
-								{
-									Name:  "AQUA_GRPC_ONLY_MODE",
-									Value: "true",
-								},
-								{
-									Name:  "RESTART_CONTAINERS",
-									Value: "no",
-								},
-							},
+							Env: envVars,
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -316,4 +295,36 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 	}
 
 	return ds
+}
+
+func (ebf *AquaEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaEnforcer) []corev1.EnvVar {
+	result := []corev1.EnvVar{
+		{
+			Name: "AQUA_TOKEN",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Spec.Secret.Name,
+					},
+					Key: cr.Spec.Secret.Key,
+				},
+			},
+		},
+		{
+			Name:  "AQUA_SERVER",
+			Value: fmt.Sprintf("%s:%d", cr.Spec.Gateway.Host, cr.Spec.Gateway.Port),
+		},
+		{
+			Name:  "AQUA_INSTALL_PATH",
+			Value: "/var/lib/aquasec",
+		},
+	}
+
+	if cr.Spec.Envs != nil {
+		for _, env := range cr.Spec.Envs {
+			result = extra.AppendEnvVar(result, env)
+		}
+	}
+
+	return result
 }

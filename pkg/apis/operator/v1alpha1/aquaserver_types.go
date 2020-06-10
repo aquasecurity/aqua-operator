@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,7 +20,8 @@ type AquaServerSpec struct {
 	ExternalDb    *AquaDatabaseInformation `json:"externalDb,omitempty"`
 	LicenseToken  string                   `json:"licenseToken,omitempty"`
 	AdminPassword string                   `json:"adminPassword,omitempty"`
-	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
+	Enforcer      *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
+	Envs          []corev1.EnvVar          `json:"env,required"`
 }
 
 // AquaServerStatus defines the observed state of AquaServer

@@ -2,8 +2,11 @@ package extra
 
 import (
 	"encoding/base64"
+	"os"
+
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/aokoli/goutils"
 )
@@ -54,4 +57,31 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 	}
 
 	return pullPolicy, registry, repository, tag
+}
+
+func IsMarketPlace() bool {
+	item := os.Getenv("CERTIFIED_MARKETPLACE")
+
+	if item == "true" || item == "yes" || item == "1" {
+		return true
+	}
+
+	return false
+}
+
+func AppendEnvVar(envs []corev1.EnvVar, item corev1.EnvVar) []corev1.EnvVar {
+	var found bool
+
+	for index := 0; index < len(envs); index++ {
+		if envs[index].Name == item.Name {
+			envs[index] = item
+			found = true
+		}
+	}
+
+	if !found {
+		envs = append(envs, item)
+	}
+
+	return envs
 }

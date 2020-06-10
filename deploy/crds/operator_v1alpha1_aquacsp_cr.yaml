@@ -10,7 +10,6 @@ spec:
     platform: "openshift"                   # Optional: auto generate if requirment is true to openshift
     requirements: true                      # Optional: default is false
   common:
-    clusterMode: false                      # Optional: if to work with cluster mode if you have more then 1 server, default false
     activeActive: false                     # Optional: if to work with cluster mode if you have more then 1 server, default false
     storageclass: "default"                 # Optional: if not given then use storage class default
     cybercenterAddress:                     # Optional: if not given then use default https://cybercenter.aquasec.com
@@ -25,7 +24,6 @@ spec:
       key:
       name:
     dbDiskSize:                             # Optional: size of internal db pvc if not given use default value 10
-    serverDiskSize:                         # Optional: size of aqua server pvc if not given use default value 4
   externalDb:                               # Optional: if want to use external db and not internal database
     host:
     port:
@@ -60,7 +58,7 @@ spec:
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
       tag: "4.6"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
-  scanner:                                  # Optional: If not given then don't deploy scanner
+  scanner:                                  # Optional: If not given then don't deploy scanner only valid when using admin password parameter
     replicas: 1                             # Required: number of replicas
     image:                                  # Optional: if not given take the default value and version from infra.version
       repository: "scanner"                 # Optional: if not given take the default value - scanner

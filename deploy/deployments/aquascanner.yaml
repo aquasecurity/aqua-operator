@@ -10,5 +10,5 @@ spec:
     replicas: 1                             
   login:                                    
     username: "scanner"
-    password: "Password1"
+    password: "<Password>"
     host: "http://aqua-server:8080"

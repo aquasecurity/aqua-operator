@@ -123,6 +123,13 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 }
 
 func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaEnforcer {
+	registry := consts.Registry
+	if cr.Spec.RegistryData != nil {
+		if len(cr.Spec.RegistryData.URL) > 0 {
+			registry = cr.Spec.RegistryData.URL
+		}
+	}
+
 	labels := map[string]string{
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
@@ -152,6 +159,11 @@ func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operato
 			Secret:           &operatorv1alpha1.AquaSecret{
 				Name: fmt.Sprintf("%s-enforcer-token", cr.Name),
 				Key:  "token",
+			},
+			EnforcerService: &operatorv1alpha1.AquaService{
+				ImageData:     &operatorv1alpha1.AquaImage{
+					Registry:	registry,
+				},
 			},
 		},
 	}
