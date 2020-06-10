@@ -14,6 +14,7 @@ spec:
     spec:
       serviceAccountName: aqua-operator
       containers:
+        # Set the operator image with digest
         - name: aqua-operator
           image: "aquasec/aqua-operator@<digest>"
           command:
