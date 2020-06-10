@@ -16,7 +16,7 @@ spec:
       containers:
         # Set the operator image with digest
         - name: aqua-operator
-          image: "registry.connect.redhat.com/aquasec/database@<digest>"
+          image: "registry.connect.redhat.com/aquasec/operator@<digest>"
           command:
           - aqua-operator
           imagePullPolicy: Always
