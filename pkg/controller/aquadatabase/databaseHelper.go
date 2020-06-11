@@ -49,6 +49,19 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase) *
 	annotations := map[string]string{
 		"description": "Deploy the aqua database server",
 	}
+
+	passwordEnvVar := "POSTGRES_PASSWORD"
+	mountPath := "/var/lib/postgresql/data"
+	pgData := "/var/lib/postgresql/data/db-files"
+
+	marketplace := extra.IsMarketPlace()
+
+	if marketplace {
+		passwordEnvVar = "POSTGRESQL_ADMIN_PASSWORD"
+		mountPath = "/var/lib/pgsql/data"
+		pgData = "/var/lib/pgsql/data"
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -79,7 +92,7 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase) *
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "postgres-database",
-									MountPath: "/var/lib/postgresql/data",
+									MountPath: mountPath,
 								},
 							},
 							Ports: []corev1.ContainerPort{
@@ -91,10 +104,10 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase) *
 							Env: []corev1.EnvVar{
 								{
 									Name:  "PGDATA",
-									Value: "/var/lib/postgresql/data/db-files",
+									Value: pgData,
 								},
 								{
-									Name: "POSTGRES_PASSWORD",
+									Name: passwordEnvVar,
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
@@ -155,6 +168,13 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase) *
 			corev1.LocalObjectReference{
 				Name: cr.Spec.Common.ImagePullSecret,
 			},
+		}
+	}
+
+	if marketplace {
+		helper := int64(26)
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			FSGroup: &helper,
 		}
 	}
 
