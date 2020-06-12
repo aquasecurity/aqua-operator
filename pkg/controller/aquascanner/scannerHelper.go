@@ -47,6 +47,9 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 	annotations := map[string]string{
 		"description": "Deploy the aqua scanner",
 	}
+
+	privileged := true
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -75,6 +78,9 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 							Name:            "aqua-scanner",
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &privileged,
+							},
 							Args: []string{
 								"daemon",
 								"--user",

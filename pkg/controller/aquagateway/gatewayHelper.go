@@ -53,6 +53,7 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 	}
 
 	envVars := gw.getEnvVars(cr)
+	privileged := true
 
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -81,6 +82,9 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 							Name:            "aqua-gateway",
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &privileged,
+							},
 							Ports: []corev1.ContainerPort{
 								{
 									Protocol:      corev1.ProtocolTCP,

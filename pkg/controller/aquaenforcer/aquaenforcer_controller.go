@@ -2,13 +2,14 @@ package aquaenforcer
 
 import (
 	"context"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"reflect"
 	"fmt"
+	"reflect"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 	appsv1 "k8s.io/api/apps/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	syserrors "errors"
 
@@ -134,6 +135,11 @@ func (r *ReconcileAquaEnforcer) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	instance = r.updateEnforcerObject(instance)
+
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
+		_ = r.client.Status().Update(context.Background(), instance)
+	}
 
 	if instance.Spec.EnforcerService != nil {
 		if len(instance.Spec.Token) != 0 {

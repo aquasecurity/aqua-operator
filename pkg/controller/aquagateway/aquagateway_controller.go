@@ -2,9 +2,10 @@ package aquagateway
 
 import (
 	"context"
-	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
-	"time"
 	"reflect"
+	"time"
+
+	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
 	appsv1 "k8s.io/api/apps/v1"
 
@@ -121,6 +122,11 @@ func (r *ReconcileAquaGateway) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	instance = r.updateGatewayObject(instance)
+
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
+		_ = r.client.Status().Update(context.Background(), instance)
+	}
 
 	if instance.Spec.GatewayService != nil {
 		reqLogger.Info("Start Setup Aqua Gateway")

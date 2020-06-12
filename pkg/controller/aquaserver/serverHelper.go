@@ -55,6 +55,7 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 	}
 
 	envVars := sr.getEnvVars(cr)
+	privileged := true
 
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -83,6 +84,9 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 							Name:            "aqua-server",
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &privileged,
+							},
 							Ports: []corev1.ContainerPort{
 								{
 									Protocol:      corev1.ProtocolTCP,

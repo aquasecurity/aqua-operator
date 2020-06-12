@@ -4,11 +4,12 @@ import (
 	"context"
 	syserrors "errors"
 	"fmt"
+	"reflect"
+
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
-	"reflect"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -132,6 +133,11 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	instance = r.updateServerObject(instance)
+
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
+		_ = r.client.Status().Update(context.Background(), instance)
+	}
 
 	if instance.Spec.ServerService != nil {
 		reqLogger.Info("Start Setup Aqua Server")

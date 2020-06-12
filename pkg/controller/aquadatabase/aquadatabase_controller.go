@@ -4,18 +4,19 @@ import (
 	"context"
 	syserrors "errors"
 	"fmt"
-	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
-	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/pvcs"
 	"reflect"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/pvcs"
 	appsv1 "k8s.io/api/apps/v1"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -130,6 +131,11 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
+		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
 	if instance.Spec.DbService != nil {

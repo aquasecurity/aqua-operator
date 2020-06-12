@@ -3,6 +3,7 @@ package aquascanner
 import (
 	"context"
 	"reflect"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
@@ -12,9 +13,9 @@ import (
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -114,6 +115,11 @@ func (r *ReconcileAquaScanner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	instance = r.updateScannerObject(instance)
+
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
+		_ = r.client.Status().Update(context.Background(), instance)
+	}
 
 	if instance.Spec.ScannerService != nil {
 		_, err = r.InstallScannerDeployment(instance)
