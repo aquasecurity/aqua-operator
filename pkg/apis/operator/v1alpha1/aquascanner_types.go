@@ -17,6 +17,7 @@ type AquaScannerSpec struct {
 
 	ScannerService *AquaService `json:"deploy,required"`
 	Login          *AquaLogin   `json:"login,required"`
+	RunAsNonRoot   bool         `json:"runAsNonRoot,omitempty"`
 }
 
 // AquaScannerStatus defines the observed state of AquaScanner

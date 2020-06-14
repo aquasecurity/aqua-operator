@@ -53,7 +53,12 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 	}
 
 	envVars := gw.getEnvVars(cr)
+
 	privileged := true
+
+	if cr.Spec.RunAsNonRoot {
+		privileged = false
+	}
 
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -138,6 +143,18 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 					Name: cr.Spec.Common.ImagePullSecret,
 				},
 			}
+		}
+	}
+
+	if cr.Spec.RunAsNonRoot {
+		runAsUser := int64(11431)
+		runAsGroup := int64(11433)
+		fsGroup := int64(11433)
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser:    &runAsUser,
+			RunAsGroup:   &runAsGroup,
+			RunAsNonRoot: &cr.Spec.RunAsNonRoot,
+			FSGroup:      &fsGroup,
 		}
 	}
 

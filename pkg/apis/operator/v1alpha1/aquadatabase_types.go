@@ -16,6 +16,7 @@ type AquaDatabaseSpec struct {
 	Common         *AquaCommon         `json:"common"`
 	DbService      *AquaService        `json:"deploy,required"`
 	DiskSize       int                 `json:"diskSize,required"`
+	RunAsNonRoot   bool                `json:"runAsNonRoot,omitempty"`
 }
 
 // AquaDatabaseStatus defines the observed state of AquaDatabase

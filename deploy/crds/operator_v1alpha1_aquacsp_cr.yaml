@@ -58,17 +58,6 @@ spec:
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
       tag: "4.6"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
-  scanner:                                  # Optional: If not given then don't deploy scanner only valid when using admin password parameter
-    replicas: 1                             # Required: number of replicas
-    image:                                  # Optional: if not given take the default value and version from infra.version
-      repository: "scanner"                 # Optional: if not given take the default value - scanner
-      registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "4.6"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
-      pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
-  scale:                                    # Optional: Scale settings for aqua scanners
-    max: 5                                  # Max number of scanners
-    min: 1                                  # Min number of scanners
-    imagesPerScanner: 200                   # Max number of images to scan per scanner
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
   enforcer:                                 # Optional: Install also enforcer components

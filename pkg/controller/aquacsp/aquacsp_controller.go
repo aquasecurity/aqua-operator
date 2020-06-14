@@ -113,13 +113,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaScanner{}}, &handler.EnqueueRequestForOwner{
+	/*err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaScanner{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.AquaCsp{},
 	})
 	if err != nil {
 		return err
-	}
+	}*/
 
 	// RBAC
 
@@ -315,7 +315,7 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
-	if instance.Spec.ScannerService != nil {
+	/*if instance.Spec.ScannerService != nil {
 		if len(instance.Spec.AdminPassword) > 0 {
 			_, err = r.InstallAquaScanner(instance)
 			if err != nil {
@@ -331,7 +331,7 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		} else {
 			reqLogger.Info("[Warning] missing admin password can't deploy scanner")
 		}
-	}
+	}*/
 
 	if strings.ToLower(instance.Spec.Infrastructure.Platform) == "openshift" {
 		if instance.Spec.Route {
@@ -556,7 +556,7 @@ func (r *ReconcileAquaCsp) InstallAquaServer(cr *operatorv1alpha1.AquaCsp) (reco
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
 
-func (r *ReconcileAquaCsp) InstallAquaScanner(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
+/*func (r *ReconcileAquaCsp) InstallAquaScanner(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
 	reqLogger := log.WithValues("CSP - AquaScanner Phase", "Install Aqua Scanner")
 	reqLogger.Info("Start installing AquaScanner")
 
@@ -601,7 +601,7 @@ func (r *ReconcileAquaCsp) InstallAquaScanner(cr *operatorv1alpha1.AquaCsp) (rec
 	// AquaScanner already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Scanner Exists", "AquaScanner.Namespace", found.Namespace, "AquaScanner.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
-}
+}*/
 
 func (r *ReconcileAquaCsp) InstallAquaEnforcer(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
 	reqLogger := log.WithValues("CSP - AquaEnforcer Phase", "Install Aqua Enforcer")
@@ -696,7 +696,7 @@ func (r *ReconcileAquaCsp) GetGatewayReady(cr *operatorv1alpha1.AquaCsp) (bool, 
 	return int(resource.Status.ReadyReplicas) == int(cr.Spec.GatewayService.Replicas), nil
 }
 
-func (r *ReconcileAquaCsp) WaitForServer(cr *operatorv1alpha1.AquaCsp) (bool, error) {
+/*func (r *ReconcileAquaCsp) WaitForServer(cr *operatorv1alpha1.AquaCsp) (bool, error) {
 	reqLogger := log.WithValues("Csp Wait For Aqua Server Phase", "Wait For Aqua Server")
 	reqLogger.Info("Start waiting to aqua server")
 
@@ -804,4 +804,4 @@ func (r *ReconcileAquaCsp) ScaleScannerCLI(cr *operatorv1alpha1.AquaCsp) (reconc
 	}
 
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
-}
+}*/

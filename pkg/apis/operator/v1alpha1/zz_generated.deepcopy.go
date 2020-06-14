@@ -139,16 +139,6 @@ func (in *AquaCspSpec) DeepCopyInto(out *AquaCspSpec) {
 		*out = new(AquaService)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.ScannerService != nil {
-		in, out := &in.ScannerService, &out.ScannerService
-		*out = new(AquaService)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Scale != nil {
-		in, out := &in.Scale, &out.Scale
-		*out = new(AquaScannerCliScale)
-		**out = **in
-	}
 	if in.Enforcer != nil {
 		in, out := &in.Enforcer, &out.Enforcer
 		*out = new(AquaEnforcerDetailes)
@@ -433,6 +423,13 @@ func (in *AquaEnforcerSpec) DeepCopyInto(out *AquaEnforcerSpec) {
 		*out = new(AquaSecret)
 		**out = **in
 	}
+	if in.Envs != nil {
+		in, out := &in.Envs, &out.Envs
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
@@ -561,6 +558,13 @@ func (in *AquaGatewaySpec) DeepCopyInto(out *AquaGatewaySpec) {
 		in, out := &in.ExternalDb, &out.ExternalDb
 		*out = new(AquaDatabaseInformation)
 		**out = **in
+	}
+	if in.Envs != nil {
+		in, out := &in.Envs, &out.Envs
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }
@@ -882,6 +886,13 @@ func (in *AquaServerSpec) DeepCopyInto(out *AquaServerSpec) {
 		in, out := &in.Enforcer, &out.Enforcer
 		*out = new(AquaEnforcerDetailes)
 		**out = **in
+	}
+	if in.Envs != nil {
+		in, out := &in.Envs, &out.Envs
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }

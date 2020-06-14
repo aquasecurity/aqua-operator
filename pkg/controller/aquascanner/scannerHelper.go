@@ -50,6 +50,10 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 
 	privileged := true
 
+	if cr.Spec.RunAsNonRoot {
+		privileged = false
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -96,24 +100,8 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 									ContainerPort: 8080,
 								},
 							},
-							/*VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "docker-socket-mount",
-									MountPath: "/var/run/docker.sock",
-								},
-							},*/
 						},
 					},
-					/*Volumes: []corev1.Volume{
-						{
-							Name: "docker-socket-mount",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/run/docker.sock",
-								},
-							},
-						},
-					},*/
 				},
 			},
 		},
@@ -154,6 +142,18 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 					Name: cr.Spec.Common.ImagePullSecret,
 				},
 			}
+		}
+	}
+
+	if cr.Spec.RunAsNonRoot {
+		runAsUser := int64(11431)
+		runAsGroup := int64(11433)
+		fsGroup := int64(11433)
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser:    &runAsUser,
+			RunAsGroup:   &runAsGroup,
+			RunAsNonRoot: &cr.Spec.RunAsNonRoot,
+			FSGroup:      &fsGroup,
 		}
 	}
 

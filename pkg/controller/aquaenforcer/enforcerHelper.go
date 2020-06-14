@@ -14,8 +14,7 @@ import (
 
 // EnforcerParameters :
 type EnforcerParameters struct {
-	Privileged bool
-	Enforcer   *operatorv1alpha1.AquaEnforcer
+	Enforcer *operatorv1alpha1.AquaEnforcer
 }
 
 // AquaEnforcerHelper :
@@ -25,8 +24,7 @@ type AquaEnforcerHelper struct {
 
 func newAquaEnforcerHelper(cr *operatorv1alpha1.AquaEnforcer) *AquaEnforcerHelper {
 	params := EnforcerParameters{
-		Privileged: true,
-		Enforcer:   cr,
+		Enforcer: cr,
 	}
 
 	return &AquaEnforcerHelper{
@@ -82,7 +80,13 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		"description": "Secret for aqua database password",
 	}
 
-	if !enf.Parameters.Privileged {
+	privileged := true
+
+	if cr.Spec.RunAsNonRoot {
+		privileged = false
+	}
+
+	if !privileged {
 		annotations["container.apparmor.security.beta.kubernetes.io/aqua-agent"] = "unconfined"
 	}
 
@@ -111,6 +115,7 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 				Spec: corev1.PodSpec{
 					ServiceAccountName: cr.Spec.Infrastructure.ServiceAccount,
 					HostPID:            true,
+					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
 							Name:            "aqua-enforcer",
@@ -258,13 +263,13 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		}
 	}
 
-	if enf.Parameters.Privileged {
+	if privileged {
 		ds.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-			Privileged: &enf.Parameters.Privileged,
+			Privileged: &privileged,
 		}
 	} else {
 		ds.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-			Privileged: &enf.Parameters.Privileged,
+			Privileged: &privileged,
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{
 					"SYS_ADMIN",

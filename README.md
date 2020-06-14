@@ -24,7 +24,6 @@ The **aqua-operator** is a group of controllers that runs within a Kubernetes or
  * Deploy Aqua Security components on Kubernetes or Openshift
  * Scale up Aqua Security components with extra replicas
  * Assign metadata tags to Aqua Security components
- * Automatic scale to the Aqua Scanner CLI by the count of the Scanning Queue.
 
 ## Deployment Requirements
 

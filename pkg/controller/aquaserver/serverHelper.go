@@ -57,6 +57,10 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 	envVars := sr.getEnvVars(cr)
 	privileged := true
 
+	if cr.Spec.RunAsNonRoot {
+		privileged = false
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -140,6 +144,18 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 					Name: cr.Spec.Common.ImagePullSecret,
 				},
 			}
+		}
+	}
+
+	if cr.Spec.RunAsNonRoot {
+		runAsUser := int64(11431)
+		runAsGroup := int64(11433)
+		fsGroup := int64(11433)
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser:    &runAsUser,
+			RunAsGroup:   &runAsGroup,
+			RunAsNonRoot: &cr.Spec.RunAsNonRoot,
+			FSGroup:      &fsGroup,
 		}
 	}
 

@@ -55,6 +55,11 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase) *
 	pgData := "/var/lib/postgresql/data/db-files"
 
 	marketplace := extra.IsMarketPlace()
+	privileged := true
+
+	if cr.Spec.RunAsNonRoot {
+		privileged = false
+	}
 
 	if marketplace {
 		passwordEnvVar = "POSTGRESQL_ADMIN_PASSWORD"
@@ -89,6 +94,9 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase) *
 							Name:            "aqua-db",
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: &privileged,
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "postgres-database",

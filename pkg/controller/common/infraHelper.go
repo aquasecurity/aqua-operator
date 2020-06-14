@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+
 	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 
@@ -77,6 +78,10 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 				Key:  consts.ScalockDbPasswordSecretKey,
 			}
 		}
+
+		if common.DbDiskSize == 0 {
+			common.DbDiskSize = consts.DbPvcSize
+		}
 	} else {
 		adminPassword := (*operatorv1alpha1.AquaSecret)(nil)
 		aquaLicense := (*operatorv1alpha1.AquaSecret)(nil)
@@ -105,7 +110,7 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 				Name: fmt.Sprintf(consts.ScalockDbPasswordSecretName, name),
 				Key:  consts.ScalockDbPasswordSecretKey,
 			},
-			DbDiskSize:     consts.DbPvcSize,
+			DbDiskSize: consts.DbPvcSize,
 		}
 	}
 

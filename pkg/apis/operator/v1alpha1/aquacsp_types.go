@@ -18,16 +18,15 @@ type AquaCspSpec struct {
 	RegistryData *AquaDockerRegistry      `json:"registry,omitempty"`
 	ExternalDb   *AquaDatabaseInformation `json:"externalDb,omitempty"`
 
-	DbService      *AquaService         `json:"database,omitempty"`
-	GatewayService *AquaService         `json:"gateway,required"`
-	ServerService  *AquaService         `json:"server,required"`
-	ScannerService *AquaService         `json:"scanner,omitempty"`
-	Scale          *AquaScannerCliScale `json:"scale,omitempty"`
+	DbService      *AquaService `json:"database,omitempty"`
+	GatewayService *AquaService `json:"gateway,required"`
+	ServerService  *AquaService `json:"server,required"`
 
 	LicenseToken  string                `json:"licenseToken,omitempty"`
 	AdminPassword string                `json:"adminPassword,omitempty"`
 	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
 	Route         bool                  `json:"route,omitempty"`
+	RunAsNonRoot  bool                  `json:"runAsNonRoot,omitempty"`
 }
 
 // AquaCspStatus defines the observed state of AquaCsp

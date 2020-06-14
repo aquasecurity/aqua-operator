@@ -22,6 +22,7 @@ type AquaServerSpec struct {
 	AdminPassword string                   `json:"adminPassword,omitempty"`
 	Enforcer      *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
 	Envs          []corev1.EnvVar          `json:"env,required"`
+	RunAsNonRoot  bool                     `json:"runAsNonRoot,omitempty"`
 }
 
 // AquaServerStatus defines the observed state of AquaServer

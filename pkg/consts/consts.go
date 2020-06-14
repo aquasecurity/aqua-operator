@@ -74,4 +74,8 @@ const (
 	ScannerDeployName = "%s-scanner"
 
 	EmptyString = ""
+
+	AquaRunAsUser  = int64(11431)
+	AquaRunAsGroup = int64(11433)
+	AquaFsGroup    = int64(11433)
 )

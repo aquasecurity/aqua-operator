@@ -21,6 +21,7 @@ type AquaEnforcerSpec struct {
 	Token           string                  `json:"token,required"`
 	Secret          *AquaSecret             `json:"secret,required"`
 	Envs            []corev1.EnvVar         `json:"env,required"`
+	RunAsNonRoot    bool                    `json:"runAsNonRoot,omitempty"`
 }
 
 // AquaEnforcerStatus defines the observed state of AquaEnforcer

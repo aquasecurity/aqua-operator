@@ -51,6 +51,7 @@ func (csp *AquaCspHelper) newAquaDatabase(cr *operatorv1alpha1.AquaCsp) *operato
 			Common:         csp.Parameters.AquaCsp.Spec.Common,
 			DbService:      csp.Parameters.AquaCsp.Spec.DbService,
 			DiskSize:       csp.Parameters.AquaCsp.Spec.Common.DbDiskSize,
+			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 		},
 	}
 
@@ -82,6 +83,7 @@ func (csp *AquaCspHelper) newAquaGateway(cr *operatorv1alpha1.AquaCsp) *operator
 			Common:         csp.Parameters.AquaCsp.Spec.Common,
 			GatewayService: csp.Parameters.AquaCsp.Spec.GatewayService,
 			ExternalDb:     csp.Parameters.AquaCsp.Spec.ExternalDb,
+			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 		},
 	}
 
@@ -115,7 +117,8 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 			ExternalDb:     csp.Parameters.AquaCsp.Spec.ExternalDb,
 			LicenseToken:   csp.Parameters.AquaCsp.Spec.LicenseToken,
 			AdminPassword:  csp.Parameters.AquaCsp.Spec.AdminPassword,
-			Enforcer: csp.Parameters.AquaCsp.Spec.Enforcer,
+			Enforcer:       csp.Parameters.AquaCsp.Spec.Enforcer,
+			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 		},
 	}
 
@@ -150,28 +153,29 @@ func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operato
 			Annotations: annotations,
 		},
 		Spec: operatorv1alpha1.AquaEnforcerSpec{
-			Infrastructure:  csp.Parameters.AquaCsp.Spec.Infrastructure,
-			Common:          csp.Parameters.AquaCsp.Spec.Common,
-			Gateway:         &operatorv1alpha1.AquaGatewayInformation{
+			Infrastructure: csp.Parameters.AquaCsp.Spec.Infrastructure,
+			Common:         csp.Parameters.AquaCsp.Spec.Common,
+			Gateway: &operatorv1alpha1.AquaGatewayInformation{
 				Host: fmt.Sprintf("%s-gateway", cr.Name),
 				Port: 8443,
 			},
-			Secret:           &operatorv1alpha1.AquaSecret{
+			Secret: &operatorv1alpha1.AquaSecret{
 				Name: fmt.Sprintf("%s-enforcer-token", cr.Name),
 				Key:  "token",
 			},
 			EnforcerService: &operatorv1alpha1.AquaService{
-				ImageData:     &operatorv1alpha1.AquaImage{
-					Registry:	registry,
+				ImageData: &operatorv1alpha1.AquaImage{
+					Registry: registry,
 				},
 			},
+			RunAsNonRoot: csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 		},
 	}
 
 	return aquaenf
 }
 
-func (csp *AquaCspHelper) newAquaScanner(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaScanner {
+/*func (csp *AquaCspHelper) newAquaScanner(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaScanner {
 	labels := map[string]string{
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
@@ -204,4 +208,4 @@ func (csp *AquaCspHelper) newAquaScanner(cr *operatorv1alpha1.AquaCsp) *operator
 	}
 
 	return scanner
-}
+}*/
