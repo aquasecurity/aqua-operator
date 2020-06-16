@@ -37,3 +37,4 @@ spec:
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
+  runAsNonRoot:                             # Optional: true/false

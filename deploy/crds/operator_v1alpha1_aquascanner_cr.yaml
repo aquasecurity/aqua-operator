@@ -20,3 +20,4 @@ spec:
     username:
     password:
     host:
+  runAsNonRoot:                             # Optional: true/false

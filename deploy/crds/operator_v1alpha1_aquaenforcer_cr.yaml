@@ -20,4 +20,5 @@ spec:
   token: "token"                            # Required: enforcer group token also can use an existing secret instead
   secret:                                   # Optional: secret for the enforcer token
     name:
-    key: 
+    key:
+  runAsNonRoot:                             # Optional: true/false

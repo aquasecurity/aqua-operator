@@ -21,3 +21,4 @@ spec:
       tag: "4.6"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   diskSize: 10                              # Required: size of database disk pvc
+  runAsNonRoot:                             # Optional: true/false
