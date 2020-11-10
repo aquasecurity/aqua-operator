@@ -27,6 +27,14 @@ spec:
     port:
     username:
     password:                               # Optional: if not using the common.databaseSecret
+  env:                                      # Optional: if you need to provide custom environment variables
+  - name: "NO_PROXY"                        #           - hardcoded environment variables
+    value: "localhost,.cluster.local"
+  - name: "HTTPS_PROXY"                     #           - from secret
+    valueFrom:
+      secretKeyRef:
+        name: proxy-secret
+        key: HTTPS_PROXY
   deploy:                                   # Required: information about aqua server deployment
     replicas: 1                             # Required: number of replicas
     service: "LoadBalancer"                 # Required: service type for aqua server

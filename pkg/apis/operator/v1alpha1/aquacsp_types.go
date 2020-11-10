@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,6 +27,7 @@ type AquaCspSpec struct {
 	AdminPassword string                `json:"adminPassword,omitempty"`
 	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
 	Route         bool                  `json:"route,omitempty"`
+	Envs          []corev1.EnvVar       `json:"env,required"`
 	RunAsNonRoot  bool                  `json:"runAsNonRoot,omitempty"`
 }
 

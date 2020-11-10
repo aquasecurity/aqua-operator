@@ -64,3 +64,11 @@ spec:
     enforceMode:                            # Optional: true/false if enforcer mode or audit
   route:                                    # Optional: true/false create route to aqua server service, please set server service as NodePort or ClusterIP
   runAsNonRoot:                             # Optional: true/false
+  env:                                      # Optional: if you need to provide custom environment variables
+  - name: "NO_PROXY"                        #           from hardcoded environment variables
+    value: "localhost,.cluster.local"
+  - name: "HTTPS_PROXY"                     #           or from secret
+    valueFrom:
+      secretKeyRef:
+        name: proxy-secret
+        key: HTTPS_PROXY
