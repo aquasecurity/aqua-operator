@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,7 +19,7 @@ type AquaCspSpec struct {
 	RegistryData *AquaDockerRegistry      `json:"registry,omitempty"`
 	ExternalDb   *AquaDatabaseInformation `json:"externalDb,omitempty"`
 
-	DbService      *AquaService `json:"database,omitempty"`
+	DbService      *AquaService `jsxon:"database,omitempty"`
 	GatewayService *AquaService `json:"gateway,required"`
 	ServerService  *AquaService `json:"server,required"`
 
@@ -27,6 +28,8 @@ type AquaCspSpec struct {
 	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
 	Route         bool                  `json:"route,omitempty"`
 	RunAsNonRoot  bool                  `json:"runAsNonRoot,omitempty"`
+	ServerEnvs    []corev1.EnvVar       `json:"serverEnvs,required"`
+	GatewayEnvs   []corev1.EnvVar       `json:"gatewayEnvs,required"`
 }
 
 // AquaCspStatus defines the observed state of AquaCsp

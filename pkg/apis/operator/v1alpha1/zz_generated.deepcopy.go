@@ -144,6 +144,20 @@ func (in *AquaCspSpec) DeepCopyInto(out *AquaCspSpec) {
 		*out = new(AquaEnforcerDetailes)
 		**out = **in
 	}
+	if in.ServerEnvs != nil {
+		in, out := &in.ServerEnvs, &out.ServerEnvs
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.GatewayEnvs != nil {
+		in, out := &in.GatewayEnvs, &out.GatewayEnvs
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
