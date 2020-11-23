@@ -169,6 +169,10 @@ func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operato
 				ImageData: &operatorv1alpha1.AquaImage{
 					Registry: registry,
 				},
+				Affinity:     csp.Parameters.AquaCsp.Spec.Enforcer.Affinity,
+				Tolerations:  csp.Parameters.AquaCsp.Spec.Enforcer.Tolerations,
+				NodeSelector: csp.Parameters.AquaCsp.Spec.Enforcer.NodeSelector,
+				Resources:    csp.Parameters.AquaCsp.Spec.Enforcer.Resources,
 			},
 			RunAsNonRoot: csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 		},

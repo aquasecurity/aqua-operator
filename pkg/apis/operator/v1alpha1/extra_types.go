@@ -81,9 +81,13 @@ type AquaScannerCliScale struct {
 }
 
 type AquaEnforcerDetailes struct {
-	Gateway     string `json:"gateway"`
-	Name        string `json:"name"`
-	EnforceMode bool   `json:"enforceMode"`
+	Gateway      string                       `json:"gateway"`
+	Name         string                       `json:"name"`
+	EnforceMode  bool                         `json:"enforceMode"`
+	NodeSelector map[string]string            `json:"nodeSelector,omitempty"`
+	Affinity     *corev1.Affinity             `json:"affinity,omitempty"`
+	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
+	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type AquaDeploymentState string
