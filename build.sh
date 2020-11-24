@@ -1,7 +1,7 @@
 #!/bin/bash
 
 docker run \
-        --rm -it \
+        --rm \
         -w "/go/src/github.org/aquasecurity/aqua-operator" \
         -v `pwd`:/go/src/github.org/aquasecurity/aqua-operator \
         -v //var/run/docker.sock:/var/run/docker.sock \
