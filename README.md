@@ -38,7 +38,7 @@ The following documentation is provided:
 
 - [Installation](docs/Installation.md)
 - [First Steps](docs/FirstSteps.md)
-- [Official Aqua Security Docs Site](https://read.aquasec.com/)
+- [Official Aqua Security Docs Site](https://docs.aquasec.com/)
 - [Operator Hub Aqua](https://operatorhub.io/operator/aqua)
 
 ## Issues and feedback
