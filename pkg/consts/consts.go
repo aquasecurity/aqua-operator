@@ -53,7 +53,7 @@ const (
 	DbPvcSize = 10
 
 	// LatestVersion Latest supported aqua version in operator
-	LatestVersion = "4.6"
+	LatestVersion = "5.3"
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter.aquasec.com"

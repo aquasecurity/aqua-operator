@@ -101,3 +101,9 @@ const (
 	// AquaDeploymentStateRunning done
 	AquaDeploymentStateRunning AquaDeploymentState = "Running"
 )
+
+type AquaKubeEnforcerConfig struct {
+	GatewayAddress  string `json:"gateway_address, omitempty"`
+	ClusterName     string `json:"cluster_name, omitempty"`
+	ImagePullSecret string `json:"imagePullSecret,omitempty"`
+}

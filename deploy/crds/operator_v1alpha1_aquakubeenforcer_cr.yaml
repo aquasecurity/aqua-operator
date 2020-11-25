@@ -1,0 +1,23 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaKubeEnforcer
+metadata:
+  name: example-aquakubeenforcer
+spec:
+  # Add fields here
+  config:
+    gateway_address: "aqua-gateway:8443"
+    cluster_name: "aqua-secure"
+    imagePullSecret: "aqua-registry"
+  token: "<<KubeEnforcer Group Token>>"
+  image:
+    registry: "registry.aquasec.com"
+    tag: "5.3"
+    repository: "kube-enforcer"
+    pullPolicy: "Always"
+  registry:
+    url: "registry.aquasec.com"
+    username: "exampleusername"
+    password: "examplepassword"
+    email: "examplemail@company.com"
+
+
