@@ -1,6 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: aqua-operator
 rules:
 - apiGroups:
@@ -51,6 +52,7 @@ rules:
   - aquacsps
   - aquaenforcers
   - aquascanners
+  - aquakubeenforcers
   verbs:
   - '*'
 - apiGroups:
@@ -63,10 +65,16 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
+  - mutatingwebhookconfigurations
+  verbs:
+  - '*'
+- apiGroups:
   - policy
   resources:
   - '*'
   - podsecuritypolicies
   verbs:
   - '*'
-  

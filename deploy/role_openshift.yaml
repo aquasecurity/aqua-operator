@@ -53,6 +53,7 @@ rules:
       - aquacsps
       - aquaenforcers
       - aquascanners
+      - aquakubeenforcers
     verbs:
       - '*'
   - apiGroups:
@@ -69,6 +70,13 @@ rules:
     resources:
       - '*'
       - podsecuritypolicies
+    verbs:
+      - '*'
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
     verbs:
       - '*'
   - apiGroups:
