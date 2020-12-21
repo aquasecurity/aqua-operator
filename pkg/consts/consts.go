@@ -78,4 +78,6 @@ const (
 	AquaRunAsUser  = int64(11431)
 	AquaRunAsGroup = int64(11433)
 	AquaFsGroup    = int64(11433)
+
+	DefaultKubeEnforcerToken = "ke-token"
 )

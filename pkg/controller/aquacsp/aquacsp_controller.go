@@ -269,7 +269,27 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		if instance.Spec.ServerService == nil {
 			reqLogger.Error(syserrors.New("Missing Aqua Server Deployment Data!, Please fix and redeploy template!"), "Aqua CSP Deployment Missing Server Deployment Data!")
 		}
+		if instance.Spec.DeployKubeEnforcer != nil {
+			envList := []corev1.EnvVar{
+				{
+					Name: "BATCH_INSTALL_GATEWAY",
+					Value: fmt.Sprintf(consts.GatewayServiceName, instance.Name),
+				},
+				{
+					Name: "AQUA_KE_GROUP_NAME",
+					Value: "operator-default-ke-group",
+				},
+				{
+					Name: "AQUA_KE_GROUP_TOKEN",
+					Value: consts.DefaultKubeEnforcerToken,
+				},
+			}
+			for _, envVar := range envList {
+				instance.Spec.ServerEnvs = extra.AppendEnvVar(instance.Spec.ServerEnvs, envVar)
+				instance.Spec.GatewayEnvs = extra.AppendEnvVar(instance.Spec.GatewayEnvs, envVar)
 
+			}
+		}
 		_, err = r.InstallAquaGateway(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
@@ -310,6 +330,13 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	if instance.Spec.Enforcer != nil {
 		_, err = r.InstallAquaEnforcer(instance)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+	}
+
+	if instance.Spec.DeployKubeEnforcer != nil {
+		_, err = r.InstallAquaKubeEnforcer(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 		}
@@ -632,6 +659,38 @@ func (r *ReconcileAquaCsp) InstallAquaEnforcer(cr *operatorv1alpha1.AquaCsp) (re
 	}
 	// AquaEnforcer already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Enforcer Exists", "AquaEnforcer.Namespace", found.Namespace, "AquaEnforcer.Name", found.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+}
+
+func (r *ReconcileAquaCsp) InstallAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
+	reqLogger := log.WithValues("CSP - AquaKubeEnforcer Phase", "Install Aqua Enforcer")
+	reqLogger.Info("Start installing AquaKubeEnforcer")
+
+	// Define a new AquaEnforcer object
+	cspHelper := newAquaCspHelper(cr)
+	enforcer := cspHelper.newAquaKubeEnforcer(cr)
+
+	// Set AquaCsp instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, enforcer, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this AquaKubeEnforcer already exists
+	found := &operatorv1alpha1.AquaKubeEnforcer{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: enforcer.Name, Namespace: enforcer.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua KubeEnforcer", "AquaKubeEnforcer.Namespace", enforcer.Namespace, "AquaKubeEnforcer.Name", enforcer.Name)
+		err = r.client.Create(context.TODO(), enforcer)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	} else if err != nil {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+	}
+	// AquaEnforcer already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Exists", "AquaKubeEnforcer.Namespace", found.Namespace, "AquaKubeEnforcer.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
 

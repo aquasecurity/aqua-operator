@@ -40,15 +40,15 @@ spec:
     image:                                  # Optional: if not given take the default value and version from infra.version
       repository: "database"                # Optional: if not given take the default value - database
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "4.6"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
+      tag: "5.3"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   gateway:                                  # Required: information about aqua gateway deployment
     replicas: 1                             # Required: number of replicas
     service: "ClusterIP"                    # Required: service type for aqua server
     image:                                  # Optional: if not given take the default value and version from infra.version
-      repository: "server"                  # Optional: if not given take the default value - gateway
+      repository: "gateway"                 # Optional: if not given take the default value - gateway
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "4.6"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
+      tag: "5.3"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   server:                                   # Required: information about aqua server deployment
     replicas: 1                             # Required: number of replicas
@@ -56,7 +56,7 @@ spec:
     image:                                  # Optional: if not given take the default value and version from infra.version
       repository: "server"                  # Optional: if not given take the default value - server
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "4.6"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
+      tag: "5.3"                            # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
@@ -64,3 +64,5 @@ spec:
     enforceMode:                            # Optional: true/false if enforcer mode or audit
   route:                                    # Optional: true/false create route to aqua server service, please set server service as NodePort or ClusterIP
   runAsNonRoot:                             # Optional: true/false
+  kubeEnforcer:                             # Optional: Install also KubeEnforcer
+    tag:                                    # Optional: KubeEnforcer image tag to install

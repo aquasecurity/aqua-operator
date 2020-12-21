@@ -23,13 +23,14 @@ type AquaCspSpec struct {
 	GatewayService *AquaService `json:"gateway,required"`
 	ServerService  *AquaService `json:"server,required"`
 
-	LicenseToken  string                `json:"licenseToken,omitempty"`
-	AdminPassword string                `json:"adminPassword,omitempty"`
-	Enforcer      *AquaEnforcerDetailes `json:"enforcer,omitempty"`
-	Route         bool                  `json:"route,omitempty"`
-	RunAsNonRoot  bool                  `json:"runAsNonRoot,omitempty"`
-	ServerEnvs    []corev1.EnvVar       `json:"serverEnvs,required"`
-	GatewayEnvs   []corev1.EnvVar       `json:"gatewayEnvs,required"`
+	LicenseToken       string                   `json:"licenseToken,omitempty"`
+	AdminPassword      string                   `json:"adminPassword,omitempty"`
+	Enforcer           *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
+	Route              bool                     `json:"route,omitempty"`
+	RunAsNonRoot       bool                     `json:"runAsNonRoot,omitempty"`
+	ServerEnvs         []corev1.EnvVar          `json:"serverEnvs,required"`
+	GatewayEnvs        []corev1.EnvVar          `json:"gatewayEnvs,required"`
+	DeployKubeEnforcer *AquaKubeEnforcerDetails `json:"kubeEnforcer",omitempty`
 }
 
 // AquaCspStatus defines the observed state of AquaCsp
