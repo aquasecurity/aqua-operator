@@ -107,3 +107,7 @@ type AquaKubeEnforcerConfig struct {
 	ClusterName     string `json:"cluster_name, omitempty"`
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 }
+
+type AquaKubeEnforcerDetails struct {
+	ImageTag string `json:"tag,omitempty"`
+}

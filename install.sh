@@ -5,6 +5,7 @@ kubectl create -f  deploy/crds/operator.aquasec.com_aquaservers_crd.yaml
 kubectl create -f  deploy/crds/operator.aquasec.com_aquaenforcers_crd.yaml
 kubectl create -f  deploy/crds/operator.aquasec.com_aquacsps_crd.yaml
 kubectl create -f  deploy/crds/operator.aquasec.com_aquascanners_crd.yaml
+kubectl create -f  deploy/crds/operator.aquasec.com_aquakubeenforcers_crd.yaml
 
 kubectl create -f deploy/service_account.yaml -n aqua
 kubectl create -f deploy/role.yaml

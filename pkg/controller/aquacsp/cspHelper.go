@@ -177,6 +177,56 @@ func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operato
 	return aquaenf
 }
 
+func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaKubeEnforcer {
+	registry := consts.Registry
+	if cr.Spec.RegistryData != nil {
+		if len(cr.Spec.RegistryData.URL) > 0 {
+			registry = cr.Spec.RegistryData.URL
+		}
+	}
+	tag := consts.LatestVersion
+	if cr.Spec.DeployKubeEnforcer.ImageTag != "" {
+		tag = cr.Spec.DeployKubeEnforcer.ImageTag
+	}
+
+	labels := map[string]string{
+		"app":                cr.Name + "-csp",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua KubeEnforcer",
+	}
+	aquaKubeEnf := &operatorv1alpha1.AquaKubeEnforcer{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operator.aquasec.com/v1alpha1",
+			Kind:       "AquaKubeEnforcer",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: operatorv1alpha1.AquaKubeEnforcerSpec{
+			Config: operatorv1alpha1.AquaKubeEnforcerConfig{
+				GatewayAddress: fmt.Sprintf("%s:8443", fmt.Sprintf(consts.GatewayServiceName, cr.Name)),
+				ClusterName: "aqua-secure",
+				ImagePullSecret: cr.Spec.Common.ImagePullSecret,
+			},
+			Token: consts.DefaultKubeEnforcerToken,
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry: registry,
+				Repository: "kube-enforcer",
+				Tag: tag,
+				PullPolicy: "Always",
+			},
+		},
+	}
+
+	return aquaKubeEnf
+}
+
 /*func (csp *AquaCspHelper) newAquaScanner(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaScanner {
 	labels := map[string]string{
 		"app":                cr.Name + "-csp",

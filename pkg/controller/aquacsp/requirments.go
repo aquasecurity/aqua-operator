@@ -26,11 +26,15 @@ func (r *ReconcileAquaCsp) CreateImagePullSecret(cr *operatorv1alpha1.AquaCsp) (
 	reqLogger := log.WithValues("Csp Requirments Phase", "Create Image Pull Secret")
 	reqLogger.Info("Start creating aqua images pull secret")
 
+	secretName := fmt.Sprintf(consts.PullImageSecretName, cr.Name)
+	if cr.Spec.Common != nil && cr.Spec.Common.ImagePullSecret != "" {
+		secretName = cr.Spec.Common.ImagePullSecret
+	}
 	// Define a new secret object
 	secret := secrets.CreatePullImageSecret(cr.Name,
 		cr.Namespace,
 		fmt.Sprintf("%s-requirments", cr.Name),
-		fmt.Sprintf(consts.PullImageSecretName, cr.Name),
+		secretName,
 		*cr.Spec.RegistryData)
 
 	// Set AquaCspKind instance as the owner and controller
