@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/serviceaccounts"
+
+	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
@@ -132,15 +136,27 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	createDatabaseSecret := false
+	if instance.Spec.Common == nil || instance.Spec.Common.DatabaseSecret == nil {
+		createDatabaseSecret = true
+	}
+
+	instance = r.updateDatabaseObject(instance)
 
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
+	if len(instance.Spec.Infrastructure.ServiceAccount) > 0 {
+		_, err = r.CreateAquaServiceAccount(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 	if instance.Spec.DbService != nil {
 		reqLogger.Info("Start Setup Internal Aqua Database (Not For Production Usage)")
-		if instance.Spec.Common.DatabaseSecret == nil {
+		if createDatabaseSecret {
 			reqLogger.Info("Start Setup Secret For Database Password")
 			password := extra.CreateRundomPassword()
 			_, err = r.CreateDbPasswordSecret(instance, password)
@@ -364,5 +380,57 @@ func (r *ReconcileAquaDatabase) CreateDbPasswordSecret(cr *operatorv1alpha1.Aqua
 
 	// Secret already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Db Password Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaDatabase) updateDatabaseObject(cr *operatorv1alpha1.AquaDatabase) *operatorv1alpha1.AquaDatabase {
+
+	cr.Spec.Infrastructure = common.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)
+	cr.Spec.Common = common.UpdateAquaCommon(cr.Spec.Common, cr.Name, false, false)
+
+	return cr
+}
+
+func (r *ReconcileAquaDatabase) CreateAquaServiceAccount(cr *operatorv1alpha1.AquaDatabase) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Csp Requirments Phase", "Create Aqua Service Account")
+	reqLogger.Info("Start creating aqua service account")
+
+	if len(cr.Spec.Common.ImagePullSecret) > 0 {
+		foundSecret := &corev1.Secret{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Spec.Common.ImagePullSecret, Namespace: cr.Namespace}, foundSecret)
+		if err != nil && errors.IsNotFound(err) {
+			cr.Spec.Common.ImagePullSecret = ""
+		}
+	}
+
+	// Define a new service account object
+	sa := serviceaccounts.CreateServiceAccount(cr.Name,
+		cr.Namespace,
+		fmt.Sprintf("%s-requirments", cr.Name),
+		cr.Spec.Infrastructure.ServiceAccount,
+		cr.Spec.Common.ImagePullSecret)
+
+	// Set AquaCspKind instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, sa, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this service account already exists
+	found := &corev1.ServiceAccount{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: sa.Name, Namespace: sa.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua Service Account", "ServiceAccount.Namespace", sa.Namespace, "ServiceAccount.Name", sa.Name)
+		err = r.client.Create(context.TODO(), sa)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Service account already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Service Account Already Exists", "ServiceAccount.Namespace", found.Namespace, "ServiceAccount.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }
