@@ -110,4 +110,5 @@ type AquaKubeEnforcerConfig struct {
 
 type AquaKubeEnforcerDetails struct {
 	ImageTag string `json:"tag,omitempty"`
+	Registry string `json:"registry,omitempty"`
 }

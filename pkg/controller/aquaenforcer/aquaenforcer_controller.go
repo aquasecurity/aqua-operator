@@ -225,7 +225,7 @@ func (r *ReconcileAquaEnforcer) InstallEnforcerDaemonSet(cr *operatorv1alpha1.Aq
 	found := &appsv1.DaemonSet{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ds.Name, Namespace: ds.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a New Aqua Database", "DaemonSet.Namespace", ds.Namespace, "DaemonSet.Name", ds.Name)
+		reqLogger.Info("Creating a New Aqua Enforcer", "DaemonSet.Namespace", ds.Namespace, "DaemonSet.Name", ds.Name)
 		err = r.client.Create(context.TODO(), ds)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -234,6 +234,21 @@ func (r *ReconcileAquaEnforcer) InstallEnforcerDaemonSet(cr *operatorv1alpha1.Aq
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if found != nil {
+		upgrade := ds.Spec.Template.Spec.Containers[0].Image != found.Spec.Template.Spec.Containers[0].Image
+		reqLogger.Info("Checking for Aqua Enforcer Upgrade", "deployment obj", ds.Spec.Template.Spec.Containers[0].Image, "found obj", found.Spec.Template.Spec.Containers[0].Image, "upgrade bool", upgrade)
+		if upgrade {
+			found.Spec.Template.Spec.Containers[0].Image = ds.Spec.Template.Spec.Containers[0].Image
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Enforcer: Failed to update Daemonset.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
 	}
 
 	// DaemonSet already exists - don't requeue

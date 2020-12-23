@@ -529,6 +529,20 @@ func (r *ReconcileAquaCsp) InstallAquaGateway(cr *operatorv1alpha1.AquaCsp) (rec
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 		}
+
+		update := !reflect.DeepEqual(aquagw.Spec, found.Spec)
+
+		reqLogger.Info("Checking for AquaGateway Upgrade", "aquagw", aquagw.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(aquagw.Spec.DeepCopy())
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaGateway.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
 	}
 
 	// AquaGateway already exists - don't requeue
@@ -575,6 +589,20 @@ func (r *ReconcileAquaCsp) InstallAquaServer(cr *operatorv1alpha1.AquaCsp) (reco
 			}
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+		}
+
+		update := !reflect.DeepEqual(aquasr.Spec, found.Spec)
+
+		reqLogger.Info("Checking for AquaServer Upgrade", "aquasr", aquasr.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(aquasr.Spec.DeepCopy())
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaServer.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
 		}
 	}
 
@@ -658,6 +686,23 @@ func (r *ReconcileAquaCsp) InstallAquaEnforcer(cr *operatorv1alpha1.AquaCsp) (re
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 	}
 	// AquaEnforcer already exists - don't requeue
+
+	if found != nil {
+		update := !reflect.DeepEqual(enforcer.Spec, found.Spec)
+
+		reqLogger.Info("Checking for AquaEnforcer Upgrade", "enforcer", enforcer.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(enforcer.Spec.DeepCopy())
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaEnforcer.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
 	reqLogger.Info("Skip reconcile: Aqua Enforcer Exists", "AquaEnforcer.Namespace", found.Namespace, "AquaEnforcer.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
@@ -690,6 +735,23 @@ func (r *ReconcileAquaCsp) InstallAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp)
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 	}
 	// AquaEnforcer already exists - don't requeue
+
+	if found != nil {
+		update := !reflect.DeepEqual(enforcer.Spec, found.Spec)
+
+		reqLogger.Info("Checking for AquaKubeEnforcer Upgrade", "kube-enforcer", enforcer.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(enforcer.Spec.DeepCopy())
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaKubeEnforcer.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Exists", "AquaKubeEnforcer.Namespace", found.Namespace, "AquaKubeEnforcer.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }

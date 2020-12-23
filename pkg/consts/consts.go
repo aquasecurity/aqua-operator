@@ -56,7 +56,7 @@ const (
 	LatestVersion = "5.3"
 
 	// CyberCenterAddress Aqua Cybercenter Address
-	CyberCenterAddress = "https://cybercenter.aquasec.com"
+	CyberCenterAddress = "https://cybercenter5.aquasec.com"
 
 	// Deployments
 
