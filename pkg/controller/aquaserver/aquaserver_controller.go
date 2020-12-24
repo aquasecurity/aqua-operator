@@ -370,10 +370,13 @@ func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaS
 	}
 
 	if found != nil {
+		upgrade := deployment.Spec.Template.Spec.Containers[0].Image != found.Spec.Template.Spec.Containers[0].Image
+		reqLogger.Info("Checking for Aqua Server Upgrade", "deployment obj", deployment.Spec.Template.Spec.Containers[0].Image, "found obj", found.Spec.Template.Spec.Containers[0].Image, "upgrade bool", upgrade)
 		size := deployment.Spec.Replicas
-		if *found.Spec.Replicas != *size {
+		if *found.Spec.Replicas != *size || upgrade {
 			found.Spec.Replicas = size
-			err = r.client.Status().Update(context.Background(), found)
+			found.Spec.Template.Spec.Containers[0].Image = deployment.Spec.Template.Spec.Containers[0].Image
+			err = r.client.Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua Server: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 				return reconcile.Result{}, err

@@ -65,4 +65,5 @@ spec:
   route:                                    # Optional: true/false create route to aqua server service, please set server service as NodePort or ClusterIP
   runAsNonRoot:                             # Optional: true/false
   kubeEnforcer:                             # Optional: Install also KubeEnforcer
-    tag:                                    # Optional: KubeEnforcer image tag to install
+    tag:                                    # Optional: KubeEnforcer image tag
+    registry:                               # Optional: KubeEnforcer registry

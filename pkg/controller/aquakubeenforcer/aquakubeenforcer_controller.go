@@ -821,7 +821,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua CSP: Creating a New deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+		reqLogger.Info("Aqua KubeEnforcer: Creating a New deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
 		err = r.client.Create(context.TODO(), deployment)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
@@ -830,6 +830,21 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if found != nil {
+		upgrade := deployment.Spec.Template.Spec.Containers[0].Image != found.Spec.Template.Spec.Containers[0].Image
+		reqLogger.Info("Checking for Aqua KubeEnforcer Upgrade", "deployment obj", deployment.Spec.Template.Spec.Containers[0].Image, "found obj", found.Spec.Template.Spec.Containers[0].Image, "upgrade bool", upgrade)
+		if upgrade {
+			found.Spec.Template.Spec.Containers[0].Image = deployment.Spec.Template.Spec.Containers[0].Image
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua KubeEnforcer: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
 	}
 
 	// object already exists - don't requeue

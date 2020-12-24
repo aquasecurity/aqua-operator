@@ -184,6 +184,10 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 			registry = cr.Spec.RegistryData.URL
 		}
 	}
+	if cr.Spec.DeployKubeEnforcer.Registry != "" {
+		registry = cr.Spec.DeployKubeEnforcer.Registry
+	}
+
 	tag := consts.LatestVersion
 	if cr.Spec.DeployKubeEnforcer.ImageTag != "" {
 		tag = cr.Spec.DeployKubeEnforcer.ImageTag
