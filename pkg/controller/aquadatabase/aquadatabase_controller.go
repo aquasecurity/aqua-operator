@@ -136,10 +136,7 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	createDatabaseSecret := false
-	if instance.Spec.Common == nil || instance.Spec.Common.DatabaseSecret == nil {
-		createDatabaseSecret = true
-	}
+	createDatabaseSecret := instance.Spec.Common == nil || instance.Spec.Common.DatabaseSecret == nil
 
 	instance = r.updateDatabaseObject(instance)
 
@@ -148,18 +145,27 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
-	if len(instance.Spec.Infrastructure.ServiceAccount) > 0 {
+	if len(instance.Spec.Infrastructure.ServiceAccount) > 0 &&
+		!serviceaccounts.CheckIfServiceAccountExists(
+			r.client,
+			instance.Spec.Infrastructure.ServiceAccount,
+			instance.Namespace) {
 		_, err = r.CreateAquaServiceAccount(instance)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 	}
+
+
 	if instance.Spec.DbService != nil {
 		reqLogger.Info("Start Setup Internal Aqua Database (Not For Production Usage)")
 		if createDatabaseSecret {
 			reqLogger.Info("Start Setup Secret For Database Password")
 			password := extra.CreateRundomPassword()
-			_, err = r.CreateDbPasswordSecret(instance, password)
+			_, err = r.CreateDbPasswordSecret(instance,
+				fmt.Sprintf(consts.ScalockDbPasswordSecretName, instance.Name),
+				consts.ScalockDbPasswordSecretKey,
+				password)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -170,22 +176,84 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 			}
 		}
 
+		pvcName := fmt.Sprintf(consts.DbPvcName, instance.Name)
+		dbAppName := fmt.Sprintf("%s-db", instance.Name)
 		reqLogger.Info("Start Creating aqua db pvc")
-		_, err = r.InstallDatabasePvc(instance)
+		_, err = r.InstallDatabasePvc(
+			instance,
+			pvcName)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
 		reqLogger.Info("Start Creating aqua db deployment")
-		_, err = r.InstallDatabaseDeployment(instance)
+		_, err = r.InstallDatabaseDeployment(
+			instance,
+			instance.Spec.Common.DatabaseSecret,
+			fmt.Sprintf(consts.DbDeployName, instance.Name),
+			pvcName,
+			dbAppName)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
 		reqLogger.Info("Start Creating aqua db service")
-		_, err = r.InstallDatabaseService(instance)
+		_, err = r.InstallDatabaseService(
+			instance,
+			fmt.Sprintf(consts.DbServiceName, instance.Name),
+			dbAppName,
+			5432)
 		if err != nil {
 			return reconcile.Result{}, err
+		}
+
+		// if splitDB -> init AuditDB struct
+		// Check if AuditDBSecret exist
+		// if not -> create AuditDB secret
+		// create pvc, deployment, service for audit db
+		if instance.Spec.Common.SplitDB {
+			instance.Spec.AuditDB = common.UpdateAquaAuditDB(instance.Spec.AuditDB, instance.Name)
+			exist := secrets.CheckIfSecretExists(r.client, instance.Spec.AuditDB.AuditDBSecret.Name, instance.Namespace)
+			if !exist {
+				_, err = r.CreateDbPasswordSecret(instance,
+					instance.Spec.AuditDB.AuditDBSecret.Name,
+					instance.Spec.AuditDB.AuditDBSecret.Key,
+					instance.Spec.AuditDB.Data.Password)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
+
+			auditPvcName := fmt.Sprintf(consts.AuditDbPvcName, instance.Name)
+			auditDBAppName := fmt.Sprintf("%s-audit-db", instance.Name)
+			reqLogger.Info("Start Creating aqua audit-db pvc")
+			_, err = r.InstallDatabasePvc(
+				instance,
+				auditPvcName)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			reqLogger.Info("Start Creating aqua audit-db service")
+			_, err = r.InstallDatabaseService(
+				instance,
+				instance.Spec.AuditDB.Data.Host,
+				auditDBAppName,
+				int32(instance.Spec.AuditDB.Data.Port))
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			reqLogger.Info("Start Creating aqua audit-db deployment")
+			_, err = r.InstallDatabaseDeployment(
+				instance,
+				instance.Spec.AuditDB.AuditDBSecret,
+				fmt.Sprintf(consts.AuditDbDeployName, instance.Name),
+				auditPvcName,
+				auditDBAppName)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 
 	} else {
@@ -205,13 +273,13 @@ func (r *ReconcileAquaDatabase) Reconcile(request reconcile.Request) (reconcile.
 	----------------------------------------------------------------------------------------------------------------
 */
 
-func (r *ReconcileAquaDatabase) InstallDatabaseService(cr *operatorv1alpha1.AquaDatabase) (reconcile.Result, error) {
+func (r *ReconcileAquaDatabase) InstallDatabaseService(cr *operatorv1alpha1.AquaDatabase, serviceName, app string, servicePort int32) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Database Aqua Phase", "Install Database Service")
 	reqLogger.Info("Start installing aqua database service")
 
 	// Define a new Service object
 	databaseHelper := newAquaDatabaseHelper(cr)
-	service := databaseHelper.newService(cr)
+	service := databaseHelper.newService(cr, serviceName, app, servicePort)
 
 	// Set AquaCspKind instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, service, r.scheme); err != nil {
@@ -238,7 +306,7 @@ func (r *ReconcileAquaDatabase) InstallDatabaseService(cr *operatorv1alpha1.Aqua
 	return reconcile.Result{Requeue: true}, nil
 }
 
-func (r *ReconcileAquaDatabase) InstallDatabasePvc(cr *operatorv1alpha1.AquaDatabase) (reconcile.Result, error) {
+func (r *ReconcileAquaDatabase) InstallDatabasePvc(cr *operatorv1alpha1.AquaDatabase, name string) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Database Aqua Phase", "Install Database PersistentVolumeClaim")
 	reqLogger.Info("Start installing aqua database pvc")
 
@@ -247,7 +315,7 @@ func (r *ReconcileAquaDatabase) InstallDatabasePvc(cr *operatorv1alpha1.AquaData
 		cr.Namespace,
 		fmt.Sprintf("%s-database", cr.Name),
 		"Persistent Volume Claim for aqua database server",
-		fmt.Sprintf(consts.DbPvcName, cr.Name),
+		name,
 		cr.Spec.Common.StorageClass,
 		cr.Spec.DiskSize)
 
@@ -276,13 +344,18 @@ func (r *ReconcileAquaDatabase) InstallDatabasePvc(cr *operatorv1alpha1.AquaData
 	return reconcile.Result{Requeue: true}, nil
 }
 
-func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.AquaDatabase) (reconcile.Result, error) {
+func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.AquaDatabase, dbSecret *operatorv1alpha1.AquaSecret, deployName, pvcName, app string) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Database Aqua Phase", "Install Database Deployment")
 	reqLogger.Info("Start installing aqua database deployment")
 
 	// Define a new deployment object
 	databaseHelper := newAquaDatabaseHelper(cr)
-	deployment := databaseHelper.newDeployment(cr)
+	deployment := databaseHelper.newDeployment(
+		cr,
+		dbSecret,
+		deployName,
+		pvcName,
+		app)
 
 	// Set AquaCspKind instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, deployment, r.scheme); err != nil {
@@ -313,6 +386,7 @@ func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.A
 				reqLogger.Error(err, "Database Aqua: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 				return reconcile.Result{}, err
 			}
+
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true}, nil
 		}
@@ -328,11 +402,30 @@ func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.A
 			reqLogger.Error(err, "Aqua DataBase: Failed to list pods.", "AquaDatabase.Namespace", cr.Namespace, "AquaDatabase.Name", cr.Name)
 			return reconcile.Result{}, err
 		}
+
 		podNames := k8s.PodNames(podList.Items)
 
 		// Update status.Nodes if needed
-		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
+		if len(cr.Status.Nodes) == 0 {
 			cr.Status.Nodes = podNames
+		}
+		nodes := cr.Status.Nodes
+		var podsToAppend []string
+		for _, pod := range podNames {
+			addPodName := true
+			for _, node := range nodes {
+				if pod == node {
+					addPodName = false
+				}
+			}
+			if addPodName {
+				podsToAppend = append(podsToAppend, pod)
+			}
+		}
+		if len(podsToAppend) > 0 {
+			for _, pod := range podsToAppend {
+				cr.Status.Nodes = append(cr.Status.Nodes, pod)
+			}
 			err := r.client.Status().Update(context.Background(), cr)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -345,7 +438,7 @@ func (r *ReconcileAquaDatabase) InstallDatabaseDeployment(cr *operatorv1alpha1.A
 	return reconcile.Result{Requeue: true}, nil
 }
 
-func (r *ReconcileAquaDatabase) CreateDbPasswordSecret(cr *operatorv1alpha1.AquaDatabase, password string) (reconcile.Result, error) {
+func (r *ReconcileAquaDatabase) CreateDbPasswordSecret(cr *operatorv1alpha1.AquaDatabase, name, key, password string) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Database Aqua Phase", "Create Db Password Secret")
 	reqLogger.Info("Start creating aqua db password secret")
 
@@ -354,8 +447,8 @@ func (r *ReconcileAquaDatabase) CreateDbPasswordSecret(cr *operatorv1alpha1.Aqua
 		cr.Namespace,
 		fmt.Sprintf("%s-requirments", cr.Name),
 		"Secret for aqua database password",
-		fmt.Sprintf(consts.ScalockDbPasswordSecretName, cr.Name),
-		consts.ScalockDbPasswordSecretKey,
+		name,
+		key,
 		password)
 
 	// Set AquaCspKind instance as the owner and controller

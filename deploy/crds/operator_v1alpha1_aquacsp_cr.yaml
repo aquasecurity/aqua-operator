@@ -24,11 +24,21 @@ spec:
       key:
       name:
     dbDiskSize:                             # Optional: size of internal db pvc if not given use default value 10
+    splitDB:                                # Optional: create 2 database deployments, one for audit and one for configuration
   externalDb:                               # Optional: if want to use external db and not internal database
     host:
     port:
     username:
     password:                               # Optional: if not using the common.databaseSecret
+  auditDB:                                  # Optional: applied only when splitDB set to true. must be set when using externalDb
+    information:
+      host:
+      port:
+      username:
+      password:                               # Optional: if not, generating a random password
+    secret:                                   # Optional: the secret to use for audit-db. if secret not exist, create secret with audit-db.information.password
+      key:
+      name:
   registry:                                 # Optional: if not given secret in common.imagePullSecret
     url: "registry.aquasec.com"
     username: "example@company.com"

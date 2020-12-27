@@ -18,6 +18,7 @@ type AquaGatewaySpec struct {
 
 	GatewayService *AquaService             `json:"deploy,required"`
 	ExternalDb     *AquaDatabaseInformation `json:"externalDb,omitempty"`
+	AuditDB        *AuditDBInformation      `json:"auditDB,omitempty"`
 	Envs           []corev1.EnvVar          `json:"env,required"`
 	RunAsNonRoot   bool                     `json:"runAsNonRoot,omitempty"`
 }

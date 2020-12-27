@@ -22,11 +22,21 @@ spec:
     databaseSecret:                         # Optional: if already created database password secret
       key:
       name:
+    splitDB:                                # Optional: create 2 database deployments, one for audit and one for configuration
   externalDb:                               # Optional: if want to use external db and not internal database
     host:
     port:
     username:
-    password:                               # Optional: if not using the common.databaseSecret
+    password:                               # Optional: if not, generating a random password
+  auditDB:                                  # Optional: applied only when splitDB set to true. must be set when using externalDb.
+    information:
+      host:
+      port:
+      username:
+      password:                               # Optional: if not using the common.databaseSecret
+    secret:                                   # Optional: the secret to use for audit-db. if secret not exist, create secret with audit-db.information.password
+      key:
+      name:
   deploy:                                   # Required: information about aqua server deployment
     replicas: 1                             # Required: number of replicas
     service: "LoadBalancer"                 # Required: service type for aqua server

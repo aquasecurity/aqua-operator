@@ -231,7 +231,11 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 	if instance.Spec.DbService != nil {
 		reqLogger.Info("Start Setup Secret For Database Password")
 		password := extra.CreateRundomPassword()
-		_, err = r.CreateDbPasswordSecret(instance, password)
+		_, err = r.CreateDbPasswordSecret(
+			instance,
+			fmt.Sprintf(consts.ScalockDbPasswordSecretName, instance.Name),
+			consts.ScalockDbPasswordSecretKey,
+			password)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 		}
@@ -245,7 +249,11 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		dbstatus, _ = r.WaitForDatabase(instance)
 	} else if instance.Spec.ExternalDb != nil {
 		if len(instance.Spec.ExternalDb.Password) != 0 {
-			_, err = r.CreateDbPasswordSecret(instance, instance.Spec.ExternalDb.Password)
+			_, err = r.CreateDbPasswordSecret(
+				instance,
+				fmt.Sprintf(consts.ScalockDbPasswordSecretName, instance.Name),
+				consts.ScalockDbPasswordSecretKey,
+				instance.Spec.ExternalDb.Password)
 			if err != nil {
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 			}
@@ -257,6 +265,33 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 				}
 			} else {
 				reqLogger.Error(syserrors.New("For using external db you must define password, or define the secret name and key in common section!"), "Missing external database password definition")
+			}
+		}
+
+		// if splitDB ->
+		//if no  AuditDB struct -> error
+		// init AuditDB struct
+		// Check if AuditDBSecret exist
+		// if not -> create AuditDB secret using given password
+		if instance.Spec.Common.SplitDB {
+			if instance.Spec.ExternalDb != nil &&
+				(instance.Spec.AuditDB == nil ||
+					(instance.Spec.AuditDB != nil && instance.Spec.AuditDB.Data == nil)) {
+				reqLogger.Error(syserrors.New(
+					"When using split DB with External DB, you must define auditDB information"),
+					"Missing audit database information definition")
+			}
+
+			instance.Spec.AuditDB = common.UpdateAquaAuditDB(instance.Spec.AuditDB, instance.Name)
+			exist := secrets.CheckIfSecretExists(r.client, instance.Spec.AuditDB.AuditDBSecret.Name, instance.Namespace)
+			if !exist {
+				_, err = r.CreateDbPasswordSecret(instance,
+					instance.Spec.AuditDB.AuditDBSecret.Name,
+					instance.Spec.AuditDB.AuditDBSecret.Key,
+					instance.Spec.AuditDB.Data.Password)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
 			}
 		}
 	}
@@ -765,20 +800,33 @@ func (r *ReconcileAquaCsp) WaitForDatabase(cr *operatorv1alpha1.AquaCsp) (bool, 
 	reqLogger := log.WithValues("Csp Wait For Database Phase", "Wait For Database")
 	reqLogger.Info("Start waiting to aqua database")
 
-	ready, err := r.GetPostgresReady(cr)
+	ready, err := r.GetPostgresReady(
+		cr,
+		fmt.Sprintf(consts.DbDeployName, cr.Name),
+		int(cr.Spec.DbService.Replicas))
 	if err != nil {
 		return false, err
 	}
 
-	return ready, nil
+	auditReady := true
+	if cr.Spec.Common.SplitDB {
+		auditReady, err = r.GetPostgresReady(
+			cr,
+			fmt.Sprintf(consts.AuditDbDeployName, cr.Name),
+			1)
+		if err != nil {
+			return false, err
+		}
+	}
+	return ready && auditReady, nil
 }
 
-func (r *ReconcileAquaCsp) GetPostgresReady(cr *operatorv1alpha1.AquaCsp) (bool, error) {
+func (r *ReconcileAquaCsp) GetPostgresReady(cr *operatorv1alpha1.AquaCsp, dbDeployName string, replicas int) (bool, error) {
 	resource := appsv1.Deployment{}
 
 	selector := types.NamespacedName{
 		Namespace: cr.Namespace,
-		Name:      fmt.Sprintf(consts.DbDeployName, cr.Name),
+		Name:      dbDeployName,
 	}
 
 	err := r.client.Get(context.TODO(), selector, &resource)
@@ -786,7 +834,7 @@ func (r *ReconcileAquaCsp) GetPostgresReady(cr *operatorv1alpha1.AquaCsp) (bool,
 		return false, err
 	}
 
-	return int(resource.Status.ReadyReplicas) == int(cr.Spec.DbService.Replicas), nil
+	return int(resource.Status.ReadyReplicas) == replicas, nil
 }
 
 func (r *ReconcileAquaCsp) WaitForGateway(cr *operatorv1alpha1.AquaCsp) (bool, error) {

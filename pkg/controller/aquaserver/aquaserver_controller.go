@@ -184,6 +184,18 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 			}
 		}
 
+		if instance.Spec.Common.SplitDB {
+			if instance.Spec.ExternalDb != nil &&
+				(instance.Spec.AuditDB == nil ||
+					(instance.Spec.AuditDB != nil && instance.Spec.AuditDB.Data == nil)) {
+				reqLogger.Error(syserrors.New(
+					"When using split DB with External DB, you must define auditDB information"),
+					"Missing audit database information definition")
+			}
+
+			instance.Spec.AuditDB = common.UpdateAquaAuditDB(instance.Spec.AuditDB, instance.Name)
+		}
+
 		reqLogger.Info("Start Creating Aqua Server Deployment...")
 		_, err = r.InstallServerDeployment(instance)
 		if err != nil {

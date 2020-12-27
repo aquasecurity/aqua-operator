@@ -62,7 +62,7 @@ func (r *ReconcileAquaCsp) CreateImagePullSecret(cr *operatorv1alpha1.AquaCsp) (
 	return reconcile.Result{Requeue: true}, nil
 }
 
-func (r *ReconcileAquaCsp) CreateDbPasswordSecret(cr *operatorv1alpha1.AquaCsp, password string) (reconcile.Result, error) {
+func (r *ReconcileAquaCsp) CreateDbPasswordSecret(cr *operatorv1alpha1.AquaCsp, name, key, password string) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Csp Requirments Phase", "Create Db Password Secret")
 	reqLogger.Info("Start creating aqua db password secret")
 
@@ -71,8 +71,8 @@ func (r *ReconcileAquaCsp) CreateDbPasswordSecret(cr *operatorv1alpha1.AquaCsp, 
 		cr.Namespace,
 		fmt.Sprintf("%s-requirments", cr.Name),
 		"Secret for aqua database password",
-		fmt.Sprintf(consts.ScalockDbPasswordSecretName, cr.Name),
-		consts.ScalockDbPasswordSecretKey,
+		name,
+		key,
 		password)
 
 	// Set AquaCspKind instance as the owner and controller

@@ -12,6 +12,7 @@ spec:
     databaseSecret:                         # Optional: if already created database password secret
       key:
       name:
+    splitDB:                                # Optional: create 2 database deployments, one for audit and one for configuration
   deploy:                                 # Required: information about aqua gateway deployment
     replicas: 1                             # Required: number of replicas
     service: "ClusterIP"                    # Required: service type for aqua server
@@ -21,4 +22,13 @@ spec:
       tag: "4.6"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   diskSize: 10                              # Required: size of database disk pvc
+  auditDB:                                  # Optional: applied only when splitDB set to true.
+    information:                            # Optional: could be used for creating audit-db password
+      host:
+      port:
+      username:
+      password:                               # Optional: if not, generating a random password
+    secret:                                   # Optional: the secret to use for audit-db. if secret not exist, create secret with audit-db.information.password
+      key:
+      name:
   runAsNonRoot:                             # Optional: true/false

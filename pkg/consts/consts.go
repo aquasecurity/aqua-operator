@@ -34,6 +34,9 @@ const (
 	// ScalockDbPasswordSecretName Scalock DB Password Secret Name
 	ScalockDbPasswordSecretName = "%s-aqua-db"
 
+	// AuditDbPasswordSecretName Scalock audit DB Password Secret Name
+	AuditDbPasswordSecretName = "%s-aqua-audit-db"
+
 	// ScalockDbPasswordSecretKey Scalock DB Password Secret Key
 	ScalockDbPasswordSecretKey = "password"
 
@@ -49,6 +52,9 @@ const (
 	// DbPvcName DB PVC Name
 	DbPvcName = "%s-db-pvc"
 
+	// AuditDbPvcName DB PVC Name
+	AuditDbPvcName = "%s-audit-db-pvc"
+
 	// DbPvcSize Database PVC Size
 	DbPvcSize = 10
 
@@ -62,6 +68,9 @@ const (
 
 	DbDeployName  = "%s-db"
 	DbServiceName = "%s-db"
+
+	AuditDbDeployName  = "%s-audit-db"
+	AuditDbServiceName = "%s-audit-db"
 
 	GatewayDeployName  = "%s-gateway"
 	GatewayServiceName = "%s-gateway"

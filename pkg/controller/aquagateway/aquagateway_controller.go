@@ -2,6 +2,7 @@ package aquagateway
 
 import (
 	"context"
+	syserrors "errors"
 	"reflect"
 	"time"
 
@@ -126,6 +127,18 @@ func (r *ReconcileAquaGateway) Reconcile(request reconcile.Request) (reconcile.R
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
 		_ = r.client.Status().Update(context.Background(), instance)
+	}
+
+	if instance.Spec.Common.SplitDB {
+		if instance.Spec.ExternalDb != nil &&
+			(instance.Spec.AuditDB == nil ||
+				(instance.Spec.AuditDB != nil && instance.Spec.AuditDB.Data == nil)) {
+			reqLogger.Error(syserrors.New(
+				"When using split DB with External DB, you must define auditDB information"),
+				"Missing audit database information definition")
+		}
+
+		instance.Spec.AuditDB = common.UpdateAquaAuditDB(instance.Spec.AuditDB, instance.Name)
 	}
 
 	if instance.Spec.GatewayService != nil {
