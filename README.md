@@ -38,6 +38,7 @@ The following documentation is provided:
 
 - [Installation](docs/Installation.md)
 - [First Steps](docs/FirstSteps.md)
+- [OpenShift installation and examples](docs/DeployOpenShiftOperator.md)
 - [Official Aqua Security Docs Site](https://docs.aquasec.com/)
 - [Operator Hub Aqua](https://operatorhub.io/operator/aqua)
 
