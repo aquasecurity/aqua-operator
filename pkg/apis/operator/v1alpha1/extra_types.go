@@ -21,6 +21,7 @@ type AquaCommon struct {
 	AquaLicense        *AquaSecret `json:"license,omitempty"`
 	DatabaseSecret     *AquaSecret `json:"databaseSecret,omitempty"`
 	DbDiskSize         int         `json:"dbDiskSize,omitempty"`
+	SplitDB            bool        `json:"splitDB,omitempty"`
 }
 
 type AquaDockerRegistry struct {
@@ -111,4 +112,9 @@ type AquaKubeEnforcerConfig struct {
 type AquaKubeEnforcerDetails struct {
 	ImageTag string `json:"tag,omitempty"`
 	Registry string `json:"registry,omitempty"`
+}
+
+type AuditDBInformation struct {
+	AuditDBSecret *AquaSecret              `json:"secret,omitempty"`
+	Data          *AquaDatabaseInformation `json:"information,omitempty"`
 }

@@ -15,6 +15,7 @@ type AquaDatabaseSpec struct {
 	Infrastructure *AquaInfrastructure `json:"infra"`
 	Common         *AquaCommon         `json:"common"`
 	DbService      *AquaService        `json:"deploy,required"`
+	AuditDB        *AuditDBInformation `json:"auditDB,omitempty"`
 	DiskSize       int                 `json:"diskSize,required"`
 	RunAsNonRoot   bool                `json:"runAsNonRoot,omitempty"`
 }

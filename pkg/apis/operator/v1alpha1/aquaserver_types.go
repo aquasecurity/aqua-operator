@@ -18,6 +18,7 @@ type AquaServerSpec struct {
 
 	ServerService *AquaService             `json:"deploy,required"`
 	ExternalDb    *AquaDatabaseInformation `json:"externalDb,omitempty"`
+	AuditDB       *AuditDBInformation      `json:"auditDB,omitempty"`
 	LicenseToken  string                   `json:"licenseToken,omitempty"`
 	AdminPassword string                   `json:"adminPassword,omitempty"`
 	Enforcer      *AquaEnforcerDetailes    `json:"enforcer,omitempty"`

@@ -18,6 +18,7 @@ type AquaCspSpec struct {
 
 	RegistryData *AquaDockerRegistry      `json:"registry,omitempty"`
 	ExternalDb   *AquaDatabaseInformation `json:"externalDb,omitempty"`
+	AuditDB      *AuditDBInformation      `json:"auditDB,omitempty"`
 
 	DbService      *AquaService `json:"database,omitempty"`
 	GatewayService *AquaService `json:"gateway,required"`

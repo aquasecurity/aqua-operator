@@ -163,7 +163,7 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 }
 
 func (sr *AquaServerHelper) getEnvVars(cr *operatorv1alpha1.AquaServer) []corev1.EnvVar {
-	envsHelper := common.NewAquaEnvsHelper(cr.Spec.Infrastructure, cr.Spec.Common, cr.Spec.ExternalDb, cr.Name)
+	envsHelper := common.NewAquaEnvsHelper(cr.Spec.Infrastructure, cr.Spec.Common, cr.Spec.ExternalDb, cr.Name, cr.Spec.AuditDB)
 	result, _ := envsHelper.GetDbEnvVars()
 
 	if cr.Spec.Common.AquaLicense != nil {

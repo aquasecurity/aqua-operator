@@ -111,8 +111,48 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 				Key:  consts.ScalockDbPasswordSecretKey,
 			},
 			DbDiskSize: consts.DbPvcSize,
+			SplitDB: false,
 		}
 	}
 
 	return common
+}
+
+
+func UpdateAquaAuditDB(auditDb *operatorv1alpha1.AuditDBInformation, name string) *operatorv1alpha1.AuditDBInformation {
+	password := extra.CreateRundomPassword()
+
+	if auditDb != nil {
+		if auditDb.AuditDBSecret == nil {
+			auditDb.AuditDBSecret = &operatorv1alpha1.AquaSecret{
+				Name: fmt.Sprintf(consts.AuditDbPasswordSecretName, name),
+				Key: consts.ScalockDbPasswordSecretKey,
+			}
+		}
+
+		if auditDb.Data == nil {
+			auditDb.Data = &operatorv1alpha1.AquaDatabaseInformation{
+				Host: fmt.Sprintf(consts.AuditDbServiceName, name),
+				Port: 5432,
+				Username: "postgres",
+				Password: password,
+			}
+		}
+	} else {
+		auditDb = &operatorv1alpha1.AuditDBInformation{
+			AuditDBSecret: &operatorv1alpha1.AquaSecret{
+				Name: fmt.Sprintf(consts.AuditDbPasswordSecretName, name),
+				Key: consts.ScalockDbPasswordSecretKey,
+			},
+			Data: &operatorv1alpha1.AquaDatabaseInformation{
+				Host: fmt.Sprintf(consts.AuditDbServiceName, name),
+				Port: 5432,
+				Username: "postgres",
+				Password: password,
+
+			},
+		}
+	}
+
+	return auditDb
 }

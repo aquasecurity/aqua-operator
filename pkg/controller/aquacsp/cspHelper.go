@@ -52,6 +52,7 @@ func (csp *AquaCspHelper) newAquaDatabase(cr *operatorv1alpha1.AquaCsp) *operato
 			DbService:      csp.Parameters.AquaCsp.Spec.DbService,
 			DiskSize:       csp.Parameters.AquaCsp.Spec.Common.DbDiskSize,
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
+			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
 		},
 	}
 
@@ -85,6 +86,7 @@ func (csp *AquaCspHelper) newAquaGateway(cr *operatorv1alpha1.AquaCsp) *operator
 			ExternalDb:     csp.Parameters.AquaCsp.Spec.ExternalDb,
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 			Envs:           csp.Parameters.AquaCsp.Spec.GatewayEnvs,
+			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
 		},
 	}
 
@@ -121,6 +123,7 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 			Enforcer:       csp.Parameters.AquaCsp.Spec.Enforcer,
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 			Envs:           csp.Parameters.AquaCsp.Spec.ServerEnvs,
+			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
 		},
 	}
 
@@ -214,15 +217,15 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 		},
 		Spec: operatorv1alpha1.AquaKubeEnforcerSpec{
 			Config: operatorv1alpha1.AquaKubeEnforcerConfig{
-				GatewayAddress: fmt.Sprintf("%s:8443", fmt.Sprintf(consts.GatewayServiceName, cr.Name)),
-				ClusterName: "aqua-secure",
+				GatewayAddress:  fmt.Sprintf("%s:8443", fmt.Sprintf(consts.GatewayServiceName, cr.Name)),
+				ClusterName:     "aqua-secure",
 				ImagePullSecret: cr.Spec.Common.ImagePullSecret,
 			},
 			Token: consts.DefaultKubeEnforcerToken,
 			ImageData: &operatorv1alpha1.AquaImage{
-				Registry: registry,
+				Registry:   registry,
 				Repository: "kube-enforcer",
-				Tag: tag,
+				Tag:        tag,
 				PullPolicy: "Always",
 			},
 		},

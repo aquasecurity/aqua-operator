@@ -14,6 +14,7 @@ type EnvsParameters struct {
 	Common         *operatorv1alpha1.AquaCommon
 	ExternalDb     *operatorv1alpha1.AquaDatabaseInformation
 	Name           string
+	AuditDB        *operatorv1alpha1.AuditDBInformation
 }
 
 type AquaEnvsHelper struct {
@@ -23,12 +24,14 @@ type AquaEnvsHelper struct {
 func NewAquaEnvsHelper(infra *operatorv1alpha1.AquaInfrastructure,
 	common *operatorv1alpha1.AquaCommon,
 	externalDb *operatorv1alpha1.AquaDatabaseInformation,
-	name string) *AquaEnvsHelper {
+	name string,
+	auditDB *operatorv1alpha1.AuditDBInformation) *AquaEnvsHelper {
 	params := EnvsParameters{
 		Infrastructure: infra,
 		Common:         common,
 		ExternalDb:     externalDb,
 		Name:           name,
+		AuditDB:        auditDB,
 	}
 
 	return &AquaEnvsHelper{
@@ -47,6 +50,20 @@ func (ctx *AquaEnvsHelper) GetDbEnvVars() ([]corev1.EnvVar, error) {
 		dbuser = ctx.Parameters.ExternalDb.Username
 		dbhost = ctx.Parameters.ExternalDb.Host
 		dbport = int(ctx.Parameters.ExternalDb.Port)
+	}
+
+	dbSecret := ctx.Parameters.Common.DatabaseSecret
+
+	dbAuditUser := dbuser
+	dbAuditHost := dbhost
+	dbAuditPort := dbport
+	dbAuditSecret := dbSecret
+
+	if ctx.Parameters.Common.SplitDB {
+		dbAuditHost = ctx.Parameters.AuditDB.Data.Host
+		dbAuditUser = ctx.Parameters.AuditDB.Data.Username
+		dbAuditPort = int(ctx.Parameters.AuditDB.Data.Port)
+		dbAuditSecret = ctx.Parameters.AuditDB.AuditDBSecret
 	}
 
 	result = []corev1.EnvVar{
@@ -68,7 +85,7 @@ func (ctx *AquaEnvsHelper) GetDbEnvVars() ([]corev1.EnvVar, error) {
 		},
 		{
 			Name:  "SCALOCK_AUDIT_DBUSER",
-			Value: dbuser,
+			Value: dbAuditUser,
 		},
 		{
 			Name:  "SCALOCK_AUDIT_DBNAME",
@@ -76,11 +93,11 @@ func (ctx *AquaEnvsHelper) GetDbEnvVars() ([]corev1.EnvVar, error) {
 		},
 		{
 			Name:  "SCALOCK_AUDIT_DBHOST",
-			Value: dbhost,
+			Value: dbAuditHost,
 		},
 		{
 			Name:  "SCALOCK_AUDIT_DBPORT",
-			Value: fmt.Sprintf("%d", dbport),
+			Value: fmt.Sprintf("%d", dbAuditPort),
 		},
 		{
 			Name:  "SCALOCK_DBSSL",
@@ -95,9 +112,9 @@ func (ctx *AquaEnvsHelper) GetDbEnvVars() ([]corev1.EnvVar, error) {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: ctx.Parameters.Common.DatabaseSecret.Name,
+						Name: dbSecret.Name,
 					},
-					Key: ctx.Parameters.Common.DatabaseSecret.Key,
+					Key: dbSecret.Key,
 				},
 			},
 		},
@@ -106,15 +123,11 @@ func (ctx *AquaEnvsHelper) GetDbEnvVars() ([]corev1.EnvVar, error) {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: ctx.Parameters.Common.DatabaseSecret.Name,
+						Name: dbAuditSecret.Name,
 					},
-					Key: ctx.Parameters.Common.DatabaseSecret.Key,
+					Key: dbAuditSecret.Key,
 				},
 			},
-		},
-		{
-			Name:  "SCALOCK_AUDIT_DBSSL",
-			Value: "require",
 		},
 	}
 
@@ -148,9 +161,9 @@ func (ctx *AquaEnvsHelper) GetDbEnvVars() ([]corev1.EnvVar, error) {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: ctx.Parameters.Common.DatabaseSecret.Name,
+						Name: dbSecret.Name,
 					},
-					Key: ctx.Parameters.Common.DatabaseSecret.Key,
+					Key: dbSecret.Key,
 				},
 			},
 		}
