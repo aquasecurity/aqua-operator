@@ -38,8 +38,7 @@ Support only Openshift 3.11+
 First of all you need to create:
 * Namespace
 * Service Account
-* Docker Pull Image Secret
-* Aqua Database Password Secret
+
 
 ```shell
 oc new-project aqua
@@ -50,8 +49,4 @@ oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua
 oc adm policy add-scc-to-user privileged system:serviceaccount:aqua:aqua-sa -n aqua
 oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-sa -n aqua
 
-oc create secret docker-registry aqua-registry-secret --docker-server=registry.aquasec.com --docker-username=<user name> --docker-password=<password> --docker-email=<user email> -n aqua
-
-oc create secret generic aqua-database-password --from-literal=db-password=123456 -n aqua
-oc secrets add aqua-sa aqua-registry-secret --for=pull -n aqua
 ```
