@@ -12,11 +12,11 @@ import (
 )
 
 // CheckIfClusterRoleBindingExists Check if cluster role binding exists in namespace
-func CheckIfClusterRoleBindingExists(k8sclient client.Client, name, namespace string) bool {
+func CheckIfClusterRoleBindingExists(k8sclient client.Client, name string) bool {
 	exist := true
 
 	found := &rbacv1.ClusterRoleBinding{}
-	err := k8sclient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, found)
+	err := k8sclient.Get(context.TODO(), types.NamespacedName{Name: name}, found)
 	if err != nil && errors.IsNotFound(err) {
 		exist = false
 	}
