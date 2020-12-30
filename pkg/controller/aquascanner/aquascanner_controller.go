@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	rbacv1 "k8s.io/api/rbac/v1"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
@@ -69,6 +71,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.AquaScanner{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.AquaScanner{},
+	})
+	if err != nil {
+		return err
+	}
+
 	// AquaScanner
 
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
@@ -115,6 +133,20 @@ func (r *ReconcileAquaScanner) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	instance = r.updateScannerObject(instance)
+
+	rbacHelper := common.NewAquaRbacHelper(
+		instance.Spec.Infrastructure,
+		instance.Name,
+		instance.Namespace,
+		instance.Spec.Common,
+		r.client,
+		r.scheme,
+		instance)
+
+	err = rbacHelper.CreateRBAC()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending

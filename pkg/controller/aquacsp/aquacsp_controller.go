@@ -207,24 +207,20 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 				reqLogger.Info("[Marketplace Mode] skipping creating of image pull secret, using images from RedHat repository with digest")
 			}
 		}
-
-		reqLogger.Info("Start Setup Aqua Service Account")
-		_, err = r.CreateAquaServiceAccount(instance)
-		if err != nil {
-			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-		}
 	}
 
-	reqLogger.Info("Creating discovery cluster roles...")
-	_, err = r.CreateClusterRole(instance)
-	if err != nil {
-		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-	}
+	rbacHelper := common.NewAquaRbacHelper(
+		instance.Spec.Infrastructure,
+		instance.Name,
+		instance.Namespace,
+		instance.Spec.Common,
+		r.client,
+		r.scheme,
+		instance)
 
-	reqLogger.Info("Creating discovery cluster roles binding...")
-	_, err = r.CreateClusterRoleBinding(instance)
+	err = rbacHelper.CreateRBAC()
 	if err != nil {
-		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		return reconcile.Result{}, err
 	}
 
 	dbstatus := true
@@ -307,15 +303,15 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		if instance.Spec.DeployKubeEnforcer != nil {
 			envList := []corev1.EnvVar{
 				{
-					Name: "BATCH_INSTALL_GATEWAY",
+					Name:  "BATCH_INSTALL_GATEWAY",
 					Value: fmt.Sprintf(consts.GatewayServiceName, instance.Name),
 				},
 				{
-					Name: "AQUA_KE_GROUP_NAME",
+					Name:  "AQUA_KE_GROUP_NAME",
 					Value: "operator-default-ke-group",
 				},
 				{
-					Name: "AQUA_KE_GROUP_TOKEN",
+					Name:  "AQUA_KE_GROUP_TOKEN",
 					Value: consts.DefaultKubeEnforcerToken,
 				},
 			}
