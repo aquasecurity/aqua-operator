@@ -71,6 +71,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.AquaEnforcer{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.AquaEnforcer{},
+	})
+	if err != nil {
+		return err
+	}
+
 	// AquaEnforcer Components
 
 	err = c.Watch(&source.Kind{Type: &appsv1.DaemonSet{}}, &handler.EnqueueRequestForOwner{
@@ -135,6 +151,20 @@ func (r *ReconcileAquaEnforcer) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	instance = r.updateEnforcerObject(instance)
+
+	rbacHelper := common.NewAquaRbacHelper(
+		instance.Spec.Infrastructure,
+		instance.Name,
+		instance.Namespace,
+		instance.Spec.Common,
+		r.client,
+		r.scheme,
+		instance)
+
+	err = rbacHelper.CreateRBAC()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
