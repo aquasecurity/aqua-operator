@@ -6,7 +6,7 @@ spec:
   infra:                                    # Optional: Infrastructure information
     serviceAccount: "aqua-sa"               # Optional: auto generate if requirment is true
     namespace: "aqua"                       # Optional: auto generate if requirment is true
-    version: "4.6"                          # Optional: auto generate if requirment is true to latest version
+    version: "5.3"                          # Optional: auto generate if requirment is true to latest version
     platform: "openshift"                   # Optional: auto generate if requirment is true to openshift
     requirements: true                      # Optional: default is false
   common:
