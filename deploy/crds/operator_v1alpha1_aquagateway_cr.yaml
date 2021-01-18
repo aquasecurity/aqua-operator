@@ -5,7 +5,7 @@ metadata:
 spec:
   infra:                                    # Optional: Infrastructure information
     serviceAccount: "aqua-sa"               # Optional: auto generate if requirment is true
-    version: "4.6"                          # Optional: auto generate if requirment is true to latest version
+    version: "5.3"                          # Optional: auto generate if requirment is true to latest version
     platform: "openshift"                   # Optional: auto generate if requirment is true to openshift
   common:
     imagePullSecret:                        # Optional: if already created image pull secret then mention in here
@@ -33,6 +33,6 @@ spec:
     image:                                  # Optional: if not given take the default value and version from infra.version
       repository: "gateway"                 # Optional: if not given take the default value - gateway
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "4.6"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
+      tag: "5.3"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   runAsNonRoot:                             # Optional: true/false
