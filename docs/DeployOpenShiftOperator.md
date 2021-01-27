@@ -30,6 +30,14 @@ oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua
 oc adm policy add-scc-to-user privileged system:serviceaccount:aqua:aqua-sa -n aqua
 oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-sa -n aqua
 ```
+Run the following commands if you intend to deploy the kube-enforcer - 
+```bash
+oc create serviceaccount aqua-kube-enforcer-sa -n aqua
+oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua:aqua-kube-enforcer-sa
+oc adm policy add-scc-to-user nonroot system:serviceaccount:aqua:aqua-kube-enforcer-sa
+oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-kube-enforcer-sa
+```
+
 
 2. Set secrets for for the deployment: 
 * A secret for the Docker registry
