@@ -24,14 +24,7 @@ It is advised that you read about the [Aqua Environment and Configuration](https
 
 ## Preparing the environment to run Aqua Enterprise
 
-1. Run the following commands to set the RBAC for the service-account
-```bash
-oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua:aqua-sa -n aqua
-oc adm policy add-scc-to-user privileged system:serviceaccount:aqua:aqua-sa -n aqua
-oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-sa -n aqua
-```
-
-2. Set secrets for for the deployment: 
+1. Set secrets for the deployment: 
 * A secret for the Docker registry
 * A secret for the database
 
@@ -39,7 +32,15 @@ You can list the secrets in the custom resource YAML files or you can define the
 ```bash
 oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
 oc create secret generic aqua-database-password --from-literal=db-password=<password> -n aqua
-oc secrets link aqua-sa aqua-registry --for=pull -n aqua
+```
+
+ *Run the following commands if you intend to deploy Aqua KubeEnforcer*
+
+```bash
+oc create serviceaccount aqua-kube-enforcer-sa -n aqua
+oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua:aqua-kube-enforcer-sa
+oc adm policy add-scc-to-user nonroot system:serviceaccount:aqua:aqua-kube-enforcer-sa
+oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-kube-enforcer-sa
 ```
 
 ## AquaCSP CRDs ##
@@ -353,15 +354,6 @@ spec:
 ```
 
 #### Example: Deploying the KubeEnforcer
-
-Before deploying the KubeEnforcer, you need to run the following commands:
-
-```bash
-oc create serviceaccount aqua-kube-enforcer-sa -n aqua
-oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua:aqua-kube-enforcer-sa
-oc adm policy add-scc-to-user nonroot system:serviceaccount:aqua:aqua-kube-enforcer-sa
-oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-kube-enforcer-sa
-```
 
 Here is an example of a KubeEnforcer deployment:
 ```yaml
