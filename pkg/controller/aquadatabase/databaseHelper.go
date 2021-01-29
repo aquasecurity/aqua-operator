@@ -3,6 +3,7 @@ package aquadatabase
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/services"
 
@@ -178,10 +179,22 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, d
 		}
 	}
 
+	fsGroupHelper := int64(11433)
 	if marketplace {
-		helper := int64(26)
+		fsGroupHelper = int64(26)
 		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-			FSGroup: &helper,
+			FSGroup: &fsGroupHelper,
+		}
+	}
+
+	if cr.Spec.RunAsNonRoot &&
+		strings.ToLower(cr.Spec.Infrastructure.Platform) == "openshift" {
+		runAsUser := int64(70)
+		runAsGroup := int64(70)
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			RunAsUser:  &runAsUser,
+			RunAsGroup: &runAsGroup,
+			FSGroup:    &fsGroupHelper,
 		}
 	}
 
