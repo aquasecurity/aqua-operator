@@ -30,7 +30,3 @@ kubectl create -f deploy/role.yaml
 kubectl create -f deploy/role_binding.yaml
 kubectl create -f deploy/operator.yaml -n <namespace>
 ```
-
-## Installation via helm
-
-[Helm Aqua Operator](https://github.com/aquasecurity/aqua-operator-helm)
