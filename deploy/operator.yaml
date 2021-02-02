@@ -15,7 +15,7 @@ spec:
       serviceAccountName: aqua-operator
       containers:
         - name: aqua-operator
-          image: "aquasec/aqua-operator:1.0.2"
+          image: "aquasec/aqua-operator:5.3.0"
           command:
           - aqua-operator
           imagePullPolicy: Always
