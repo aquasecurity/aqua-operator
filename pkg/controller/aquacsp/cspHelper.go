@@ -217,7 +217,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 		},
 		Spec: operatorv1alpha1.AquaKubeEnforcerSpec{
 			Config: operatorv1alpha1.AquaKubeEnforcerConfig{
-				GatewayAddress:  fmt.Sprintf("%s:8443", fmt.Sprintf(consts.GatewayServiceName, cr.Name)),
+				GatewayAddress:  fmt.Sprintf("%s.%s:8443", fmt.Sprintf(consts.GatewayServiceName, cr.Name), cr.Namespace),
 				ClusterName:     "aqua-secure",
 				ImagePullSecret: cr.Spec.Common.ImagePullSecret,
 			},
