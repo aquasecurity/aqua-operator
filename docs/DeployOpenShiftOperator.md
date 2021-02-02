@@ -363,9 +363,9 @@ metadata:
   name: aqua
 spec:
   config:
-    gateway_address: "aqua-gateway:8443"      # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
-    cluster_name: "aqua-secure"               # Required: provide your cluster name
-    imagePullSecret: "aqua-registry"          # Optional: needed in case spec.registry is not defined
+    gateway_address: "aqua-gateway.aqua:8443"      # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
+    cluster_name: "aqua-secure"                    # Required: provide your cluster name
+    imagePullSecret: "aqua-registry"               # Optional: needed in case spec.registry is not defined
   image:
     registry: "registry.aquasec.com"
     tag: "<<KUBE_ENFORCER_TAG>>"
