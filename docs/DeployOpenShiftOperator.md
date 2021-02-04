@@ -34,15 +34,6 @@ oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.
 oc create secret generic aqua-database-password --from-literal=db-password=<password> -n aqua
 ```
 
- *Run the following commands if you intend to deploy Aqua KubeEnforcer*
-
-```bash
-oc create serviceaccount aqua-kube-enforcer-sa -n aqua
-oc adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:aqua:aqua-kube-enforcer-sa
-oc adm policy add-scc-to-user nonroot system:serviceaccount:aqua:aqua-kube-enforcer-sa
-oc adm policy add-scc-to-user hostaccess system:serviceaccount:aqua:aqua-kube-enforcer-sa
-```
-
 ## AquaCSP CRDs ##
 ***You can find CR examples for common deployment configuration in the next section - CR Examples***
 
