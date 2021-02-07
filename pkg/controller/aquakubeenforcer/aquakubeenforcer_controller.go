@@ -248,6 +248,7 @@ func createKECerts() (*KubeEnforcerCertificates, error) {
 		NotAfter:              time.Now().AddDate(10, 0, 0),
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		DNSNames:              []string{"aqua-kube-enforcer.aqua.svc", "aqua-kube-enforcer.aqua.svc.cluster.local"},
 		Subject: pkix.Name{
 			CommonName: "aqua-kube-enforcer.aqua.svc",
 		},
