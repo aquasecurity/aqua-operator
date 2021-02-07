@@ -89,4 +89,6 @@ const (
 	AquaFsGroup    = int64(11433)
 
 	DefaultKubeEnforcerToken = "ke-token"
+
+	DBInitContainerCommand = "[ -f $PGDATA/server.key ] && chmod 600 $PGDATA/server.key || echo 'OK'"
 )
