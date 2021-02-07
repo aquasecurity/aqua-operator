@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aquasecurity/aqua-operator/pkg/consts"
+
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/services"
 
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
@@ -67,6 +69,31 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, d
 		pgData = "/var/lib/pgsql/data"
 	}
 
+	envVars := []corev1.EnvVar{
+		{
+			Name:  "PGDATA",
+			Value: pgData,
+		},
+		{
+			Name: passwordEnvVar,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dbSecret.Name,
+					},
+					Key: dbSecret.Key,
+				},
+			},
+		},
+	}
+
+	volumesMount := []corev1.VolumeMount{
+		{
+			Name:      "postgres-database",
+			MountPath: mountPath,
+		},
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -97,35 +124,14 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, d
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "postgres-database",
-									MountPath: mountPath,
-								},
-							},
+							VolumeMounts: volumesMount,
 							Ports: []corev1.ContainerPort{
 								{
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 5432,
 								},
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "PGDATA",
-									Value: pgData,
-								},
-								{
-									Name: passwordEnvVar,
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: dbSecret.Name,
-											},
-											Key: dbSecret.Key,
-										},
-									},
-								},
-							},
+							Env: envVars,
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -195,6 +201,20 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, d
 			RunAsUser:  &runAsUser,
 			RunAsGroup: &runAsGroup,
 			FSGroup:    &fsGroupHelper,
+		}
+		deployment.Spec.Template.Spec.InitContainers = []corev1.Container{
+			{
+				Name:            fmt.Sprintf("%s-init", deployName),
+				Image:           image,
+				ImagePullPolicy: corev1.PullPolicy(pullPolicy),
+				Env:             envVars,
+				VolumeMounts:    volumesMount,
+				Command: []string{
+					"sh",
+					"-c",
+					consts.DBInitContainerCommand,
+				},
+			},
 		}
 	}
 
