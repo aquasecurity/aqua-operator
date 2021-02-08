@@ -2,6 +2,7 @@ package aquakubeenforcer
 
 import (
 	"fmt"
+	"os"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
@@ -467,6 +468,12 @@ func (enf *AquaKubeEnforcerHelper) CreateKEService(cr, namespace, name, app stri
 }
 
 func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, sa, registry, tag, imagePullSecret string) *appsv1.Deployment {
+
+	image := os.Getenv("RELATED_IMAGE_KUBE_ENFORCER")
+	if image == "" {
+		image = fmt.Sprintf("%s/kube-enforcer:%s", registry, tag)
+	}
+
 	labels := map[string]string{
 		"app":                app,
 		"deployedby":         "aqua-operator",
@@ -547,7 +554,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 					Containers: []corev1.Container{
 						{
 							Name:            "kube-enforcer",
-							Image:           fmt.Sprintf("%s/kube-enforcer:%s", registry, tag),
+							Image:           image,
 							ImagePullPolicy: corev1.PullAlways,
 							LivenessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
