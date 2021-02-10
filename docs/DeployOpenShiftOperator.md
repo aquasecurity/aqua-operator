@@ -35,13 +35,6 @@ oc create secret generic aqua-database-password --from-literal=db-password=<pass
 ```
 
 
-*Run the following command if you intend to deploy Aqua KubeEnforcer*
-
-```bash
-oc adm policy add-cluster-role-to-user cluster-reader -z aqua-kube-enforcer-sa -n aqua
-```
-
-
 ## AquaCSP CRDs ##
 ***You can find CR examples for common deployment configuration in the next section - CR Examples***
 
@@ -89,8 +82,9 @@ If you choose to run Aqua components with Aqua custom SCC "aqua-scc", the follow
 oc apply -f <<AQUA SCC FILE PATH>>
 ```
 
-* Validate that the cluster roles which are bind to "aqua-sa"/"aqua-kube-enforcer-sa"
-are using the "aqua-scc" SCC.
+* Validate that the cluster role which is bind to "aqua-sa"
+is using the "aqua-scc" SCC, and the cluster role which is bind to
+"aqua-kube-enforcer-sa" is bind to "nonroot" and "hostaccess" SCCs. 
 
 * **For community operator** - 
 If a change is necessary, edit the section  - ```.rules.resourceNames``` in the cluster role YAML file. 
