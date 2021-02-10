@@ -137,6 +137,17 @@ func (rb *AquaRbacHelper) CreateRBAC() (err error) {
 		}
 	}
 
+	if strings.ToLower(rb.Parameters.Infra.Platform) == consts.OpenShiftPlatform &&
+		rbac.CheckIfClusterRoleExists(rb.Parameters.Client, consts.ClusterReaderRole) &&
+		!rbac.CheckIfClusterRoleBindingExists(rb.Parameters.Client, consts.AquaSAClusterReaderRoleBind) {
+
+		// Create ClusterRoleBinding between aqua service account and ClusterReaderRole
+		_, err = rb.CreateClusterReaderRoleBinding()
+		if err != nil {
+			return err
+		}
+	}
+
 	// Check if Cluster role exist -> if not, create
 	if !rbac.CheckIfClusterRoleExists(rb.Parameters.Client, fmt.Sprintf(consts.DiscoveryClusterRole, rb.Parameters.Name)) {
 		_, err = rb.CreateClusterRole()
@@ -264,5 +275,43 @@ func (rb *AquaRbacHelper) CreateClusterRoleBinding() (reconcile.Result, error) {
 
 	// ClusterRoleBinding already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua ClusterRoleBinding Exists", "ClusterRoleBinding.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (rb *AquaRbacHelper) CreateClusterReaderRoleBinding() (reconcile.Result, error) {
+	reqLogger := log.WithValues("RBAC Phase", "Create ClusterReaderRoleBinding")
+	reqLogger.Info("Start creating ClusterReaderRoleBinding")
+
+	crb := rbac.CreateClusterRoleBinding(
+		rb.Parameters.Name,
+		rb.Parameters.Namespace,
+		consts.AquaSAClusterReaderRoleBind,
+		fmt.Sprintf("%s-cluster-reader", rb.Parameters.Name),
+		"Deploy Aqua Cluster Reader Role Binding",
+		rb.Parameters.Infra.ServiceAccount,
+		consts.ClusterReaderRole)
+
+	// Set AquaCsp instance as the owner and controller
+	if err := controllerutil.SetControllerReference(rb.Parameters.Cr, crb, rb.Parameters.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this ClusterRoleBinding already exists
+	found := &rbacv1.ClusterRoleBinding{}
+	err := rb.Parameters.Client.Get(context.TODO(), types.NamespacedName{Name: crb.Name}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Aqua CSP: Creating a New ClusterReaderRoleBinding", "ClusterReaderRoleBinding.Namespace", crb.Namespace, "ClusterReaderRoleBinding.Name", crb.Name)
+		err = rb.Parameters.Client.Create(context.TODO(), crb)
+		if err != nil {
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// ClusterRoleBinding already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua ClusterReaderRoleBinding Exists", "ClusterRoleBinding.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }

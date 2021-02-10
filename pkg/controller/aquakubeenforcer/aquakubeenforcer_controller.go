@@ -14,6 +14,10 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/aquasecurity/aqua-operator/pkg/consts"
+	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
+
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 	"k8s.io/api/admissionregistration/v1beta1"
@@ -345,6 +349,16 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 	_, err = r.createAquaServiceAccount(instance)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	isOpenshift, _ := ocp.VerifyRouteAPI()
+	if isOpenshift &&
+		rbac.CheckIfClusterRoleExists(r.client, consts.ClusterReaderRole) &&
+		!rbac.CheckIfClusterRoleBindingExists(r.client, consts.AquaKubeEnforcerSAClusterReaderRoleBind) {
+		_, err = r.CreateClusterReaderRoleBinding(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	_, err = r.addKEClusterRoleBinding(instance)
@@ -886,5 +900,43 @@ func (r *ReconcileAquaKubeEnforcer) CreateImagePullSecret(cr *operatorv1alpha1.A
 
 	// Secret already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Image Pull Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaKubeEnforcer) CreateClusterReaderRoleBinding(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("KubeEnforcer Phase", "Create KubeEnforcer ClusterReaderRoleBinding")
+	reqLogger.Info("Start creating KubeEnforcer ClusterReaderRoleBinding")
+
+	crb := rbac.CreateClusterRoleBinding(
+		cr.Name,
+		cr.Namespace,
+		consts.AquaKubeEnforcerSAClusterReaderRoleBind,
+		fmt.Sprintf("%s-kube-enforcer-cluster-reader", cr.Name),
+		"Deploy Aqua KubeEnforcer Cluster Reader Role Binding",
+		"aqua-kube-enforcer-sa",
+		consts.ClusterReaderRole)
+
+	// Set AquaCsp instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, crb, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this ClusterRoleBinding already exists
+	found := &rbacv1.ClusterRoleBinding{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: crb.Name}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Aqua CSP: Creating a New KubeEnfocer ClusterReaderRoleBinding", "ClusterReaderRoleBinding.Namespace", crb.Namespace, "ClusterReaderRoleBinding.Name", crb.Name)
+		err = r.client.Create(context.TODO(), crb)
+		if err != nil {
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// ClusterRoleBinding already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer ClusterReaderRoleBinding Exists", "ClusterRoleBinding.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }
