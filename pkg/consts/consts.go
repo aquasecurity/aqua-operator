@@ -37,6 +37,15 @@ const (
 	// AuditDbPasswordSecretName Scalock audit DB Password Secret Name
 	AuditDbPasswordSecretName = "%s-aqua-audit-db"
 
+	// ClusterReaderRole is Openshift cluster role to bind Aqua service accounts
+	ClusterReaderRole = "cluster-reader"
+
+	// AquaSAClusterReaderRoleBind is Openshift cluster role binding between aqua-sa and ClusterReaderRole
+	AquaSAClusterReaderRoleBind = "aqua-sa-cluster-reader-crb"
+
+	// AquaKubeEnforcerSAClusterReaderRoleBind is Openshift cluster role binding between aqua-kube-enforcer-sa and ClusterReaderRole
+	AquaKubeEnforcerSAClusterReaderRoleBind = "aqua-kube-enforcer-sa-cluster-reader-crb"
+
 	// ScalockDbPasswordSecretKey Scalock DB Password Secret Key
 	ScalockDbPasswordSecretKey = "password"
 
@@ -91,4 +100,6 @@ const (
 	DefaultKubeEnforcerToken = "ke-token"
 
 	DBInitContainerCommand = "[ -f $PGDATA/server.key ] && chmod 600 $PGDATA/server.key || echo 'OK'"
+
+	OpenShiftPlatform = "openshift"
 )
