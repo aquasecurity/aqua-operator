@@ -71,6 +71,32 @@ The **[AquaServer CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/
 * You need to set the target Aqua Server using the **login.host** property.
 * You need to provide the **login.username** and **login.password** to authenticate with the Aqua Server.
 * You can choose to deploy a different version of the Aqua Scanner by setting the **image.tag** property.
+
+
+##  SecurityContextConstraints for Aqua components ##
+When installing the Aqua operator, the operator creates a cluster role binding between the "aqua-sa" 
+and "aqua-kube-enforcer-sa" service accounts to cluster roles containing the SecurityContextConstraints (SCC)
+for running the Aqua components.
+
+By default, the SCCs for running Aqua components are the "privileged" and "hostaccess"
+SCCs.
+If you choose to run Aqua components with Aqua custom SCC "aqua-scc", the following steps required:
+
+* Download the [aqua-scc](../deploy/aqua-scc.yaml) SCC file.
+
+* Run the command:
+```bash
+oc apply -f <<AQUA SCC FILE PATH>>
+```
+
+* Validate that the cluster roles which are bind to "aqua-sa"/"aqua-kube-enforcer-sa"
+are using the "aqua-scc" SCC.
+
+* **For community operator** - 
+If a change is necessary, edit the section  - ```.rules.resourceNames``` in the cluster role YAML file. 
+
+* Run the AquaCSP/AquaServer/AquaGateway/AquaDatabase/AquaEnforcer/AquaScanner CRs with ```.spec.runAsNonRoot:true``` .  
+ 
 	
 ## CR Examples ##
 
