@@ -16,6 +16,7 @@ import (
 
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
@@ -331,7 +332,7 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
-	if instance.Spec.Config.ImagePullSecret == "" {
+	if instance.Spec.Config.ImagePullSecret == "" && !extra.IsMarketPlace() {
 		instance.Spec.Config.ImagePullSecret = "aqua-registry-secret"
 	}
 
