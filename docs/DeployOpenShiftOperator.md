@@ -73,6 +73,23 @@ for running the Aqua components.
 
 By default, the SCCs for running Aqua components are the "privileged" and "hostaccess"
 SCCs.
+```yaml
+- rules:
+    - apiGroups:
+        - security.openshift.io
+      resourceNames:
+        - privileged
+        - hostaccess
+      resources:
+        - securitycontextconstraints
+      verbs:
+        - use
+```
+
+
+*The rest of this section is relevant only when using the **community** operator, 
+and the Aqua components are **not** running with Aqua **UBI** images*
+
 If you choose to run Aqua components with Aqua custom SCC "aqua-scc", the following steps required:
 
 * Download the [aqua-scc](../deploy/aqua-scc.yaml) SCC file.
@@ -82,12 +99,10 @@ If you choose to run Aqua components with Aqua custom SCC "aqua-scc", the follow
 oc apply -f <<AQUA SCC FILE PATH>>
 ```
 
-* Validate that the cluster role which is bind to "aqua-sa"
-is using the "aqua-scc" SCC, and the cluster role which is bind to
-"aqua-kube-enforcer-sa" is bind to "nonroot" and "hostaccess" SCCs. 
-
-* **For community operator** - 
-If a change is necessary, edit the section  - ```.rules.resourceNames``` in the cluster role YAML file. 
+* Change the cluster role which is bind to "aqua-sa"
+to use "aqua-scc" SCC, and the cluster role which is bind to
+"aqua-kube-enforcer-sa" to use "nonroot" and "hostaccess" SCCs.
+Edit the section  - ```.rules.resourceNames``` in the cluster role YAML file. 
 
 * Run the AquaCSP/AquaServer/AquaGateway/AquaDatabase/AquaEnforcer/AquaScanner CRs with ```.spec.runAsNonRoot:true``` .  
  
