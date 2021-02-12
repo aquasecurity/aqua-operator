@@ -818,15 +818,19 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	reqLogger := log.WithValues("KubeEnforcer", "Create Deployment")
 	reqLogger.Info("Start creating deployment")
 
+	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", consts.LatestVersion, cr.Spec.ImageData)
+
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	deployment := enforcerHelper.CreateKEDeployment(cr.Name,
 		cr.Namespace,
 		"aqua-kube-enforcer",
 		"ke-deployment",
 		"aqua-kube-enforcer-sa",
-		cr.Spec.ImageData.Registry,
-		cr.Spec.ImageData.Tag,
-		cr.Spec.Config.ImagePullSecret)
+		registry,
+		tag,
+		cr.Spec.Config.ImagePullSecret,
+		pullPolicy,
+		repository)
 
 	// Set AquaCsp instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, deployment, r.scheme); err != nil {
