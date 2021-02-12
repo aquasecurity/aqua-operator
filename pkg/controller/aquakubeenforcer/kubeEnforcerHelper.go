@@ -467,11 +467,11 @@ func (enf *AquaKubeEnforcerHelper) CreateKEService(cr, namespace, name, app stri
 	return service
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, sa, registry, tag, imagePullSecret string) *appsv1.Deployment {
+func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, sa, registry, tag, imagePullSecret, pullPolicy, repository string) *appsv1.Deployment {
 
 	image := os.Getenv("RELATED_IMAGE_KUBE_ENFORCER")
 	if image == "" {
-		image = fmt.Sprintf("%s/kube-enforcer:%s", registry, tag)
+		image = fmt.Sprintf("%s/%s:%s", registry, repository, tag)
 	}
 
 	labels := map[string]string{
@@ -555,7 +555,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 						{
 							Name:            "kube-enforcer",
 							Image:           image,
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
 							LivenessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									TCPSocket: &corev1.TCPSocketAction{
