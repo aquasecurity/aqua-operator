@@ -22,6 +22,7 @@ type AquaCommon struct {
 	DatabaseSecret     *AquaSecret `json:"databaseSecret,omitempty"`
 	DbDiskSize         int         `json:"dbDiskSize,omitempty"`
 	SplitDB            bool        `json:"splitDB,omitempty"`
+	AllowAnyVersion    bool        `json:"allowAnyVersion,omitempty"`
 }
 
 type AquaDockerRegistry struct {
@@ -101,6 +102,18 @@ const (
 
 	// AquaDeploymentStateRunning done
 	AquaDeploymentStateRunning AquaDeploymentState = "Running"
+
+	// AquaEnforcerUpdatePendingApproval Waiting for approval to update enforcer
+	AquaEnforcerUpdatePendingApproval AquaDeploymentState = "Pending Approval for Enforcers Update"
+
+	// AquaDeploymentUpdateInProgress When Operand is Updating to latest changes
+	AquaDeploymentUpdateInProgress AquaDeploymentState = "Update In Progress"
+
+	// AquaEnforcerUpdateInProgress When Enforcers Updating to latest changes
+	AquaEnforcerUpdateInProgress AquaDeploymentState = "Enforcers Update In Progress"
+
+	// AquaEnforcerWaiting Waiting for Enforcer inital Run
+	AquaEnforcerWaiting AquaDeploymentState = "Waiting For Enforcers to Start"
 )
 
 type AquaKubeEnforcerConfig struct {

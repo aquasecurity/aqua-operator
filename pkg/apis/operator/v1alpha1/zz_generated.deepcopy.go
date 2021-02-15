@@ -168,6 +168,11 @@ func (in *AquaCspSpec) DeepCopyInto(out *AquaCspSpec) {
 		*out = new(AquaKubeEnforcerDetails)
 		**out = **in
 	}
+	if in.EnforcerUpdateApproved != nil {
+		in, out := &in.EnforcerUpdateApproved, &out.EnforcerUpdateApproved
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
@@ -458,6 +463,11 @@ func (in *AquaEnforcerSpec) DeepCopyInto(out *AquaEnforcerSpec) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.EnforcerUpdateApproved != nil {
+		in, out := &in.EnforcerUpdateApproved, &out.EnforcerUpdateApproved
+		*out = new(bool)
+		**out = **in
 	}
 	return
 }
@@ -771,6 +781,11 @@ func (in *AquaKubeEnforcerSpec) DeepCopyInto(out *AquaKubeEnforcerSpec) {
 	if in.ImageData != nil {
 		in, out := &in.ImageData, &out.ImageData
 		*out = new(AquaImage)
+		**out = **in
+	}
+	if in.EnforcerUpdateApproved != nil {
+		in, out := &in.EnforcerUpdateApproved, &out.EnforcerUpdateApproved
+		*out = new(bool)
 		**out = **in
 	}
 	return

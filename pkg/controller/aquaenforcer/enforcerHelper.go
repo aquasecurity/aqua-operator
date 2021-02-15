@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
@@ -64,7 +66,7 @@ func (enf *AquaEnforcerHelper) CreateTokenSecret(cr *operatorv1alpha1.AquaEnforc
 
 // CreateDaemonSet :
 func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer) *appsv1.DaemonSet {
-	pullPolicy, registry, repository, tag := extra.GetImageData("enforcer", cr.Spec.Infrastructure.Version, cr.Spec.EnforcerService.ImageData)
+	pullPolicy, registry, repository, tag := extra.GetImageData("enforcer", cr.Spec.Infrastructure.Version, cr.Spec.EnforcerService.ImageData, cr.Spec.Common.AllowAnyVersion)
 
 	image := os.Getenv("RELATED_IMAGE_ENFORCER")
 	if image == "" {
@@ -239,6 +241,15 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 								},
 							},
 						},
+					},
+				},
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type: appsv1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: int32(1),
 					},
 				},
 			},

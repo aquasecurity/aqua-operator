@@ -9,10 +9,12 @@ import (
 
 // AquaKubeEnforcerSpec defines the desired state of AquaKubeEnforcer
 type AquaKubeEnforcerSpec struct {
-	Config       AquaKubeEnforcerConfig `json:"config"`
-	Token        string                 `json:"token,omitempty"`
-	RegistryData *AquaDockerRegistry    `json:"registry,omitempty"`
-	ImageData    *AquaImage             `json:"image,required"`
+	Config                 AquaKubeEnforcerConfig `json:"config"`
+	Token                  string                 `json:"token,omitempty"`
+	RegistryData           *AquaDockerRegistry    `json:"registry,omitempty"`
+	ImageData              *AquaImage             `json:"image,required"`
+	EnforcerUpdateApproved *bool                  `json:"updateEnforcer,omitempty"`
+	AllowAnyVersion        bool                   `json:"allowAnyVersion,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer

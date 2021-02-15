@@ -35,7 +35,7 @@ func newAquaGatewayHelper(cr *operatorv1alpha1.AquaGateway) *AquaGatewayHelper {
 }
 
 func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *appsv1.Deployment {
-	pullPolicy, registry, repository, tag := extra.GetImageData("gateway", cr.Spec.Infrastructure.Version, cr.Spec.GatewayService.ImageData)
+	pullPolicy, registry, repository, tag := extra.GetImageData("gateway", cr.Spec.Infrastructure.Version, cr.Spec.GatewayService.ImageData, cr.Spec.Common.AllowAnyVersion)
 
 	image := os.Getenv("RELATED_IMAGE_GATEWAY")
 	if image == "" {

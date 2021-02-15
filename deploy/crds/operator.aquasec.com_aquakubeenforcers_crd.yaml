@@ -11,10 +11,20 @@ spec:
     kind: AquaKubeEnforcer
     listKind: AquaKubeEnforcerList
   scope: Namespaced
+  additionalPrinterColumns:
+    - name: Status
+      type: string
+      description: Aqua KubeEnforcer status
+      JSONPath: .status.state
+    - name: Age
+      type: date
+      description: Aqua KubeEnforcer Age
+      JSONPath: .metadata.creationTimestamp
   versions:
     - name: v1alpha1
       served: true
       storage: true
   conversion:
     strategy: None
-status: {}
+  subresources:
+    status: {}

@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/banzaicloud/k8s-objectmatcher/patch"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
@@ -156,7 +158,8 @@ func (r *ReconcileAquaGateway) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) &&
+		!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
@@ -184,11 +187,6 @@ func (r *ReconcileAquaGateway) Reconcile(request reconcile.Request) (reconcile.R
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-	}
-
-	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
-		instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-		_ = r.client.Status().Update(context.Background(), instance)
 	}
 
 	return reconcile.Result{Requeue: true}, nil
@@ -234,6 +232,19 @@ func (r *ReconcileAquaGateway) InstallGatewayService(cr *operatorv1alpha1.AquaGa
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 	}
 
+	if !reflect.DeepEqual(found.Spec.Type, service.Spec.Type) {
+		service.Spec.ClusterIP = found.Spec.ClusterIP
+		service.SetResourceVersion(found.GetResourceVersion())
+
+		err = r.client.Update(context.Background(), service)
+		if err != nil {
+			reqLogger.Error(err, "Aqua Server: Failed to update Service.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return reconcile.Result{Requeue: true}, nil
+	}
+
 	// Service already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Gateway Service Already Exists", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
@@ -257,6 +268,10 @@ func (r *ReconcileAquaGateway) InstallGatewayDeployment(cr *operatorv1alpha1.Aqu
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a New Aqua Gateway Deployment", "Dervice.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+		err = patch.DefaultAnnotator.SetLastAppliedAnnotation(deployment)
+		if err != nil {
+			reqLogger.Error(err, "Unable to set default for k8s-objectmatcher", err)
+		}
 		err = r.client.Create(context.TODO(), deployment)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
@@ -268,19 +283,18 @@ func (r *ReconcileAquaGateway) InstallGatewayDeployment(cr *operatorv1alpha1.Aqu
 	}
 
 	if found != nil {
-		upgrade := deployment.Spec.Template.Spec.Containers[0].Image != found.Spec.Template.Spec.Containers[0].Image
-		reqLogger.Info("Checking for Aqua Gateway Upgrade", "deployment obj", deployment.Spec.Template.Spec.Containers[0].Image, "found obj", found.Spec.Template.Spec.Containers[0].Image, "upgrade bool", upgrade)
-		size := deployment.Spec.Replicas
-		if *found.Spec.Replicas != *size || upgrade {
-			found.Spec.Replicas = size
-			found.Spec.Template.Spec.Containers[0].Image = deployment.Spec.Template.Spec.Containers[0].Image
-			err = r.client.Update(context.Background(), found)
+		update, err := k8s.CheckForK8sObjectUpdate("AquaGateway deployment", found, deployment)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		if update {
+			err = r.client.Update(context.Background(), deployment)
 			if err != nil {
 				reqLogger.Error(err, "Aqua Gateway: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+				return reconcile.Result{}, err
 			}
 			// Spec updated - return and requeue
-			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+			return reconcile.Result{Requeue: true}, nil
 		}
 
 		podList := &corev1.PodList{}
@@ -300,10 +314,18 @@ func (r *ReconcileAquaGateway) InstallGatewayDeployment(cr *operatorv1alpha1.Aqu
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
 			cr.Status.Nodes = podNames
-			err := r.client.Status().Update(context.Background(), cr)
-			if err != nil {
-				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+
+		currentState := cr.Status.State
+		if !k8s.IsDeploymentReady(found, int(cr.Spec.GatewayService.Replicas)) {
+			if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, currentState) &&
+				!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, currentState) {
+				cr.Status.State = operatorv1alpha1.AquaDeploymentUpdateInProgress
+				_ = r.client.Status().Update(context.Background(), cr)
 			}
+		} else if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentState) {
+			cr.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
+			_ = r.client.Status().Update(context.Background(), cr)
 		}
 	}
 
