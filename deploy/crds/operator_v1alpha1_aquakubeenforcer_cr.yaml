@@ -9,9 +9,10 @@ spec:
     cluster_name: "aqua-secure"
     imagePullSecret: "aqua-registry"
   token: "<<KubeEnforcer Group Token>>"
+  allowAnyVersion:                        # Optional: running all types of images
   image:
     registry: "registry.aquasec.com"
-    tag: "5.3"
+    tag: "6.0"
     repository: "kube-enforcer"
     pullPolicy: "Always"
   registry:

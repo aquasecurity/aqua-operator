@@ -40,72 +40,58 @@ oc create secret generic aqua-database-password --from-literal=db-password=<pass
 
 The AquaCSP Operator includes the following CRDs -
 
-**[AquaCSP CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquacsp_cr.yaml)** provides the fastest methods to deploy Aqua Enterprise in a single cluster. AquaCSP defines how to deploy the Server, Gateway, Aqua Enforcer, and KubeEnforcer in the target cluster. Please see the [example CR](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquacsp_cr.yaml) for the listing of all fields and configurations.
-* You can set the enforcement mode using the "enforcerMode" property in the CR file.
-* You can deploy a Route by setting the "route" property to "true".
+**[AquaCSP CRD](../deploy/crds/operator.aquasec.com_aquacsps_crd.yaml)** provides the fastest methods to deploy Aqua Enterprise in a single cluster. AquaCSP defines how to deploy the Server, Gateway, Aqua Enforcer, and KubeEnforcer in the target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquacsp_cr.yaml) for the listing of all fields and configurations.
+* You can set the enforcement mode using the ```.spec.enforcer.enforceMode``` property in the CR file.
+* You can deploy a Route by setting the  ```.spec.route``` property to "true".
 * The default service type for the Console and Gateway is ClusterIP. You can change the service type in the CR.
-* You can choose to deploy a different version of Aqua CSP by setting the "version" property or change the image "tag".
-* You can choose to use an external database by providing the 'externalDb' property details.
+* You can choose to deploy a different version of Aqua CSP by setting the ```.spec.infra.version```  property or change the image ```.spec.<<server/gateway/database>>.image.tag```.
+* You can choose to use an external database by providing the ```.spec.externalDB```  property details.
 * You can omit the Enforcer and KubeEnforcer components by removing them from the CR.
+* You can add server/gateway environment variables with ```.spec.<<serverEnvs/gatewayEnvs>>``` (same convention of name value as k8s deployment).
+* You can define the server/gateway resources requests/limits with ```.spec.<<server/gateway>>.resources```
 
-The **[AquaServer CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, **[AquaDatabase CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquadatabase_cr.yaml)**, and **[AquaGateway CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquagateway_cr.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
+The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, **[AquaDatabase CRD](../deploy/crds/operator_v1alpha1_aquadatabase_cr.yaml)**, and **[AquaGateway CRD](../deploy/crds/operator_v1alpha1_aquagateway_cr.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
 
-**[AquaEnforcer CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml)** is used to deploy the Aqua Enforcer in any cluster. Please see the [example CR](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml) for the listing of all fields and configurations.
+**[AquaEnforcer CRD](../deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml)** is used to deploy the Aqua Enforcer in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the Aqua Enforcer.
-* You can set the target Gateway using the **gateway.host** and **gateway.port** properties.
-* You can choose to deploy a different version of the Aqua Enforcer by setting the **image.tag** property.
+* You can set the target Gateway using the ```.spec.gateway.host```and ```.spec.gateway.port``` properties.
+* You can choose to deploy a different version of the Aqua Enforcer by setting the ```.spec.image.tag``` property. 
+    If you choose to run old/custom Aqua Enforcer version, you must set ```.spec.common.allowAnyVersion``` .
+* You can add environment variables using ```.spec.env```.
+* You can define the enforcer resources requests/limits using ```.spec.deploy.resources```.
 
-**[AquaKubeEnforcer CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
+**[AquaKubeEnforcer CRD](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the KubeEnforcer to the Aqua Server.
-* You can set the target Gateway using the **config.gateway_address** property.
-* You can choose to deploy a different version of the KubeEnforcer by setting the **image.tag** property.
+* You can set the target Gateway using the ```.spec.config.gateway_address```  property.
+* You can choose to deploy a different version of the KubeEnforcer by setting the ```.spec.image.tag``` property.
+    If you choose to run old/custom Aqua KubeEnforcer version, you must set ```.spec.allowAnyVersion``` .
 
-**[AquaScanner CRD](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](https://github.com/aquasecurity/aqua-operator/blob/5.3.0/deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
-* You need to set the target Aqua Server using the **login.host** property.
-* You need to provide the **login.username** and **login.password** to authenticate with the Aqua Server.
-* You can choose to deploy a different version of the Aqua Scanner by setting the **image.tag** property.
-
-
-##  SecurityContextConstraints for Aqua components ##
-When installing the Aqua operator, the operator creates a cluster role binding between the "aqua-sa" 
-and "aqua-kube-enforcer-sa" service accounts to cluster roles containing the SecurityContextConstraints (SCC)
-for running the Aqua components.
-
-By default, the SCCs for running Aqua components are the "privileged" and "hostaccess"
-SCCs.
-```yaml
-- rules:
-    - apiGroups:
-        - security.openshift.io
-      resourceNames:
-        - privileged
-        - hostaccess
-      resources:
-        - securitycontextconstraints
-      verbs:
-        - use
-```
+**[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
+* You need to set the target Aqua Server using the ```.spec.login.host```  property.
+* You need to provide the ```.spec.login.username``` and ```.spec.login.password``` to authenticate with the Aqua Server.
+* You can choose to deploy a different version of the Aqua Scanner by setting the ```.spec.image.tag``` property.
+    If you choose to run old/custom Aqua Scanner version, you must set ```.spec.common.allowAnyVersion``` .
 
 
-*The rest of this section is relevant only when using the **community** operator, 
-and the Aqua components are **not** running with Aqua **UBI** images*
+## Operator Upgrades ##
+**Major versions** - When switching from an older operator channel to this channel,
+the operator will update the Aqua components to this channel Aqua version.
 
-If you choose to run Aqua components with Aqua custom SCC "aqua-scc", the following steps required:
+**Minor versions** - For the certified operator, the Aqua operator is using the "Seamless Upgrades" mechanism.
+You can set the upgrade approval strategy in the operator subscription to either "Automatic" or "Manual".
+If you choose "Automatic", the OLM will automatically upgrade to the latest operator version in this channel
+with the latest Aqua components images. If you choose the "Manual" approval strategy, the OLM will
+only notify you there is an update available, and will upgrade the operator version and Aqua components
+only after a manual approval given.
 
-* Download the [aqua-scc](../deploy/aqua-scc.yaml) SCC file.
+*If you choose "Manual" approval strategy, we recommend that before approving, make sure you are indeed
+upgrading to the most updated version. you can do that by deleting the suggested InstallPlan, once the 
+suggested InstallPlan is deleted, the OLM will generate a new InstallPlan to the latest version available
+in this channel*
 
-* Run the command:
-```bash
-oc apply -f <<AQUA SCC FILE PATH>>
-```
+For community operator, you can upgrade minor version by changing the relevant CRs 
+```.spec.infra.version``` or ```.spec.<<NAME>>.image.tag```
 
-* Change the cluster role which is bind to "aqua-sa"
-to use "aqua-scc" SCC, and the cluster role which is bind to
-"aqua-kube-enforcer-sa" to use "nonroot" and "hostaccess" SCCs.
-Edit the section  - ```.rules.resourceNames``` in the cluster role YAML file. 
-
-* Run the AquaCSP/AquaServer/AquaGateway/AquaDatabase/AquaEnforcer/AquaScanner CRs with ```.spec.runAsNonRoot:true``` .  
- 
 	
 ## CR Examples ##
 
@@ -122,7 +108,7 @@ spec:
   infra:                                    
     serviceAccount: "aqua-sa"               
     namespace: "aqua"                       
-    version: "5.3"                          
+    version: "6.0"                          
     requirements: true                      
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
@@ -151,7 +137,7 @@ spec:
     service: "LoadBalancer" 
     image:
       registry: "registry.aquasec.com"
-      repository: "server"
+      repository: "console"
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always 
   enforcer:                                 # Optional: If defined, the Operator will create the default Aqua Enforcer 
@@ -177,7 +163,7 @@ spec:
   infra:                                    
     serviceAccount: "aqua-sa"               
     namespace: "aqua"                       
-    version: "5.3"                          
+    version: "6.0"                          
     requirements: true                      
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
@@ -206,7 +192,7 @@ spec:
     service: "LoadBalancer" 
     image:
       registry: "registry.aquasec.com"
-      repository: "server"
+      repository: "console"
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
@@ -228,7 +214,7 @@ spec:
   infra:                                    
     serviceAccount: "aqua-sa"               
     namespace: "aqua"                       
-    version: "5.3"                          
+    version: "6.0"                          
     requirements: true                      
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
@@ -258,7 +244,7 @@ spec:
     service: "LoadBalancer" 
     image:
       registry: "registry.aquasec.com"
-      repository: "server"
+      repository: "console"
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
@@ -277,7 +263,7 @@ spec:
   infra:                                    
     serviceAccount: "aqua-sa"               
     namespace: "aqua"                       
-    version: "5.3"                          
+    version: "6.0"                          
     requirements: true                      
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
@@ -300,7 +286,7 @@ spec:
     service: "LoadBalancer" 
     image:
       registry: "registry.aquasec.com"
-      repository: "server"
+      repository: "console"
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
@@ -319,7 +305,7 @@ spec:
   infra:                                    
     serviceAccount: "aqua-sa"               
     namespace: "aqua"                       
-    version: "5.3"                          
+    version: "6.0"                          
     requirements: true                      
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
@@ -352,7 +338,7 @@ spec:
     service: "LoadBalancer" 
     image:
       registry: "registry.aquasec.com"
-      repository: "server"
+      repository: "console"
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
@@ -372,7 +358,7 @@ metadata:
 spec:
   infra:                                    
     serviceAccount: "aqua-sa"                
-    version: "5.3"                          # Optional: auto generate to latest version
+    version: "6.0"                          # Optional: auto generate to latest version
   common:
     imagePullSecret: "aqua-registry"        # Optional: if already created image pull secret then mention in here
   deploy:                                   # Optional: information about Aqua Enforcer deployment
@@ -405,11 +391,6 @@ spec:
     tag: "<<KUBE_ENFORCER_TAG>>"
     repository: kube-enforcer
     pullPolicy: Always
-  registry:                                 # Optional: required only if spec.config.imagePullSecret does not exist
-    url: "registry.aquasec.com"
-    username: "<<YOUR_USER_NAME>>"
-    password: "<<YOUR_PASSWORD>>"
-    email: "<<YOUR_EMAIL_ADDERESS>>"
   token: "<<KUBE_ENFORCER_GROUP_TOKEN>>"    # Optional: The KubeEnforcer group token (if not provided manual approval will be required)
  ```
 
@@ -425,7 +406,7 @@ metadata:
 spec:
   infra:
     serviceAccount: aqua-sa
-    version: '5.3'
+    version: '6.0'
   deploy:
     replicas: 1
     image:
