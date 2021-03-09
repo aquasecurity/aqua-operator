@@ -37,7 +37,7 @@ func newAquaServerHelper(cr *operatorv1alpha1.AquaServer) *AquaServerHelper {
 }
 
 func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *appsv1.Deployment {
-	pullPolicy, registry, repository, tag := extra.GetImageData("server", cr.Spec.Infrastructure.Version, cr.Spec.ServerService.ImageData)
+	pullPolicy, registry, repository, tag := extra.GetImageData("console", cr.Spec.Infrastructure.Version, cr.Spec.ServerService.ImageData, cr.Spec.Common.AllowAnyVersion)
 
 	image := os.Getenv("RELATED_IMAGE_SERVER")
 	if image == "" {

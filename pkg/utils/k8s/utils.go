@@ -1,7 +1,13 @@
 package k8s
 
 import (
+	syserrors "errors"
 	"fmt"
+
+	"github.com/banzaicloud/k8s-objectmatcher/patch"
+
+	appsv1 "k8s.io/api/apps/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 )
+
+var log = logf.Log.WithName("k8s-utils")
 
 // ToObjectMeta returns an ObjectMeta based on the given NamespacedName.
 func ToObjectMeta(namespacedName types.NamespacedName) metav1.ObjectMeta {
@@ -72,4 +80,45 @@ func EmitErrorEvent(r record.EventRecorder, err error, obj runtime.Object, reaso
 	}
 
 	r.Eventf(obj, corev1.EventTypeWarning, reason, message, args...)
+}
+
+func IsDeploymentReady(deployObj *appsv1.Deployment, expectedReplicas int) bool {
+
+	totalReplicas := int(deployObj.Status.Replicas)
+	readyReplicas := int(deployObj.Status.ReadyReplicas)
+
+	condOne := totalReplicas == readyReplicas
+	condTwo := readyReplicas == expectedReplicas
+
+	return condOne && condTwo
+
+}
+
+func CheckForK8sObjectUpdate(objectName string, found, desired runtime.Object) (bool, error) {
+	reqLogger := log.WithValues("Checking For k8s object update", "Checking For k8s object update")
+
+	objectsMatcher, err := patch.DefaultPatchMaker.Calculate(found, desired, patch.IgnoreStatusFields())
+	if err != nil {
+		reqLogger.Error(err, "Unable to Calculate diff", err)
+		return false, err
+	}
+	if objectsMatcher == nil {
+		reqLogger.Error(err, "Unable to Calculate diff", err)
+		return false, syserrors.New("objectsMatcher == nil")
+	}
+	upgrade := false
+	if !objectsMatcher.IsEmpty() {
+		upgrade = true
+		err = patch.DefaultAnnotator.SetLastAppliedAnnotation(desired)
+		if err != nil {
+			reqLogger.Error(err, "Unable to set default for k8s-objectmatcher", err)
+			return false, err
+		}
+	}
+
+	reqLogger.Info(fmt.Sprintf("Checking for %s Upgrade", objectName),
+		"PATCH", string(objectsMatcher.Patch),
+		"upgrade bool", upgrade)
+
+	return upgrade, nil
 }

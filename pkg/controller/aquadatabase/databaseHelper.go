@@ -36,7 +36,7 @@ func newAquaDatabaseHelper(cr *operatorv1alpha1.AquaDatabase) *AquaDatabaseHelpe
 }
 
 func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, dbSecret *operatorv1alpha1.AquaSecret, deployName, pvcName, app string) *appsv1.Deployment {
-	pullPolicy, registry, repository, tag := extra.GetImageData("database", cr.Spec.Infrastructure.Version, cr.Spec.DbService.ImageData)
+	pullPolicy, registry, repository, tag := extra.GetImageData("database", cr.Spec.Infrastructure.Version, cr.Spec.DbService.ImageData, cr.Spec.Common.AllowAnyVersion)
 
 	image := os.Getenv("RELATED_IMAGE_DATABASE")
 	if image == "" {

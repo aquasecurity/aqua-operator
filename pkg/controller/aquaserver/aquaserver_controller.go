@@ -12,6 +12,7 @@ import (
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
+	"github.com/banzaicloud/k8s-objectmatcher/patch"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -166,7 +167,8 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) &&
+		!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
@@ -235,11 +237,6 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 	}
 
-	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
-		instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-		_ = r.client.Status().Update(context.Background(), instance)
-	}
-
 	return reconcile.Result{Requeue: true}, nil
 }
 
@@ -302,6 +299,19 @@ func (r *ReconcileAquaServer) InstallServerService(cr *operatorv1alpha1.AquaServ
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if !reflect.DeepEqual(found.Spec.Type, service.Spec.Type) {
+		service.Spec.ClusterIP = found.Spec.ClusterIP
+		service.SetResourceVersion(found.GetResourceVersion())
+
+		err = r.client.Update(context.Background(), service)
+		if err != nil {
+			reqLogger.Error(err, "Aqua Server: Failed to update Service.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+		// Spec updated - return and requeue
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Service already exists - don't requeue
@@ -403,6 +413,10 @@ func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaS
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a New Aqua Server Deployment", "Dervice.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+		err = patch.DefaultAnnotator.SetLastAppliedAnnotation(deployment)
+		if err != nil {
+			reqLogger.Error(err, "Unable to set default for k8s-objectmatcher", err)
+		}
 		err = r.client.Create(context.TODO(), deployment)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -414,13 +428,12 @@ func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaS
 	}
 
 	if found != nil {
-		upgrade := deployment.Spec.Template.Spec.Containers[0].Image != found.Spec.Template.Spec.Containers[0].Image
-		reqLogger.Info("Checking for Aqua Server Upgrade", "deployment obj", deployment.Spec.Template.Spec.Containers[0].Image, "found obj", found.Spec.Template.Spec.Containers[0].Image, "upgrade bool", upgrade)
-		size := deployment.Spec.Replicas
-		if *found.Spec.Replicas != *size || upgrade {
-			found.Spec.Replicas = size
-			found.Spec.Template.Spec.Containers[0].Image = deployment.Spec.Template.Spec.Containers[0].Image
-			err = r.client.Update(context.Background(), found)
+		update, err := k8s.CheckForK8sObjectUpdate("AquaServer deployment", found, deployment)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		if update {
+			err = r.client.Update(context.Background(), deployment)
 			if err != nil {
 				reqLogger.Error(err, "Aqua Server: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 				return reconcile.Result{}, err
@@ -445,10 +458,18 @@ func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaS
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
 			cr.Status.Nodes = podNames
-			err := r.client.Status().Update(context.Background(), cr)
-			if err != nil {
-				return reconcile.Result{}, err
+		}
+
+		currentState := cr.Status.State
+		if !k8s.IsDeploymentReady(found, int(cr.Spec.ServerService.Replicas)) {
+			if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, currentState) &&
+				!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, currentState) {
+				cr.Status.State = operatorv1alpha1.AquaDeploymentUpdateInProgress
+				_ = r.client.Status().Update(context.Background(), cr)
 			}
+		} else if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentState) {
+			cr.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
+			_ = r.client.Status().Update(context.Background(), cr)
 		}
 	}
 

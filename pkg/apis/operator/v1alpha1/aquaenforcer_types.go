@@ -16,12 +16,13 @@ type AquaEnforcerSpec struct {
 	Infrastructure *AquaInfrastructure `json:"infra"`
 	Common         *AquaCommon         `json:"common"`
 
-	EnforcerService *AquaService            `json:"deploy,required"`
-	Gateway         *AquaGatewayInformation `json:"gateway,required"`
-	Token           string                  `json:"token,required"`
-	Secret          *AquaSecret             `json:"secret,required"`
-	Envs            []corev1.EnvVar         `json:"env,required"`
-	RunAsNonRoot    bool                    `json:"runAsNonRoot,omitempty"`
+	EnforcerService        *AquaService            `json:"deploy,required"`
+	Gateway                *AquaGatewayInformation `json:"gateway,required"`
+	Token                  string                  `json:"token,required"`
+	Secret                 *AquaSecret             `json:"secret,required"`
+	Envs                   []corev1.EnvVar         `json:"env,required"`
+	RunAsNonRoot           bool                    `json:"runAsNonRoot,omitempty"`
+	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
 }
 
 // AquaEnforcerStatus defines the observed state of AquaEnforcer

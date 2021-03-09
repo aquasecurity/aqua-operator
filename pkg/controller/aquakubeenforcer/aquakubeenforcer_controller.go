@@ -14,6 +14,10 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/banzaicloud/k8s-objectmatcher/patch"
+
+	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
+
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
@@ -327,7 +331,10 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
+	currentStatus := instance.Status.State
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentStatus) &&
+		!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdatePendingApproval, currentStatus) &&
+		!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, currentStatus) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
 		_ = r.client.Status().Update(context.Background(), instance)
 	}
@@ -818,7 +825,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	reqLogger := log.WithValues("KubeEnforcer", "Create Deployment")
 	reqLogger.Info("Start creating deployment")
 
-	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", consts.LatestVersion, cr.Spec.ImageData)
+	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", consts.LatestVersion, cr.Spec.ImageData, cr.Spec.AllowAnyVersion)
 
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	deployment := enforcerHelper.CreateKEDeployment(cr.Name,
@@ -842,6 +849,10 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
+		err = patch.DefaultAnnotator.SetLastAppliedAnnotation(deployment)
+		if err != nil {
+			reqLogger.Error(err, "Unable to set default for k8s-objectmatcher", err)
+		}
 		err = r.client.Create(context.TODO(), deployment)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
@@ -853,17 +864,40 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	}
 
 	if found != nil {
-		upgrade := deployment.Spec.Template.Spec.Containers[0].Image != found.Spec.Template.Spec.Containers[0].Image
-		reqLogger.Info("Checking for Aqua KubeEnforcer Upgrade", "deployment obj", deployment.Spec.Template.Spec.Containers[0].Image, "found obj", found.Spec.Template.Spec.Containers[0].Image, "upgrade bool", upgrade)
-		if upgrade {
-			found.Spec.Template.Spec.Containers[0].Image = deployment.Spec.Template.Spec.Containers[0].Image
-			err = r.client.Update(context.Background(), found)
+
+		updateEnforcerApproved := true
+		if cr.Spec.EnforcerUpdateApproved != nil {
+			updateEnforcerApproved = *cr.Spec.EnforcerUpdateApproved
+		}
+
+		update, err := k8s.CheckForK8sObjectUpdate("AquaKubeEnforcer deployment", found, deployment)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if update && updateEnforcerApproved {
+			err = r.client.Update(context.Background(), deployment)
 			if err != nil {
 				reqLogger.Error(err, "Aqua KubeEnforcer: Failed to update Deployment.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 				return reconcile.Result{}, err
 			}
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true}, nil
+		} else if update && !updateEnforcerApproved {
+			cr.Status.State = operatorv1alpha1.AquaEnforcerUpdatePendingApproval
+			_ = r.client.Status().Update(context.Background(), cr)
+		} else {
+			currentState := cr.Status.State
+			if !k8s.IsDeploymentReady(found, 1) {
+				if !reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, currentState) &&
+					!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, currentState) {
+					cr.Status.State = operatorv1alpha1.AquaEnforcerUpdateInProgress
+					_ = r.client.Status().Update(context.Background(), cr)
+				}
+			} else if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentState) {
+				cr.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
+				_ = r.client.Status().Update(context.Background(), cr)
+			}
 		}
 	}
 

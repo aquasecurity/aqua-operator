@@ -3,6 +3,7 @@ package extra
 import (
 	"encoding/base64"
 	"os"
+	"strings"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -28,7 +29,14 @@ func Int32Ptr(i int32) *int32 {
 	return &i
 }
 
-func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaImage) (string, string, string, string) {
+// checkForUpgrade is making sure that .infra.version contain the latest version.
+// if not, there is a need to upgrade the images.
+func checkForUpgrade(existingTag string) bool {
+
+	return !strings.Contains(existingTag, consts.LatestVersion)
+}
+
+func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaImage, allowAnyVersion bool) (string, string, string, string) {
 	pullPolicy := consts.PullPolicy
 	repository := repo
 	tag := version
@@ -54,6 +62,10 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		if len(imageData.Registry) != 0 {
 			registry = imageData.Registry
 		}
+	}
+
+	if checkForUpgrade(tag) && !allowAnyVersion {
+		tag = consts.LatestVersion
 	}
 
 	return pullPolicy, registry, repository, tag

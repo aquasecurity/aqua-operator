@@ -112,6 +112,7 @@ func UpdateAquaCommon(common *operatorv1alpha1.AquaCommon, name string, admin bo
 			},
 			DbDiskSize: consts.DbPvcSize,
 			SplitDB: false,
+			AllowAnyVersion: false,
 		}
 	}
 

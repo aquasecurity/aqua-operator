@@ -173,7 +173,8 @@ func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operato
 					Registry: registry,
 				},
 			},
-			RunAsNonRoot: csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
+			RunAsNonRoot:           csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
+			EnforcerUpdateApproved: csp.Parameters.AquaCsp.Spec.EnforcerUpdateApproved,
 		},
 	}
 
@@ -192,6 +193,9 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 	}
 
 	tag := consts.LatestVersion
+	if cr.Spec.Infrastructure.Version != "" {
+		tag = cr.Spec.Infrastructure.Version
+	}
 	if cr.Spec.DeployKubeEnforcer.ImageTag != "" {
 		tag = cr.Spec.DeployKubeEnforcer.ImageTag
 	}
@@ -221,7 +225,9 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 				ClusterName:     "aqua-secure",
 				ImagePullSecret: cr.Spec.Common.ImagePullSecret,
 			},
-			Token: consts.DefaultKubeEnforcerToken,
+			Token:                  consts.DefaultKubeEnforcerToken,
+			EnforcerUpdateApproved: cr.Spec.EnforcerUpdateApproved,
+			AllowAnyVersion:        cr.Spec.Common.AllowAnyVersion,
 			ImageData: &operatorv1alpha1.AquaImage{
 				Registry:   registry,
 				Repository: "kube-enforcer",

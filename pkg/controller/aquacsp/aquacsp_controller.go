@@ -331,16 +331,22 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 		}
 
-		gwstatus, _ := r.WaitForGateway(instance)
-		// _, _ := r.WaitForServer(instance)
+		serverGatewayStatus := r.GetGatewayServerState(instance)
 
-		if gwstatus {
-			instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-			_ = r.client.Status().Update(context.Background(), instance)
+		currentStatus := instance.Status.State
+		serverGatewayReady := reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, serverGatewayStatus)
+
+		if serverGatewayReady {
+			if !reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdatePendingApproval, currentStatus) &&
+				!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, currentStatus) &&
+				!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerWaiting, currentStatus) &&
+				!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentStatus) {
+				instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
+				_ = r.client.Status().Update(context.Background(), instance)
+			}
 		} else {
-			reqLogger.Info("CSP Deployment: Waiting internal for aqua to start")
-			if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateWaitingAqua, instance.Status.State) {
-				instance.Status.State = operatorv1alpha1.AquaDeploymentStateWaitingAqua
+			if !reflect.DeepEqual(serverGatewayStatus, currentStatus) {
+				instance.Status.State = serverGatewayStatus
 				_ = r.client.Status().Update(context.Background(), instance)
 			}
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
@@ -354,22 +360,30 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 	}
 
-	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) {
-		instance.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
-		_ = r.client.Status().Update(context.Background(), instance)
-	}
-
+	waitForEnforcer := false
 	if instance.Spec.Enforcer != nil {
 		_, err = r.InstallAquaEnforcer(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 		}
+		waitForEnforcer = true
 	}
 
+	waitForKubeEnforcer := false
 	if instance.Spec.DeployKubeEnforcer != nil {
 		_, err = r.InstallAquaKubeEnforcer(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+		waitForKubeEnforcer = true
+	}
+
+	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, instance.Status.State) &&
+		(waitForKubeEnforcer || waitForEnforcer) {
+		crStatus := r.WaitForEnforcersReady(instance, waitForEnforcer, waitForKubeEnforcer)
+		if !reflect.DeepEqual(instance.Status.State, crStatus) {
+			instance.Status.State = crStatus
+			_ = r.client.Status().Update(context.Background(), instance)
 		}
 	}
 
@@ -400,7 +414,7 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
-	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 30}, nil
 }
 
 func (r *ReconcileAquaCsp) updateCspObject(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaCsp {
@@ -781,6 +795,7 @@ func (r *ReconcileAquaCsp) InstallAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp)
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true}, nil
 		}
+
 	}
 
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Exists", "AquaKubeEnforcer.Namespace", found.Namespace, "AquaKubeEnforcer.Name", found.Name)
@@ -833,32 +848,88 @@ func (r *ReconcileAquaCsp) GetPostgresReady(cr *operatorv1alpha1.AquaCsp, dbDepl
 	return int(resource.Status.ReadyReplicas) == replicas, nil
 }
 
-func (r *ReconcileAquaCsp) WaitForGateway(cr *operatorv1alpha1.AquaCsp) (bool, error) {
-	reqLogger := log.WithValues("Csp Wait For Aqua Gateway Phase", "Wait For Aqua Gateway")
-	reqLogger.Info("Start waiting to aqua gateway")
+func (r *ReconcileAquaCsp) GetGatewayServerState(cr *operatorv1alpha1.AquaCsp) operatorv1alpha1.AquaDeploymentState {
+	reqLogger := log.WithValues("Csp Wait For Aqua Gateway and Server Phase", "Wait For Aqua Gateway and Server")
+	reqLogger.Info("Start waiting to aqua gateway and server")
 
-	ready, err := r.GetGatewayReady(cr)
+	gatewayState := operatorv1alpha1.AquaDeploymentStateRunning
+	gatewayFound := &operatorv1alpha1.AquaGateway{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gatewayFound)
 	if err != nil {
-		return false, err
+		reqLogger.Error(err, "Unable to Get AquaGateway Object", "err", err)
+		gatewayState = operatorv1alpha1.AquaDeploymentStatePending
+	} else {
+		gatewayState = gatewayFound.Status.State
 	}
 
-	return ready, nil
+	serverState := operatorv1alpha1.AquaDeploymentStateRunning
+	serverFound := &operatorv1alpha1.AquaServer{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, serverFound)
+	if err != nil {
+		reqLogger.Error(err, "Unable to Get AquaServer Object", "err", err)
+		serverState = operatorv1alpha1.AquaDeploymentStatePending
+	} else {
+		serverState = serverFound.Status.State
+	}
+
+	cspStatus := operatorv1alpha1.AquaDeploymentStateRunning
+
+	if reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, gatewayState) ||
+		reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, serverState) {
+		cspStatus = operatorv1alpha1.AquaDeploymentStateWaitingAqua
+	} else if reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, gatewayState) ||
+		reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, serverState) {
+		cspStatus = operatorv1alpha1.AquaDeploymentUpdateInProgress
+	}
+
+	return cspStatus
 }
 
-func (r *ReconcileAquaCsp) GetGatewayReady(cr *operatorv1alpha1.AquaCsp) (bool, error) {
-	resource := appsv1.Deployment{}
+func (r *ReconcileAquaCsp) WaitForEnforcersReady(cr *operatorv1alpha1.AquaCsp, validateEnforcer, validateKubeEnforcer bool) operatorv1alpha1.AquaDeploymentState {
+	reqLogger := log.WithValues("Csp Wait For Aqua Enforcer and KubeEnforcer Phase", "Wait For Aqua Enforcer and KubeEnforcer")
+	reqLogger.Info("Start waiting to aqua enforcer and kube-enforcer")
 
-	selector := types.NamespacedName{
-		Namespace: cr.Namespace,
-		Name:      fmt.Sprintf(consts.GatewayDeployName, cr.Name),
+	enforcerStatus := operatorv1alpha1.AquaDeploymentStateRunning
+	if validateEnforcer {
+		enforcerFound := &operatorv1alpha1.AquaEnforcer{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, enforcerFound)
+		if err != nil {
+			reqLogger.Info("Unable to Get AquaEnforcer Object", "err", err)
+			enforcerStatus = operatorv1alpha1.AquaDeploymentStatePending
+		} else {
+			enforcerStatus = enforcerFound.Status.State
+		}
+
 	}
 
-	err := r.client.Get(context.TODO(), selector, &resource)
-	if err != nil {
-		return false, err
+	kubeEnforcerStatus := operatorv1alpha1.AquaDeploymentStateRunning
+	if validateKubeEnforcer {
+		kubeEnforcerFound := &operatorv1alpha1.AquaKubeEnforcer{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, kubeEnforcerFound)
+		if err != nil {
+			reqLogger.Info("Unable to Get AquaKubeEnforcer Object", "err", err)
+			kubeEnforcerStatus = operatorv1alpha1.AquaDeploymentStatePending
+		} else {
+			kubeEnforcerStatus = kubeEnforcerFound.Status.State
+		}
+
 	}
 
-	return int(resource.Status.ReadyReplicas) == int(cr.Spec.GatewayService.Replicas), nil
+	returnStatus := operatorv1alpha1.AquaDeploymentStateRunning
+
+	if reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, enforcerStatus) ||
+		reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, kubeEnforcerStatus) {
+		returnStatus = operatorv1alpha1.AquaEnforcerWaiting
+	} else if reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, enforcerStatus) ||
+		reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, kubeEnforcerStatus) {
+		returnStatus = operatorv1alpha1.AquaEnforcerUpdateInProgress
+	} else if reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdatePendingApproval, enforcerStatus) ||
+		reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdatePendingApproval, kubeEnforcerStatus) {
+		returnStatus = operatorv1alpha1.AquaEnforcerUpdatePendingApproval
+	}
+
+	return returnStatus
+
 }
 
 /*func (r *ReconcileAquaCsp) WaitForServer(cr *operatorv1alpha1.AquaCsp) (bool, error) {
