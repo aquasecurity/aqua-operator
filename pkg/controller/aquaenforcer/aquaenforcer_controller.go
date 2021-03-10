@@ -302,7 +302,8 @@ func (r *ReconcileAquaEnforcer) InstallEnforcerDaemonSet(cr *operatorv1alpha1.Aq
 					cr.Status.State = operatorv1alpha1.AquaEnforcerUpdateInProgress
 					_ = r.client.Status().Update(context.Background(), cr)
 				}
-			} else if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentState) {
+			} else if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentState) &&
+				found.Status.NumberReady > 0 {
 				cr.Status.State = operatorv1alpha1.AquaDeploymentStateRunning
 				_ = r.client.Status().Update(context.Background(), cr)
 			}
