@@ -1,44 +1,52 @@
-The Aqua Security Operator is used to deploy and manage Aqua Enterprise (formerly CSP) and its components:
+## General 
+
+This guide explains how to deploy and use the Aqua Security Operator to manage Aqua's deployments in an OpenShift 4.x enviornemnt. You can use the Operator to deploy Aqua Entperiese or any of its components -
 * Server (aka “console”)
 * Database (optional; you can map an external database as well) 
 * Gateway 
-* Aqua Enforcer
-* KubeEnforcer
+* Enforcer
 * Scanner
+* KubeEnforcer
 
-Use the Aqua Security Operator to: 
-* Deploy Aqua Enterprise on OpenShift
-* Scale up Aqua security components with additional replicas
+Use the Aqua Operator to: 
+* Easily deploy Aqua Enterprise on OpenShift
+* Manage and scale up Aqua security components with additional replicas
 * Assign metadata tags to Aqua Enterprise components
+* Easily add and delete Aqua components like Scanner daemons, Kube-Enforcers and Enforcers
+	
+You can find all Aqua's Operator CRs and their properties at [Custom Resources](../deploy/crds). 
 	   
 ## Prerequisites 
 
 Make sure you have a license and access to the Aqua registry. To obtain a license, please contact Aqua Security at https://www.aquasec.com/about-us/contact-us/.
 
-It is advised that you read about the [Aqua Environment and Configuration](https://docs.aquasec.com/v5.3/docs/purpose-of-this-section) before deploying and using the Operator. 
+It is advised that you read about the [Aqua Environment and Configuration](https://docs.aquasec.com/docs/purpose-of-this-section) and [Aqua's sizing guide](https://docs.aquasec.com/docs/sizing-guide) before deploying and using the Operator. 
+
+## Types of Aqua Opertaor
+Aqua Security maintans three types of Operators:
+* **Marketplace** - The marketplace operator is purchased through Red Hat Marketplace.
+* **Community** - Aqua's official Operator. It typically represents the latest and newest version of the Operator. 
+* **Certified** - Aqua's official Operator vetted and certified by RedHat. The certified Operator is based on the latest community Operator. It is packaged in a mode that allows it to work in disconnected networks, and contains UBI images as part of the package.  
 
 ## Deploying the Aqua Operator
+1. Create a new namespace/project called "aqua" for the Aqua deployment.
 
-1. Create a new namespace/project called "aqua" for the Aqua Enterprise deployment.
-2. Install the Aqua Operator from Red Hat's OperatorHub and deploy it to the "aqua" namespace. 
+2. Install the Aqua Operator from Red Hat's OperatorHub and add it to the "aqua" namespace. 
 
-## Preparing the environment to run Aqua Enterprise
-
-1. Set secrets for the deployment: 
-* A secret for the Docker registry
-* A secret for the database
-
-You can list the secrets in the custom resource YAML files or you can define them in the OpenShift project (see example below):
-```bash
-oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
+3. Create a secret for the database password
+```
 oc create secret generic aqua-database-password --from-literal=db-password=<password> -n aqua
 ```
 
+4. To work with the community Operator, you need to create a registry secret to Aqua's images registry. Aqua's registry credentials are identical to the username and password for Aqua's supprot portal (https://success.aquasec.com.) -
+```bash
+oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
+```
 
-## AquaCSP CRDs ##
-***You can find CR examples for common deployment configuration in the next section - CR Examples***
 
-The AquaCSP Operator includes the following CRDs -
+## Deploying Aqua Enterprise using Custom Resources
+The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different configurations. Before you create your deployment CR, please review commons CR examples in the section *CR Examples* below.
+
 
 **[AquaCSP CRD](../deploy/crds/operator.aquasec.com_aquacsps_crd.yaml)** provides the fastest methods to deploy Aqua Enterprise in a single cluster. AquaCSP defines how to deploy the Server, Gateway, Aqua Enforcer, and KubeEnforcer in the target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquacsp_cr.yaml) for the listing of all fields and configurations.
 * You can set the enforcement mode using the ```.spec.enforcer.enforceMode``` property in the CR file.
