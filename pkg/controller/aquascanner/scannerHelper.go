@@ -157,5 +157,13 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 		}
 	}
 
+	if cr.Spec.ScannerService.VolumeMounts != nil {
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, cr.Spec.ScannerService.VolumeMounts...)
+	}
+
+	if cr.Spec.ScannerService.Volumes != nil {
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.ScannerService.Volumes...)
+	}
+
 	return deployment
 }

@@ -310,6 +310,14 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		}
 	}
 
+	if cr.Spec.EnforcerService.VolumeMounts != nil {
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, cr.Spec.EnforcerService.VolumeMounts...)
+	}
+
+	if cr.Spec.EnforcerService.Volumes != nil {
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, cr.Spec.EnforcerService.Volumes...)
+	}
+
 	return ds
 }
 

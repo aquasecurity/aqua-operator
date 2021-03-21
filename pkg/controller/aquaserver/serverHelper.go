@@ -159,6 +159,14 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 		}
 	}
 
+	if cr.Spec.ServerService.VolumeMounts != nil {
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, cr.Spec.ServerService.VolumeMounts...)
+	}
+
+	if cr.Spec.ServerService.Volumes != nil {
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.ServerService.Volumes...)
+	}
+
 	return deployment
 }
 
