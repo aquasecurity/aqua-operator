@@ -158,6 +158,14 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 		}
 	}
 
+	if cr.Spec.GatewayService.VolumeMounts != nil {
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, cr.Spec.GatewayService.VolumeMounts...)
+	}
+
+	if cr.Spec.GatewayService.Volumes != nil {
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.GatewayService.Volumes...)
+	}
+
 	return deployment
 }
 
