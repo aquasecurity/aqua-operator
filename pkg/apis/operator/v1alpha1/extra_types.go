@@ -63,6 +63,8 @@ type AquaService struct {
 	NodeSelector   map[string]string            `json:"nodeSelector,omitempty"`
 	Affinity       *corev1.Affinity             `json:"affinity,omitempty"`
 	Tolerations    []corev1.Toleration          `json:"tolerations,omitempty"`
+	VolumeMounts   []corev1.VolumeMount         `json:"volumeMounts,omitempty"`
+	Volumes        []corev1.Volume              `json:"volumes,omitempty"`
 }
 
 type AquaGatewayInformation struct {
