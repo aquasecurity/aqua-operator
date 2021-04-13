@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
+
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
 	"k8s.io/api/admissionregistration/v1beta1"
@@ -12,6 +14,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	WebhookTimeout int32 = 5
 )
 
 // EnforcerParameters :
@@ -268,6 +274,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 						Port:      &servicePort,
 					},
 				},
+				TimeoutSeconds: extra.Int32Ptr(WebhookTimeout),
 			},
 		},
 	}
@@ -329,6 +336,7 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 						Port:      &servicePort,
 					},
 				},
+				TimeoutSeconds: extra.Int32Ptr(WebhookTimeout),
 			},
 		},
 	}
