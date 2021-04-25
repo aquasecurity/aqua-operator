@@ -318,6 +318,10 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, cr.Spec.EnforcerService.Volumes...)
 	}
 
+	if cr.Spec.EnforcerService.Tolerations != nil {
+		ds.Spec.Template.Spec.Tolerations = cr.Spec.EnforcerService.Tolerations
+	}
+
 	return ds
 }
 
