@@ -1,12 +1,5 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-#Due to SLK-33541
-RUN microdnf install yum
-RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
-RUN yum clean all
-RUN microdnf remove yum
-RUN microdnf clean all
-
 ENV OPERATOR=/usr/local/bin/aqua-operator \
     USER_UID=1001 \
     USER_NAME=aqua-operator
