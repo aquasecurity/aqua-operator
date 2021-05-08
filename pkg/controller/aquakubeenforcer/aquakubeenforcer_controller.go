@@ -14,12 +14,13 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
+
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
 
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
-	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
 
@@ -349,6 +350,9 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 			return reconcile.Result{}, err
 		}
 	}
+
+	instance.Spec.Infrastructure = common.UpdateAquaInfrastructure(instance.Spec.Infrastructure, "aqua-kube-enforcer", instance.Namespace)
+
 	_, err = r.addKubeEnforcerClusterRole(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -359,8 +363,7 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	isOpenshift, _ := ocp.VerifyRouteAPI()
-	if isOpenshift &&
+	if instance.Spec.Infrastructure.Platform == consts.OpenShiftPlatform &&
 		rbac.CheckIfClusterRoleExists(r.client, consts.ClusterReaderRole) &&
 		!rbac.CheckIfClusterRoleBindingExists(r.client, consts.AquaKubeEnforcerSAClusterReaderRoleBind) {
 		_, err = r.CreateClusterReaderRoleBinding(instance)
@@ -368,6 +371,8 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 			return reconcile.Result{}, err
 		}
 	}
+
+	instance.Spec.KubeEnforcerService = r.updateKubeEnforcerServerObject(instance.Spec.KubeEnforcerService, instance.Spec.ImageData)
 
 	_, err = r.addKEClusterRoleBinding(instance)
 	if err != nil {
@@ -463,7 +468,7 @@ func (r *ReconcileAquaKubeEnforcer) createAquaServiceAccount(cr *operatorv1alpha
 	sa := enforcerHelper.CreateKEServiceAccount(cr.Name,
 		cr.Namespace,
 		fmt.Sprintf("%s-requirments", cr.Name),
-		"aqua-kube-enforcer-sa")
+		cr.Spec.Infrastructure.ServiceAccount)
 
 	// Set AquaCspKind instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, sa, r.scheme); err != nil {
@@ -500,7 +505,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEClusterRoleBinding(cr *operatorv1alpha1
 		cr.Namespace,
 		"aqua-kube-enforcer",
 		"ke-crb",
-		"aqua-kube-enforcer-sa",
+		cr.Spec.Infrastructure.ServiceAccount,
 		"aqua-kube-enforcer")
 
 	// Set AquaCsp instance as the owner and controller
@@ -570,7 +575,7 @@ func (r *ReconcileAquaKubeEnforcer) addKERoleBinding(cr *operatorv1alpha1.AquaKu
 		cr.Namespace,
 		"aqua-kube-enforcer",
 		"ke-rb",
-		"aqua-kube-enforcer-sa",
+		cr.Spec.Infrastructure.ServiceAccount,
 		"aqua-kube-enforcer")
 
 	// Set AquaCsp instance as the owner and controller
@@ -825,14 +830,14 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	reqLogger := log.WithValues("KubeEnforcer", "Create Deployment")
 	reqLogger.Info("Start creating deployment")
 
-	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", consts.LatestVersion, cr.Spec.ImageData, cr.Spec.AllowAnyVersion)
+	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
 
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	deployment := enforcerHelper.CreateKEDeployment(cr.Name,
 		cr.Namespace,
 		"aqua-kube-enforcer",
 		"ke-deployment",
-		"aqua-kube-enforcer-sa",
+		cr.Spec.Infrastructure.ServiceAccount,
 		registry,
 		tag,
 		cr.Spec.Config.ImagePullSecret,
@@ -978,4 +983,24 @@ func (r *ReconcileAquaKubeEnforcer) CreateClusterReaderRoleBinding(cr *operatorv
 	// ClusterRoleBinding already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer ClusterReaderRoleBinding Exists", "ClusterRoleBinding.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaKubeEnforcer) updateKubeEnforcerServerObject(serviceObject *operatorv1alpha1.AquaService, kubeEnforcerImageData *operatorv1alpha1.AquaImage) *operatorv1alpha1.AquaService {
+
+	if serviceObject == nil {
+		serviceObject = &operatorv1alpha1.AquaService{
+			ImageData:   kubeEnforcerImageData,
+			ServiceType: string(corev1.ServiceTypeClusterIP),
+		}
+	} else {
+		if serviceObject.ImageData == nil {
+			serviceObject.ImageData = kubeEnforcerImageData
+		}
+		if len(serviceObject.ServiceType) == 0 {
+			serviceObject.ServiceType = string(corev1.ServiceTypeClusterIP)
+		}
+
+	}
+
+	return serviceObject
 }
