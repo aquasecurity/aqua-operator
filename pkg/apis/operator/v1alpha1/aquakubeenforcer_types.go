@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -9,12 +10,16 @@ import (
 
 // AquaKubeEnforcerSpec defines the desired state of AquaKubeEnforcer
 type AquaKubeEnforcerSpec struct {
+	Infrastructure *AquaInfrastructure `json:"infra,omitempty"`
+
 	Config                 AquaKubeEnforcerConfig `json:"config"`
 	Token                  string                 `json:"token,omitempty"`
 	RegistryData           *AquaDockerRegistry    `json:"registry,omitempty"`
-	ImageData              *AquaImage             `json:"image,required"`
+	ImageData              *AquaImage             `json:"image,omitempty"`
 	EnforcerUpdateApproved *bool                  `json:"updateEnforcer,omitempty"`
 	AllowAnyVersion        bool                   `json:"allowAnyVersion,omitempty"`
+	KubeEnforcerService    *AquaService           `json:"deploy,omitempty"`
+	Envs                   []corev1.EnvVar        `json:"env,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer
