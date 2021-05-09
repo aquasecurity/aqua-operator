@@ -466,7 +466,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEService(cr, namespace, name, app stri
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     corev1.ServiceType("ClusterIP"),
+			Type:     corev1.ServiceType(enf.Parameters.KubeEnforcer.Spec.KubeEnforcerService.ServiceType),
 			Selector: selectors,
 			Ports:    ports,
 		},
@@ -616,6 +616,32 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 				},
 			},
 		},
+	}
+
+	kubeEnforcerExtraData := enf.Parameters.KubeEnforcer.Spec.KubeEnforcerService
+
+	if kubeEnforcerExtraData.Resources != nil {
+		deployment.Spec.Template.Spec.Containers[0].Resources = *kubeEnforcerExtraData.Resources
+	}
+
+	if kubeEnforcerExtraData.LivenessProbe != nil {
+		deployment.Spec.Template.Spec.Containers[0].LivenessProbe = kubeEnforcerExtraData.LivenessProbe
+	}
+
+	if kubeEnforcerExtraData.ReadinessProbe != nil {
+		deployment.Spec.Template.Spec.Containers[0].ReadinessProbe = kubeEnforcerExtraData.ReadinessProbe
+	}
+
+	if kubeEnforcerExtraData.VolumeMounts != nil {
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, kubeEnforcerExtraData.VolumeMounts...)
+	}
+
+	if kubeEnforcerExtraData.Volumes != nil {
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, kubeEnforcerExtraData.Volumes...)
+	}
+
+	if enf.Parameters.KubeEnforcer.Spec.Envs != nil {
+		deployment.Spec.Template.Spec.Containers[0].Env = append(deployment.Spec.Template.Spec.Containers[0].Env, enf.Parameters.KubeEnforcer.Spec.Envs...)
 	}
 
 	return deployment
