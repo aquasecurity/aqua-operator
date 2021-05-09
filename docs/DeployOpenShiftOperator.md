@@ -63,7 +63,7 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 **[AquaEnforcer CRD](../deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml)** is used to deploy the Aqua Enforcer in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the Aqua Enforcer.
 * You can set the target Gateway using the ```.spec.gateway.host```and ```.spec.gateway.port``` properties.
-* You can choose to deploy a different version of the Aqua Enforcer by setting the ```.spec.image.tag``` property. 
+* You can choose to deploy a different version of the Aqua Enforcer by setting the ```.spec.deploy.image.tag``` property. 
     If you choose to run old/custom Aqua Enforcer version, you must set ```.spec.common.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the enforcer resources requests/limits using ```.spec.deploy.resources```.
@@ -71,8 +71,10 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 **[AquaKubeEnforcer CRD](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the KubeEnforcer to the Aqua Server.
 * You can set the target Gateway using the ```.spec.config.gateway_address```  property.
-* You can choose to deploy a different version of the KubeEnforcer by setting the ```.spec.image.tag``` property.
+* You can choose to deploy a different version of the KubeEnforcer by setting the ```.spec.deploy.image.tag``` property.
     If you choose to run old/custom Aqua KubeEnforcer version, you must set ```.spec.allowAnyVersion``` .
+* You can add environment variables using ```.spec.env```.
+* You can define the kube-enforcer resources requests/limits using ```.spec.deploy.resources```.    
 
 **[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
@@ -390,17 +392,22 @@ kind: AquaKubeEnforcer
 metadata:
   name: aqua
 spec:
+  infra:
+    version: '6.0'
+    serviceAccount: aqua-kube-enforcer-sa
   config:
-    gateway_address: "aqua-gateway.aqua:8443"      # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
-    cluster_name: "aqua-secure"                    # Required: provide your cluster name
-    imagePullSecret: "aqua-registry"               # Optional: needed in case spec.registry is not defined
-  image:
-    registry: "registry.aquasec.com"
-    tag: "<<KUBE_ENFORCER_TAG>>"
-    repository: kube-enforcer
-    pullPolicy: Always
-  token: "<<KUBE_ENFORCER_GROUP_TOKEN>>"    # Optional: The KubeEnforcer group token (if not provided manual approval will be required)
- ```
+    gateway_address: 'aqua-gateway.aqua:8443'     # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
+    cluster_name: aqua-secure                     # Required: provide your cluster name
+    imagePullSecret: aqua-registry                # Required: provide the imagePullSecret name
+  deploy:
+    service: ClusterIP
+    image:
+      registry: "registry.aquasec.com"
+      tag: "<<KUBE_ENFORCER_TAG>>"
+      repository: kube-enforcer
+      pullPolicy: Always
+  token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)    
+```
 
 #### Example: Deploy the Aqua Scanner
 

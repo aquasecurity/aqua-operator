@@ -1,24 +1,33 @@
 apiVersion: operator.aquasec.com/v1alpha1
 kind: AquaKubeEnforcer
 metadata:
-  name: example-aquakubeenforcer
+  name: aqua
 spec:
-  # Add fields here
+  infra:
+    version: '6.0'
+    serviceAccount: "aqua-kube-enforcer-sa"
   config:
-    gateway_address: "aqua-gateway:8443"
+    gateway_address: "aqua-gateway.aqua:8443"
     cluster_name: "aqua-secure"
     imagePullSecret: "aqua-registry"
   token: "<<KubeEnforcer Group Token>>"
   allowAnyVersion:                        # Optional: running all types of images
-  image:
-    registry: "registry.aquasec.com"
-    tag: "6.0"
-    repository: "kube-enforcer"
-    pullPolicy: "Always"
-  registry:
-    url: "registry.aquasec.com"
-    username: "exampleusername"
-    password: "examplepassword"
-    email: "examplemail@company.com"
+  deploy:
+    service: ClusterIP
+    image:
+      registry: "registry.aquasec.com"
+      tag: "6.0"
+      repository: "kube-enforcer"
+      pullPolicy: "Always"
+    resources:                              # Optional: Set resources requests/limits for kube-enforcer
+      limits:
+        cpu: "SOME VALUE"
+        memory: "SOME VALUE"
+      requests:
+        cpu: "SOME VALUE"
+        memory: "SOME VALUE"
+  env:                                      # Optional: environment variables to add to the kube-enforcer
+  - name: "SOME ENV"
+    value: "SOME ENV VALUE"
 
 
