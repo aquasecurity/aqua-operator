@@ -4,7 +4,7 @@ metadata:
   name: aqua
 spec:
   infra:
-    version: '6.0'
+    version: '6.2'
     serviceAccount: "aqua-kube-enforcer-sa"
   config:
     gateway_address: "aqua-gateway.aqua:8443"
@@ -16,7 +16,7 @@ spec:
     service: ClusterIP
     image:
       registry: "registry.aquasec.com"
-      tag: "6.0"
+      tag: "6.2"
       repository: "kube-enforcer"
       pullPolicy: "Always"
     resources:                              # Optional: Set resources requests/limits for kube-enforcer

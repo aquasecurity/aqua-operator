@@ -26,7 +26,8 @@ import (
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
-	"k8s.io/api/admissionregistration/v1beta1"
+
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -121,7 +122,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &v1beta1.ValidatingWebhookConfiguration{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &admissionv1.ValidatingWebhookConfiguration{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.AquaKubeEnforcer{},
 	})
@@ -129,7 +130,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &v1beta1.MutatingWebhookConfiguration{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &admissionv1.MutatingWebhookConfiguration{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.AquaKubeEnforcer{},
 	})
@@ -622,7 +623,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEValidatingWebhook(cr *operatorv1alpha1.
 	}
 
 	// Check if this ClusterRoleBinding already exists
-	found := &v1beta1.ValidatingWebhookConfiguration{}
+	found := &admissionv1.ValidatingWebhookConfiguration{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: validWebhook.Name, Namespace: validWebhook.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua CSP: Creating a New ValidatingWebhookConfiguration", "ValidatingWebhook.Namespace", validWebhook.Namespace, "ClusterRoleBinding.Name", validWebhook.Name)
@@ -660,7 +661,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEMutatingWebhook(cr *operatorv1alpha1.Aq
 	}
 
 	// Check if this ClusterRoleBinding already exists
-	found := &v1beta1.MutatingWebhookConfiguration{}
+	found := &admissionv1.MutatingWebhookConfiguration{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mutateWebhook.Name, Namespace: mutateWebhook.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua CSP: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "ClusterRoleBinding.Name", mutateWebhook.Name)
@@ -858,6 +859,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 		if err != nil {
 			reqLogger.Error(err, "Unable to set default for k8s-objectmatcher", err)
 		}
+
 		err = r.client.Create(context.TODO(), deployment)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil

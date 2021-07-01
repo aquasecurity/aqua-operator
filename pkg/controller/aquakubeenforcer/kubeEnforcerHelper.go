@@ -8,7 +8,8 @@ import (
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
-	"k8s.io/api/admissionregistration/v1beta1"
+
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -222,7 +223,7 @@ func (enf *AquaKubeEnforcerHelper) CreateRoleBinding(cr, namespace, name, app, s
 	return rb
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, app, keService string, caBundle []byte) *v1beta1.ValidatingWebhookConfiguration {
+func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, app, keService string, caBundle []byte) *admissionv1.ValidatingWebhookConfiguration {
 	labels := map[string]string{
 		"app":                app,
 		"deployedby":         "aqua-operator",
@@ -231,13 +232,13 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 	annotations := map[string]string{
 		"description": "Deploy Aqua ValidatingWebhookConfiguration",
 	}
-	rules := []v1beta1.RuleWithOperations{
+	rules := []admissionv1.RuleWithOperations{
 		{
-			Operations: []v1beta1.OperationType{
-				v1beta1.Create,
-				v1beta1.Update,
+			Operations: []admissionv1.OperationType{
+				admissionv1.Create,
+				admissionv1.Update,
 			},
-			Rule: v1beta1.Rule{
+			Rule: admissionv1.Rule{
 				APIGroups: []string{
 					"*",
 				},
@@ -251,9 +252,11 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 		},
 	}
 	servicePort := int32(443)
-	validWebhook := &v1beta1.ValidatingWebhookConfiguration{
+	sideEffect := admissionv1.SideEffectClassNone
+	failurePolicy := admissionv1.Ignore
+	validWebhook := &admissionv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "admissionregistration.k8s.io/v1beta1",
+			APIVersion: "admissionregistration.k8s.io/v1",
 			Kind:       "ValidatingWebhookConfiguration",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -262,19 +265,22 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Webhooks: []v1beta1.ValidatingWebhook{
+		Webhooks: []admissionv1.ValidatingWebhook{
 			{
 				Name:  "imageassurance.aquasec.com",
 				Rules: rules,
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionv1.WebhookClientConfig{
 					CABundle: caBundle,
-					Service: &v1beta1.ServiceReference{
+					Service: &admissionv1.ServiceReference{
 						Namespace: namespace,
 						Name:      keService,
 						Port:      &servicePort,
 					},
 				},
-				TimeoutSeconds: extra.Int32Ptr(WebhookTimeout),
+				TimeoutSeconds:          extra.Int32Ptr(WebhookTimeout),
+				SideEffects:             &sideEffect,
+				AdmissionReviewVersions: []string{"v1beta1"},
+				FailurePolicy:           &failurePolicy,
 			},
 		},
 	}
@@ -282,7 +288,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 	return validWebhook
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, app, keService string, caBundle []byte) *v1beta1.MutatingWebhookConfiguration {
+func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, app, keService string, caBundle []byte) *admissionv1.MutatingWebhookConfiguration {
 	labels := map[string]string{
 		"app":                app,
 		"deployedby":         "aqua-operator",
@@ -291,13 +297,13 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 	annotations := map[string]string{
 		"description": "Deploy Aqua MutatingWebhookConfiguration",
 	}
-	rules := []v1beta1.RuleWithOperations{
+	rules := []admissionv1.RuleWithOperations{
 		{
-			Operations: []v1beta1.OperationType{
-				v1beta1.Create,
-				v1beta1.Update,
+			Operations: []admissionv1.OperationType{
+				admissionv1.Create,
+				admissionv1.Update,
 			},
-			Rule: v1beta1.Rule{
+			Rule: admissionv1.Rule{
 				APIGroups: []string{
 					"*",
 				},
@@ -312,9 +318,11 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 	}
 	mutatePath := "/mutate"
 	servicePort := int32(443)
-	mutateWebhook := &v1beta1.MutatingWebhookConfiguration{
+	sideEffect := admissionv1.SideEffectClassNone
+	failurePolicy := admissionv1.Ignore
+	mutateWebhook := &admissionv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "admissionregistration.k8s.io/v1beta1",
+			APIVersion: "admissionregistration.k8s.io/v1",
 			Kind:       "MutatingWebhookConfiguration",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -323,20 +331,23 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Webhooks: []v1beta1.MutatingWebhook{
+		Webhooks: []admissionv1.MutatingWebhook{
 			{
 				Name:  "microenforcer.aquasec.com",
 				Rules: rules,
-				ClientConfig: v1beta1.WebhookClientConfig{
+				ClientConfig: admissionv1.WebhookClientConfig{
 					CABundle: caBundle,
-					Service: &v1beta1.ServiceReference{
+					Service: &admissionv1.ServiceReference{
 						Namespace: namespace,
 						Name:      keService,
 						Path:      &mutatePath,
 						Port:      &servicePort,
 					},
 				},
-				TimeoutSeconds: extra.Int32Ptr(WebhookTimeout),
+				TimeoutSeconds:          extra.Int32Ptr(WebhookTimeout),
+				SideEffects:             &sideEffect,
+				AdmissionReviewVersions: []string{"v1beta1"},
+				FailurePolicy:           &failurePolicy,
 			},
 		},
 	}
