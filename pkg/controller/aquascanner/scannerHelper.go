@@ -165,5 +165,9 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.ScannerService.Volumes...)
 	}
 
+	if cr.Spec.Login.Insecure {
+		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, "--no-verify")
+	}
+
 	return deployment
 }
