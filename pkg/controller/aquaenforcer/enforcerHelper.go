@@ -322,6 +322,10 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		ds.Spec.Template.Spec.Tolerations = cr.Spec.EnforcerService.Tolerations
 	}
 
+	if cr.Spec.EnforcerService.Affinity != nil {
+		ds.Spec.Template.Spec.Affinity = cr.Spec.EnforcerService.Affinity
+	}
+
 	return ds
 }
 
