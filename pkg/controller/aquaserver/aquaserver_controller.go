@@ -5,6 +5,7 @@ import (
 	syserrors "errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
 
@@ -253,7 +254,7 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 			return reconcile.Result{}, err
 		}
 
-		if instance.Spec.Infrastructure.Platform == consts.OpenShiftPlatform && instance.Spec.Route {
+		if strings.ToLower(instance.Spec.Infrastructure.Platform) == consts.OpenShiftPlatform && instance.Spec.Route {
 			_, err = r.CreateRoute(instance)
 			if err != nil {
 				return reconcile.Result{}, err
