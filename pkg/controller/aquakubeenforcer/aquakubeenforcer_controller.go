@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
@@ -364,7 +365,7 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.Infrastructure.Platform == consts.OpenShiftPlatform &&
+	if strings.ToLower(instance.Spec.Infrastructure.Platform) == consts.OpenShiftPlatform &&
 		rbac.CheckIfClusterRoleExists(r.client, consts.ClusterReaderRole) &&
 		!rbac.CheckIfClusterRoleBindingExists(r.client, consts.AquaKubeEnforcerSAClusterReaderRoleBind) {
 		_, err = r.CreateClusterReaderRoleBinding(instance)
