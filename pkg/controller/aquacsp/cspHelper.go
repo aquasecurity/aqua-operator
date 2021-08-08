@@ -87,6 +87,7 @@ func (csp *AquaCspHelper) newAquaGateway(cr *operatorv1alpha1.AquaCsp) *operator
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 			Envs:           csp.Parameters.AquaCsp.Spec.GatewayEnvs,
 			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
+			Route:          csp.Parameters.AquaCsp.Spec.Route,
 		},
 	}
 
@@ -124,6 +125,7 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 			Envs:           csp.Parameters.AquaCsp.Spec.ServerEnvs,
 			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
+			Route:          csp.Parameters.AquaCsp.Spec.Route,
 		},
 	}
 
