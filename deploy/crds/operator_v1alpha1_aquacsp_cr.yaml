@@ -82,7 +82,7 @@ spec:
     value: "ANOTHER ENV VALUE"
   enforcer:                                 # Optional: Install also enforcer components
     enforceMode:                            # Optional: true/false if enforcer mode or audit
-  route:                                    # Optional: true/false create route to aqua server service, please set server service as NodePort or ClusterIP
+  route:                                    # Optional: true/false create route to aqua server and gateway services
   runAsNonRoot:                             # Optional: true/false
   kubeEnforcer:                             # Optional: Install also KubeEnforcer
     tag:                                    # Optional: KubeEnforcer image tag

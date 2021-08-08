@@ -6,6 +6,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/aquasecurity/aqua-operator/pkg/controller/ocp"
+
+	"github.com/aquasecurity/aqua-operator/pkg/consts"
+	routev1 "github.com/openshift/api/route/v1"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
@@ -114,6 +119,18 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	// Openshift Route
+	isOpenshift, _ := ocp.VerifyRouteAPI()
+	if isOpenshift {
+		err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &operatorv1alpha1.AquaServer{},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -234,6 +251,13 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 		_, err = r.InstallServerDeployment(instance)
 		if err != nil {
 			return reconcile.Result{}, err
+		}
+
+		if instance.Spec.Infrastructure.Platform == consts.OpenShiftPlatform && instance.Spec.Route {
+			_, err = r.CreateRoute(instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
@@ -521,5 +545,37 @@ func (r *ReconcileAquaServer) CreateEnforcerToken(cr *operatorv1alpha1.AquaServe
 
 	// Secret already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Default Enforcer Token Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaServer) CreateRoute(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("AquaServer Requirments Phase", "Create route")
+	reqLogger.Info("Start creating openshift route")
+
+	serverHelper := newAquaServerHelper(cr)
+	route := serverHelper.newRoute(cr)
+
+	// Set AquaCspKind instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, route, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this route already exists
+	found := &routev1.Route{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua Server Route", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
+		err = r.client.Create(context.TODO(), route)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Route already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Route Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }

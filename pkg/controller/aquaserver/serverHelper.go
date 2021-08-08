@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	routev1 "github.com/openshift/api/route/v1"
+
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/services"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
@@ -294,4 +296,26 @@ func (sr *AquaServerHelper) newService(cr *operatorv1alpha1.AquaServer) *corev1.
 		ports)
 
 	return service
+}
+
+func (sr *AquaServerHelper) newRoute(cr *operatorv1alpha1.AquaServer) *routev1.Route {
+	return &routev1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+		},
+		Spec: routev1.RouteSpec{
+			TLS: &routev1.TLSConfig{
+				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
+				Termination:                   routev1.TLSTerminationEdge,
+			},
+			To: routev1.RouteTargetReference{
+				Kind: "Service",
+				Name: fmt.Sprintf(consts.ServerServiceName, cr.Name),
+			},
+			Port: &routev1.RoutePort{
+				TargetPort: intstr.FromInt(8080),
+			},
+		},
+	}
 }

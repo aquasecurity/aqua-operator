@@ -21,6 +21,7 @@ type AquaGatewaySpec struct {
 	AuditDB        *AuditDBInformation      `json:"auditDB,omitempty"`
 	Envs           []corev1.EnvVar          `json:"env,required"`
 	RunAsNonRoot   bool                     `json:"runAsNonRoot,omitempty"`
+	Route          bool                     `json:"route,omitempty"`
 }
 
 // AquaGatewayStatus defines the observed state of AquaGateway
