@@ -2,7 +2,6 @@ package aquacsp
 
 import (
 	"context"
-	"strings"
 
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
@@ -403,7 +402,7 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 		} else {
 			reqLogger.Info("[Warning] missing admin password can't deploy scanner")
 		}
-	}*/
+	}
 
 	if strings.ToLower(instance.Spec.Infrastructure.Platform) == "openshift" {
 		if instance.Spec.Route {
@@ -412,7 +411,7 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 			}
 		}
-	}
+	}*/
 
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 30}, nil
 }

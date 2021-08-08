@@ -24,6 +24,7 @@ type AquaServerSpec struct {
 	Enforcer      *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
 	Envs          []corev1.EnvVar          `json:"env,required"`
 	RunAsNonRoot  bool                     `json:"runAsNonRoot,omitempty"`
+	Route         bool                     `json:"route,omitempty"`
 }
 
 // AquaServerStatus defines the observed state of AquaServer
