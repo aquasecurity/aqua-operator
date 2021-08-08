@@ -48,3 +48,4 @@ spec:
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
   runAsNonRoot:                             # Optional: true/false
+  route:                                    # Optional: true/false

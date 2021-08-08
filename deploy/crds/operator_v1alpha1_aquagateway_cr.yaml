@@ -36,3 +36,4 @@ spec:
       tag: "6.2"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   runAsNonRoot:                             # Optional: true/false
+  route:                                    # Optional: true/false

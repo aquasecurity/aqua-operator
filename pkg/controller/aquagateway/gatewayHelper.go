@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	routev1 "github.com/openshift/api/route/v1"
+
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/controller/common"
@@ -225,4 +227,29 @@ func (gw *AquaGatewayHelper) newService(cr *operatorv1alpha1.AquaGateway) *corev
 		ports)
 
 	return service
+}
+
+func (gw *AquaGatewayHelper) newRoute(cr *operatorv1alpha1.AquaGateway) *routev1.Route {
+
+	gwServiceName := fmt.Sprintf(consts.GatewayServiceName, cr.Name)
+
+	return &routev1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gwServiceName,
+			Namespace: cr.Namespace,
+		},
+		Spec: routev1.RouteSpec{
+			TLS: &routev1.TLSConfig{
+				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyNone,
+				Termination:                   routev1.TLSTerminationPassthrough,
+			},
+			To: routev1.RouteTargetReference{
+				Kind: "Service",
+				Name: gwServiceName,
+			},
+			Port: &routev1.RoutePort{
+				TargetPort: intstr.FromInt(8443),
+			},
+		},
+	}
 }
