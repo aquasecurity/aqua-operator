@@ -79,6 +79,7 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 **[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
 * You need to provide the ```.spec.login.username``` and ```.spec.login.password``` to authenticate with the Aqua Server.
+* You can set ``.spec.login.tlsNoVerify`` if you connect scanner to HTTPS server, and don't want to use mTLS verification.  
 * You can choose to deploy a different version of the Aqua Scanner by setting the ```.spec.image.tag``` property.
     If you choose to run old/custom Aqua Scanner version, you must set ```.spec.common.allowAnyVersion``` .
 
