@@ -57,6 +57,8 @@ The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different c
 * You can omit the Enforcer and KubeEnforcer components by removing them from the CR.
 * You can add server/gateway environment variables with ```.spec.<<serverEnvs/gatewayEnvs>>``` (same convention of name value as k8s deployment).
 * You can define the server/gateway resources requests/limits with ```.spec.<<server/gateway>>.resources```
+* You can define mTLS by mounting the files (probably kept in a k8s secret) with ```.spec.<<server/gateway>>.volumes``` ```.spec.<<server/gateway>>.volumeMounts``` and adding the relevant environment variables.
+
 
 The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, **[AquaDatabase CRD](../deploy/crds/operator_v1alpha1_aquadatabase_cr.yaml)**, and **[AquaGateway CRD](../deploy/crds/operator_v1alpha1_aquagateway_cr.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
 
@@ -67,6 +69,7 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
     If you choose to run old/custom Aqua Enforcer version, you must set ```.spec.common.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the enforcer resources requests/limits using ```.spec.deploy.resources```.
+* You can define mTLS by mounting the files (probably kept in a k8s secret) with ```.spec.deploy.volumes``` ```.spec.deploy.volumeMounts``` and adding the relevant environment variables.
 
 **[AquaKubeEnforcer CRD](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the KubeEnforcer to the Aqua Server.
@@ -74,7 +77,8 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 * You can choose to deploy a different version of the KubeEnforcer by setting the ```.spec.deploy.image.tag``` property.
     If you choose to run old/custom Aqua KubeEnforcer version, you must set ```.spec.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
-* You can define the kube-enforcer resources requests/limits using ```.spec.deploy.resources```.    
+* You can define the kube-enforcer resources requests/limits using ```.spec.deploy.resources```.
+* You can define mTLS by mounting the files (probably kept in a k8s secret) with ```.spec.deploy.volumes``` ```.spec.deploy.volumeMounts``` and adding the relevant environment variables.
 
 **[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
