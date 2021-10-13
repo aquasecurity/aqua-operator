@@ -6,7 +6,7 @@ spec:
   infra:                                    # Optional: Infrastructure information
     serviceAccount: "aqua-sa"               # Optional: auto generate if requirment is true
     namespace: "aqua"                       # Optional: auto generate if requirment is true
-    version: "6.2"                          # Optional: auto generate if requirment is true to latest version
+    version: "6.5"                          # Optional: auto generate if requirment is true to latest version
     platform: "openshift"                   # Optional: auto generate if requirment is true to openshift
   common:
     activeActive: false                     # Optional: to work in active active mode if you have more then 1 server, default false
@@ -43,7 +43,7 @@ spec:
     image:                                  # Optional: if not given take the default value and version from infra.version
       repository: "server"                  # Optional: if not given take the default value - server
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "6.2"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
+      tag: "6.5"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
