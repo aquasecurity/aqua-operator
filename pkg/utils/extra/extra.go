@@ -2,7 +2,9 @@ package extra
 
 import (
 	"encoding/base64"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"os"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
@@ -96,4 +98,14 @@ func AppendEnvVar(envs []corev1.EnvVar, item corev1.EnvVar) []corev1.EnvVar {
 	}
 
 	return envs
+}
+
+func GetCurrentNameSpace() string {
+	var log = logf.Log.WithName("GetWatchNamespace")
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		log.Error(err, "Failed to get watch namespace")
+		os.Exit(1)
+	}
+	return namespace
 }

@@ -41,7 +41,7 @@ func newAquaKubeEnforcerHelper(cr *operatorv1alpha1.AquaKubeEnforcer) *AquaKubeE
 	}
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string) *rbacv1.ClusterRole {
+func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, namespace string) *rbacv1.ClusterRole {
 	rules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{
@@ -67,7 +67,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string) *r
 		},
 	}
 
-	crole := rbac.CreateClusterRole(name, "aqua", "aqua-kube-enforcer", fmt.Sprintf("%s-rbac", "aqua-ke"), "Deploy Aqua Discovery Cluster Role", rules)
+	crole := rbac.CreateClusterRole(name, namespace, "aqua-kube-enforcer", fmt.Sprintf("%s-rbac", "aqua-ke"), "Deploy Aqua Discovery Cluster Role", rules)
 
 	return crole
 }
