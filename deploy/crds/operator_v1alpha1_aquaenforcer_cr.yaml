@@ -1,4 +1,4 @@
-apiVersion: operator.aquasec.com/v1alpha1
+apiVersion: operator.aquasec.com/v1
 kind: AquaEnforcer
 metadata:
   name: aqua
