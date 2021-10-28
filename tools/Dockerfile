@@ -8,7 +8,7 @@ RUN apk update \
 # git, mercurial, docker for Operator SDK
 # bash, openssh, make, openrc for QoL
 
-ARG RELEASE_VERSION=v0.15.1
+ARG RELEASE_VERSION=v0.18.0
 ARG KUBECTL_VERSION=v1.15.0
 
 # Install Operator SDK
