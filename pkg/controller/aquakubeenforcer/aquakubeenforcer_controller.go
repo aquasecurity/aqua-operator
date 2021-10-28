@@ -252,6 +252,8 @@ func createKECerts() (*KubeEnforcerCertificates, error) {
 		return certs, err
 	}
 
+	namespace := extra.GetCurrentNameSpace()
+
 	// set up our server certificate
 	cert := &x509.Certificate{
 		BasicConstraintsValid: false,
@@ -260,9 +262,9 @@ func createKECerts() (*KubeEnforcerCertificates, error) {
 		NotAfter:              time.Now().AddDate(10, 0, 0),
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		DNSNames:              []string{"aqua-kube-enforcer.aqua.svc", "aqua-kube-enforcer.aqua.svc.cluster.local"},
+		DNSNames:              []string{fmt.Sprintf("aqua-kube-enforcer.%s.svc", namespace), fmt.Sprintf("aqua-kube-enforcer.%s.svc.cluster.local", namespace)},
 		Subject: pkix.Name{
-			CommonName: "aqua-kube-enforcer.aqua.svc",
+			CommonName: fmt.Sprintf("aqua-kube-enforcer.%s.svc", namespace),
 		},
 	}
 
@@ -434,7 +436,7 @@ func (r *ReconcileAquaKubeEnforcer) addKubeEnforcerClusterRole(cr *operatorv1alp
 	reqLogger.Info("Start creating kube-enforcer cluster role")
 
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
-	crole := enforcerHelper.CreateKubeEnforcerClusterRole(cr.Name)
+	crole := enforcerHelper.CreateKubeEnforcerClusterRole(cr.Name, cr.Namespace)
 
 	// Set AquaCsp instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, crole, r.scheme); err != nil {
