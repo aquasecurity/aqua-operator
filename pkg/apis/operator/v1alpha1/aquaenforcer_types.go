@@ -23,6 +23,7 @@ type AquaEnforcerSpec struct {
 	Envs                   []corev1.EnvVar         `json:"env,required"`
 	RunAsNonRoot           bool                    `json:"runAsNonRoot,omitempty"`
 	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
+	Mtls                   bool                    `json:"mtls,omitempty"`
 }
 
 // AquaEnforcerStatus defines the observed state of AquaEnforcer

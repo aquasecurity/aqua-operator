@@ -168,6 +168,45 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.GatewayService.Volumes...)
 	}
 
+	if cr.Spec.Mtls {
+		mtlsAquaGatewayVolumeMount := []corev1.VolumeMount{
+			{
+				Name:      "aqua-grpc-gateway",
+				MountPath: "/opt/aquasec/ssl",
+				ReadOnly:  true,
+			},
+		}
+
+		secretVolumeSource := corev1.SecretVolumeSource{
+			SecretName: "aqua-grpc-gateway",
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "aqua_gateway.crt",
+					Path: "cert.pem",
+				},
+				{
+					Key:  "aqua_gateway.key",
+					Path: "key.pem",
+				},
+				{
+					Key:  "rootCA.crt",
+					Path: "ca.pem",
+				},
+			},
+		}
+
+		mtlsAquaGatewayVolume := []corev1.Volume{
+			{
+				Name: "aqua-grpc-gateway",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &secretVolumeSource,
+				},
+			},
+		}
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, mtlsAquaGatewayVolumeMount...)
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, mtlsAquaGatewayVolume...)
+	}
+
 	return deployment
 }
 
@@ -189,6 +228,28 @@ func (gw *AquaGatewayHelper) getEnvVars(cr *operatorv1alpha1.AquaGateway) []core
 		Name:  "SCALOCK_GATEWAY_PUBLIC_IP",
 		Value: fmt.Sprintf(consts.GatewayServiceName, cr.Name),
 	})
+
+	if cr.Spec.Mtls {
+		mtlsServerEnv := []corev1.EnvVar{
+			{
+				Name:  "AQUA_PRIVATE_KEY",
+				Value: "/opt/aquasec/ssl/key.pem",
+			},
+			{
+				Name:  "AQUA_PUBLIC_KEY",
+				Value: "/opt/aquasec/ssl/cert.pem",
+			},
+			{
+				Name:  "AQUA_ROOT_CA",
+				Value: "/opt/aquasec/ssl/ca.pem",
+			},
+			{
+				Name:  "AQUA_VERIFY_ENFORCER",
+				Value: "1",
+			},
+		}
+		result = append(result, mtlsServerEnv...)
+	}
 
 	if cr.Spec.Envs != nil {
 		for _, env := range cr.Spec.Envs {

@@ -57,7 +57,6 @@ The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different c
 * You can omit the Enforcer and KubeEnforcer components by removing them from the CR.
 * You can add server/gateway environment variables with ```.spec.<<serverEnvs/gatewayEnvs>>``` (same convention of name value as k8s deployment).
 * You can define the server/gateway resources requests/limits with ```.spec.<<server/gateway>>.resources```
-* You can define mTLS by mounting the files (probably kept in a k8s secret) with ```.spec.<<server/gateway>>.volumes``` ```.spec.<<server/gateway>>.volumeMounts``` and adding the relevant environment variables.
 
 
 The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, **[AquaDatabase CRD](../deploy/crds/operator_v1alpha1_aquadatabase_cr.yaml)**, and **[AquaGateway CRD](../deploy/crds/operator_v1alpha1_aquagateway_cr.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
@@ -69,7 +68,6 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
     If you choose to run old/custom Aqua Enforcer version, you must set ```.spec.common.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the enforcer resources requests/limits using ```.spec.deploy.resources```.
-* You can define mTLS by mounting the files (probably kept in a k8s secret) with ```.spec.deploy.volumes``` ```.spec.deploy.volumeMounts``` and adding the relevant environment variables.
 
 **[AquaKubeEnforcer CRD](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the KubeEnforcer to the Aqua Server.
@@ -78,7 +76,6 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
     If you choose to run old/custom Aqua KubeEnforcer version, you must set ```.spec.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the kube-enforcer resources requests/limits using ```.spec.deploy.resources```.
-* You can define mTLS by mounting the files (probably kept in a k8s secret) with ```.spec.deploy.volumes``` ```.spec.deploy.volumeMounts``` and adding the relevant environment variables.
 
 **[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
@@ -87,6 +84,131 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 * You can choose to deploy a different version of the Aqua Scanner by setting the ```.spec.image.tag``` property.
     If you choose to run old/custom Aqua Scanner version, you must set ```.spec.common.allowAnyVersion``` .
 
+## Advanced Configuration ##
+### Configuring mTLS
+
+The mTLS will be enabled automatically if the following secretes are available in the namespace:
+
+* aqua-grpc-web
+* aqua-grpc-gateway
+* aqua-grpc-enforcer
+* aqua-grpc-kube-enforcer
+    
+
+1. Generate TLS certificates signed by a public CA or Self-Signed CA for server and gateway
+
+   ```shell
+   # Self-Signed Root CA (Optional)
+   #############################################################################################################
+   # Create Root Key
+   # If you want a non password protected key just remove the -des3 option
+   openssl genrsa -des3 -out rootCA.key 4096
+   # Create and self sign the Root Certificate
+   openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1024 -out rootCA.crt
+   #############################################################################################################
+   # Generate Aqua component certificates
+   #############################################################################################################
+   
+   # Create keys (You can skip this step if you have already created a CSR file for the different components)
+   openssl genrsa -out aqua_web.key 2048
+   openssl genrsa -out aqua_gateway.key 2048
+   openssl genrsa -out aqua_enforcer.key 2048
+   openssl genrsa -out aqua_kube-enforcer.key 2048   
+   # Create config files
+   ## Create the aqua-web SSL config file   
+   cat >aqua-web.conf <<EOF
+   [ req ]default_bits = 2048
+   distinguished_name = req_distinguished_name
+   req_extensions = req_ext
+   prompt = no
+   [ req_distinguished_name ]
+   countryName = Country Name (2 letter code)
+   stateOrProvinceName = State or Province Name (full name)
+   localityName = Locality Name (e.g., city)
+   organizationName = Organization Name (e.g., company)
+   commonName = Common Name (e.g., server FQDN or YOUR name)
+   [ req_ext ]
+   subjectAltName = @alt_names
+   [alt_names]
+   DNS.1 = <console host public DNS>
+   DNS.2 = <console service DNS e.g. aqua-web>
+   IP.1 = <console service IP e.g. 10.X.X.X>
+   EOF   
+   ## Create the Aqua Gateway SSL config file   
+   cat >aqua-gateway.conf <<EOF
+   [ req ]default_bits = 2048
+   distinguished_name = req_distinguished_name
+   req_extensions = req_ext
+   prompt = no
+   [ req_distinguished_name ]
+   countryName = Country Name (2 letter code)
+   stateOrProvinceName = State or Province Name (full name)
+   localityName = Locality Name (e.g., city)
+   organizationName = Organization Name (e.g., company)
+   commonName = Common Name (e.g., server FQDN or YOUR name)
+   [ req_ext ]
+   subjectAltName = @alt_names
+   [alt_names]
+   DNS.1 = <gateway public DNS>
+   DNS.2 = <gateway service DNS e.g. aqua-gateway>
+   EOF   
+   # Generate signings (csr)
+   ## Generate a CSR file for aqua_web csr   
+   openssl req -new -sha256 -key aqua_web.key -config aqua-web.conf \
+     -out aqua_web.csr   
+   ## Generate a CSR file for aqua_gateway csr   
+   openssl req -new -sha256 -key aqua_gateway.key -config aqua-gateway.conf \
+     -out aqua_gateway.csr   
+   ## Create the Aqua Enforcer csr   
+   openssl req -new -sha256 -key aqua_enforcer.key \
+     -subj "/C=US/ST=MA/O=aqua/CN=aqua-agent" \
+     -out aqua_enforcer.csr   
+   ## Create the Aqua Kube Enforcer csr    
+   openssl req -new -sha256 -key aqua_kube-enforcer.key \
+     -subj "/C=US/ST=MA/O=aqua/CN=aqua-kube-enforcer" \
+     -out aqua_kube-enforcer.csr      
+   # Generate the certificates
+   ## Generate aqua web certificate using the CSR along with appropriate private keys and get it signed by the CA root key      
+   openssl x509 -req -in aqua_web.csr -CA rootCA.crt\
+     -CAkey rootCA.key -CAcreateserial \
+     -out aqua_web.crt -days 500 -sha256 \
+     -extensions req_ext -extfile aqua-web.conf      
+   ## Generate aqua gateway certificate using the CSR along with appropriate private keys and get it signed by the CA root key   
+   openssl x509 -req -in aqua_gateway.csr -CA rootCA.crt -CAkey rootCA.key \
+     -CAcreateserial -out aqua_gateway.crt -days 500 \
+     -sha256 -extensions req_ext -extfile aqua-gateway.conf   
+   ## Generate aqua enforcer certificate using the CSR along with appropriate private keys and get it signed by the CA root key  
+   openssl x509 -req -in aqua_enforcer.csr -CA rootCA.crt \
+     -CAkey rootCA.key -CAcreateserial -out aqua_enforcer.crt \
+     -days 500 -sha256   
+   ## Generate aqua kube enforcer certificate using the CSR along with appropriate private keys and get it signed by the CA root key     
+   openssl x509 -req -in aqua_kube-enforcer.csr -CA rootCA.crt \
+     -CAkey rootCA.key -CAcreateserial -out aqua_kube-enforcer.crt \
+     -days 500 -sha256   
+   # Verify certificates (optional)   
+   openssl x509 -in aqua_web.crt -text -noout  
+   openssl x509 -in aqua_gateway.crt -text -noout  
+   openssl x509 -in aqua_enforcer.crt -text -noout  
+   openssl x509 -in aqua_kube-enforcer.crt -text -noout
+   ```
+
+2.  Create secrets for server, gateway, enforcer and kube-enforcer components using the generated SSL certificates.
+
+    ```shell
+    # Aqua web:   
+    oc create secret generic aqua-grpc-web --from-file=rootCA.crt \
+     --from-file=aqua_web.crt --from-file=aqua_web.key -n aqua    
+    # Aqua gateway    
+    oc create secret generic aqua-grpc-gateway --from-file=rootCA.crt \
+     --from-file=aqua_gateway.crt --from-file=aqua_gateway.key -n aqua    
+    # Aqua enforcer   
+    oc create secret generic aqua-grpc-enforcer --from-file=rootCA.crt \
+     --from-file=aqua_enforcer.crt --from-file=aqua_enforcer.key -n aqua    
+    # Aqua kube-enforcer    
+    oc create secret generic aqua-grpc-kube-enforcer \
+     --from-file=rootCA.crt --from-file=aqua_kube-enforcer.crt \
+     --from-file=aqua_kube-enforcer.key -n aqua
+    ``` 
 
 ## Operator Upgrades ##
 **Major versions** - When switching from an older operator channel to this channel,

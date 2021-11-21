@@ -22,6 +22,7 @@ type AquaGatewaySpec struct {
 	Envs           []corev1.EnvVar          `json:"env,required"`
 	RunAsNonRoot   bool                     `json:"runAsNonRoot,omitempty"`
 	Route          bool                     `json:"route,omitempty"`
+	Mtls           bool                     `json:"mtls,omitempty"`
 }
 
 // AquaGatewayStatus defines the observed state of AquaGateway
