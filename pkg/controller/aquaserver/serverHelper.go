@@ -169,6 +169,45 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.ServerService.Volumes...)
 	}
 
+	if cr.Spec.Mtls {
+		mtlsAquaWebVolumeMount := []corev1.VolumeMount{
+			{
+				Name:      "aqua-grpc-web",
+				MountPath: "/opt/aquasec/ssl",
+				ReadOnly:  true,
+			},
+		}
+
+		secretVolumeSource := corev1.SecretVolumeSource{
+			SecretName: "aqua-grpc-web",
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "aqua_web.crt",
+					Path: "cert.pem",
+				},
+				{
+					Key:  "aqua_web.key",
+					Path: "key.pem",
+				},
+				{
+					Key:  "rootCA.crt",
+					Path: "ca.pem",
+				},
+			},
+		}
+
+		mtlsAquaWebVolume := []corev1.Volume{
+			{
+				Name: "aqua-grpc-web",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &secretVolumeSource,
+				},
+			},
+		}
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, mtlsAquaWebVolumeMount...)
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, mtlsAquaWebVolume...)
+	}
+
 	return deployment
 }
 
@@ -257,6 +296,28 @@ func (sr *AquaServerHelper) getEnvVars(cr *operatorv1alpha1.AquaServer) []corev1
 		})
 
 		result = append(result, enforcerEnvs...)
+	}
+
+	if cr.Spec.Mtls {
+		mtlsServerEnv := []corev1.EnvVar{
+			{
+				Name:  "AQUA_PRIVATE_KEY",
+				Value: "/opt/aquasec/ssl/key.pem",
+			},
+			{
+				Name:  "AQUA_PUBLIC_KEY",
+				Value: "/opt/aquasec/ssl/cert.pem",
+			},
+			{
+				Name:  "AQUA_ROOT_CA",
+				Value: "/opt/aquasec/ssl/ca.pem",
+			},
+			{
+				Name:  "AQUA_VERIFY_ENFORCER",
+				Value: "1",
+			},
+		}
+		result = append(result, mtlsServerEnv...)
 	}
 
 	if cr.Spec.Envs != nil {

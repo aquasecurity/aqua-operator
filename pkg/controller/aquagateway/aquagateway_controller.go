@@ -3,6 +3,8 @@ package aquagateway
 import (
 	"context"
 	syserrors "errors"
+	"fmt"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 	"reflect"
 	"strings"
 	"time"
@@ -220,6 +222,11 @@ func (r *ReconcileAquaGateway) Reconcile(request reconcile.Request) (reconcile.R
 func (r *ReconcileAquaGateway) updateGatewayObject(cr *operatorv1alpha1.AquaGateway) *operatorv1alpha1.AquaGateway {
 	cr.Spec.Infrastructure = common.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)
 	cr.Spec.Common = common.UpdateAquaCommon(cr.Spec.Common, cr.Name, false, false)
+
+	if secrets.CheckIfSecretExists(r.client, consts.MtlsAquaGatewaySecretName, cr.Namespace) {
+		log.Info(fmt.Sprintf("%s secret found, enabling mtls", consts.MtlsAquaGatewaySecretName))
+		cr.Spec.Mtls = true
+	}
 
 	return cr
 }

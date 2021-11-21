@@ -290,6 +290,11 @@ func (r *ReconcileAquaServer) updateServerObject(cr *operatorv1alpha1.AquaServer
 		}
 	}
 
+	if secrets.CheckIfSecretExists(r.client, consts.MtlsAquaWebSecretName, cr.Namespace) {
+		log.Info(fmt.Sprintf("%s secret found, enabling mtls", consts.MtlsAquaWebSecretName))
+		cr.Spec.Mtls = true
+	}
+
 	return cr
 }
 
