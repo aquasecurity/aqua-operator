@@ -326,6 +326,30 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		ds.Spec.Template.Spec.Affinity = cr.Spec.EnforcerService.Affinity
 	}
 
+	if cr.Spec.Mtls {
+		mtlsAquaEnforcerVolumeMount := []corev1.VolumeMount{
+			{
+				Name:      "aqua-grpc-enforcer",
+				MountPath: "/opt/aquasec/ssl",
+			},
+		}
+
+		secretVolumeSource := corev1.SecretVolumeSource{
+			SecretName: "aqua-grpc-enforcer",
+		}
+
+		mtlsAquaEnforcerVolume := []corev1.Volume{
+			{
+				Name: "aqua-grpc-enforcer",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &secretVolumeSource,
+				},
+			},
+		}
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts, mtlsAquaEnforcerVolumeMount...)
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, mtlsAquaEnforcerVolume...)
+	}
+
 	return ds
 }
 
@@ -350,6 +374,24 @@ func (ebf *AquaEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaEnforcer) []c
 			Name:  "AQUA_INSTALL_PATH",
 			Value: "/var/lib/aquasec",
 		},
+	}
+
+	if cr.Spec.Mtls {
+		mtlsEnforcerEnv := []corev1.EnvVar{
+			{
+				Name:  "AQUA_PRIVATE_KEY",
+				Value: "/opt/aquasec/ssl/aqua_enforcer.key",
+			},
+			{
+				Name:  "AQUA_PUBLIC_KEY",
+				Value: "/opt/aquasec/ssl/aqua_enforcer.crt",
+			},
+			{
+				Name:  "AQUA_ROOT_CA",
+				Value: "/opt/aquasec/ssl/rootCA.crt",
+			},
+		}
+		result = append(result, mtlsEnforcerEnv...)
 	}
 
 	if cr.Spec.Envs != nil {
