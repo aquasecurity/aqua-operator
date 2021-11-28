@@ -31,8 +31,9 @@ type AquaCspSpec struct {
 	RunAsNonRoot           bool                     `json:"runAsNonRoot,omitempty"`
 	ServerEnvs             []corev1.EnvVar          `json:"serverEnvs,required"`
 	GatewayEnvs            []corev1.EnvVar          `json:"gatewayEnvs,required"`
-	DeployKubeEnforcer     *AquaKubeEnforcerDetails `json:"kubeEnforcer",omitempty`
-	EnforcerUpdateApproved *bool                    `json:"updateEnforcer, omitempty"`
+	DeployKubeEnforcer     *AquaKubeEnforcerDetails `json:"kubeEnforcer,omitempty"`
+	EnforcerUpdateApproved *bool                    `json:"updateEnforcer,omitempty"`
+	Mtls                   bool                     `json:"mtls,omitempty"`
 }
 
 // AquaCspStatus defines the observed state of AquaCsp
