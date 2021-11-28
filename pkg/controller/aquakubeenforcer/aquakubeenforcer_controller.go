@@ -336,6 +336,8 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	instance = r.updateKubeEnforcerObject(instance)
+
 	currentStatus := instance.Status.State
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentStatus) &&
 		!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdatePendingApproval, currentStatus) &&
@@ -429,6 +431,14 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 	}
 
 	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaKubeEnforcer) updateKubeEnforcerObject(cr *operatorv1alpha1.AquaKubeEnforcer) *operatorv1alpha1.AquaKubeEnforcer {
+	if secrets.CheckIfSecretExists(r.client, consts.MtlsAquaKubeEnforcerSecretName, cr.Namespace) {
+		log.Info(fmt.Sprintf("%s secret found, enabling mtls", consts.MtlsAquaKubeEnforcerSecretName))
+		cr.Spec.Mtls = true
+	}
+	return cr
 }
 
 func (r *ReconcileAquaKubeEnforcer) addKubeEnforcerClusterRole(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
@@ -837,14 +847,11 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
 
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
-	deployment := enforcerHelper.CreateKEDeployment(cr.Name,
-		cr.Namespace,
+	deployment := enforcerHelper.CreateKEDeployment(cr,
 		"aqua-kube-enforcer",
 		"ke-deployment",
-		cr.Spec.Infrastructure.ServiceAccount,
 		registry,
 		tag,
-		cr.Spec.Config.ImagePullSecret,
 		pullPolicy,
 		repository)
 

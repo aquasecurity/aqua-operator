@@ -237,6 +237,11 @@ func (r *ReconcileAquaEnforcer) updateEnforcerObject(cr *operatorv1alpha1.AquaEn
 		}
 	}
 
+	if secrets.CheckIfSecretExists(r.client, consts.MtlsAquaEnforcerSecretName, cr.Namespace) {
+		log.Info(fmt.Sprintf("%s secret found, enabling mtls", consts.MtlsAquaEnforcerSecretName))
+		cr.Spec.Mtls = true
+	}
+
 	return cr
 }
 
