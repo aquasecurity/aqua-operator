@@ -102,4 +102,14 @@ const (
 	DBInitContainerCommand = "[ -f $PGDATA/server.key ] && chmod 600 $PGDATA/server.key || echo 'OK'"
 
 	OpenShiftPlatform = "openshift"
+
+	// mtls
+
+	MtlsAquaWebSecretName = "aqua-grpc-web"
+
+	MtlsAquaGatewaySecretName = "aqua-grpc-gateway"
+
+	MtlsAquaEnforcerSecretName = "aqua-grpc-enforcer"
+
+	MtlsAquaKubeEnforcerSecretName = "aqua-grpc-kube-enforcer"
 )

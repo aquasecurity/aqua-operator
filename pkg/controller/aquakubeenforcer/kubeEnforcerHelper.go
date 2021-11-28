@@ -486,7 +486,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEService(cr, namespace, name, app stri
 	return service
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, sa, registry, tag, imagePullSecret, pullPolicy, repository string) *appsv1.Deployment {
+func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaKubeEnforcer, name, app, registry, tag, pullPolicy, repository string) *appsv1.Deployment {
 
 	image := os.Getenv("RELATED_IMAGE_KUBE_ENFORCER")
 	if image == "" {
@@ -496,11 +496,13 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 	labels := map[string]string{
 		"app":                app,
 		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"aquasecoperator_cr": cr.Name,
 	}
 	annotations := map[string]string{
 		"description": "Deploy Kube Enforcer Deployment",
 	}
+
+	envVars := enf.getEnvVars(cr)
 	selectors := map[string]string{
 		"app": "aqua-kube-enforcer",
 	}
@@ -526,7 +528,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   namespace,
+			Namespace:   cr.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
@@ -544,10 +546,10 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 						RunAsGroup: &runAsGroup,
 						FSGroup:    &fsGroup,
 					},
-					ServiceAccountName: sa,
+					ServiceAccountName: cr.Spec.Infrastructure.ServiceAccount,
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{
-							Name: imagePullSecret,
+							Name: cr.Spec.Config.ImagePullSecret,
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -594,19 +596,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 								PeriodSeconds:       30,
 							},
 							Ports: ports,
-							Env: []corev1.EnvVar{
-								{
-									Name: "AQUA_TOKEN",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "aqua-kube-enforcer-token",
-											},
-											Key: "token",
-										},
-									},
-								},
-							},
+							Env:   envVars,
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -655,5 +645,69 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr, namespace, name, app, 
 		deployment.Spec.Template.Spec.Containers[0].Env = append(deployment.Spec.Template.Spec.Containers[0].Env, enf.Parameters.KubeEnforcer.Spec.Envs...)
 	}
 
+	if cr.Spec.Mtls {
+		mtlsAquaKubeEnforcerVolumeMount := []corev1.VolumeMount{
+			{
+				Name:      "aqua-grpc-kube-enforcer",
+				MountPath: "/opt/aquasec/ssl",
+			},
+		}
+
+		secretVolumeSource := corev1.SecretVolumeSource{
+			SecretName: "aqua-grpc-kube-enforcer",
+		}
+
+		mtlsAquaKubeEnforcerVolume := []corev1.Volume{
+			{
+				Name: "aqua-grpc-kube-enforcer",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &secretVolumeSource,
+				},
+			},
+		}
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = append(deployment.Spec.Template.Spec.Containers[0].VolumeMounts, mtlsAquaKubeEnforcerVolumeMount...)
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, mtlsAquaKubeEnforcerVolume...)
+	}
+
 	return deployment
+}
+
+func (ebf *AquaKubeEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaKubeEnforcer) []corev1.EnvVar {
+	result := []corev1.EnvVar{
+		{
+			Name: "AQUA_TOKEN",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "aqua-kube-enforcer-token",
+					},
+					Key: "token",
+				},
+			},
+		},
+	}
+
+	if cr.Spec.Mtls {
+		mtlsKubeEnforcerEnv := []corev1.EnvVar{
+			{
+				Name:  "AQUA_PRIVATE_KEY",
+				Value: "/opt/aquasec/ssl/aqua_kube-enforcer.key",
+			},
+			{
+				Name:  "AQUA_PUBLIC_KEY",
+				Value: "/opt/aquasec/ssl/aqua_kube-enforcer.crt",
+			},
+			{
+				Name:  "AQUA_ROOT_CA",
+				Value: "/opt/aquasec/ssl/rootCA.crt",
+			},
+			{
+				Name:  "AQUA_TLS_VERIFY",
+				Value: "true",
+			},
+		}
+		result = append(result, mtlsKubeEnforcerEnv...)
+	}
+
+	return result
 }

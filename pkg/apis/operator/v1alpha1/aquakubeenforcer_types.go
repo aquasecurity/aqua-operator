@@ -20,6 +20,7 @@ type AquaKubeEnforcerSpec struct {
 	AllowAnyVersion        bool                   `json:"allowAnyVersion,omitempty"`
 	KubeEnforcerService    *AquaService           `json:"deploy,omitempty"`
 	Envs                   []corev1.EnvVar        `json:"env,omitempty"`
+	Mtls                   bool                   `json:"mtls,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer
