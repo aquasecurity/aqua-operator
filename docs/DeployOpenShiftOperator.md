@@ -209,7 +209,29 @@ The mTLS will be enabled automatically if the following secretes are available i
      --from-file=rootCA.crt --from-file=aqua_kube-enforcer.crt \
      --from-file=aqua_kube-enforcer.key -n aqua
     ``` 
+### Running as unprivileged
 
+1. Create a new SCC (Security Context Constraint):
+   
+    The aqua-scc yaml defines the cluster’s security context constraints. We strongly recommend not changing anything in this yaml file.
+    * Download [aqua-scc](../deploy/aqua-scc.yaml) yaml.
+    * Apply it by typing:
+  ```shell
+  oc apply -f aqua-scc.yaml
+  ```
+  
+2. set\create ```.spec.runAsNonRoot``` property with ```true``` value, example:
+```yaml
+spec:
+  runAsNonRoot: true
+```
+3. To verify it, please run the following command in the relevant pod:
+   ```whoami```
+   
+    Example result:
+   
+   <img src="../images/whoami.png"/>
+   
 ## Operator Upgrades ##
 **Major versions** - When switching from an older operator channel to this channel,
 the operator will update the Aqua components to this channel Aqua version.
@@ -283,6 +305,7 @@ spec:
     registry: "registry.aquasec.com"        
     tag: "<<IMAGE TAG>>" 
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
+  runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
 If you haven't used the "route" option in the Aqua CSP CR, you should define a Route manually to enable external access to the Aqua Server (Console).
@@ -333,6 +356,7 @@ spec:
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
+  runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
 If you haven't used the "route" option in the Aqua CSP CR, you should define a Route manually to enable external access to the Aqua Server (Console).
@@ -385,6 +409,7 @@ spec:
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
+  runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
 #### Example: Deploying Aqua Enterprise with an external database
@@ -427,6 +452,7 @@ spec:
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
+  runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
 ### Example: Deploying Aqua Enterprise with a split external database
@@ -479,6 +505,7 @@ spec:
       tag: "<<IMAGE TAG>>"
       pullPolicy: Always  
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
+  runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
 #### Example: Deploying Aqua Enforcer(s)
