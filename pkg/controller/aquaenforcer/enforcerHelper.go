@@ -295,6 +295,8 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 					"AUDIT_CONTROL",
 					"SYSLOG",
 					"SYS_CHROOT",
+					"SYS_RESOURCE",
+					"IPC_LOCK",
 				},
 			},
 		}
