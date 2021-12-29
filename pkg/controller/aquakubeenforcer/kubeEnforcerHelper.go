@@ -159,6 +159,17 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 				"create", "delete",
 			},
 		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"pods",
+			},
+			Verbs: []string{
+				"create", "delete",
+			},
+		},
 	}
 	labels := map[string]string{
 		"app":                app,
