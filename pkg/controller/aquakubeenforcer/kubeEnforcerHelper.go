@@ -48,7 +48,20 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"*",
 			},
 			Resources: []string{
-				"pods", "nodes", "namespaces", "deployments", "statefulsets", "jobs", "cronjobs", "daemonsets", "replicasets", "replicationcontrollers", "clusterroles", "clusterrolebindings", "componentstatuses",
+				"pods",
+				"nodes",
+				"namespaces",
+				"deployments",
+				"statefulsets",
+				"jobs",
+				"cronjobs",
+				"daemonsets",
+				"replicasets",
+				"replicationcontrollers",
+				"clusterroles",
+				"clusterrolebindings",
+				"componentstatuses",
+				"services",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -63,6 +76,42 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 			},
 			Verbs: []string{
 				"get", "list", "watch", "update", "create",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"configmaps",
+			},
+			Verbs: []string{
+				"get", "list", "watch", "update", "create",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"roles",
+				"rolebindings",
+				"clusterroles",
+				"clusterrolebindings",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"customresourcedefinitions",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
 			},
 		},
 	}
@@ -257,7 +306,21 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 					"*",
 				},
 				Resources: []string{
-					"pods", "deployments", "replicasets", "replicationcontrollers", "statefulsets", "daemonsets", "jobs", "cronjobs",
+					"pods",
+					"deployments",
+					"replicasets",
+					"replicationcontrollers",
+					"statefulsets",
+					"daemonsets",
+					"jobs",
+					"cronjobs",
+					"configmaps",
+					"services",
+					"roles",
+					"rolebindings",
+					"clusterroles",
+					"clusterrolebindings",
+					"customresourcedefinitions",
 				},
 			},
 		},
