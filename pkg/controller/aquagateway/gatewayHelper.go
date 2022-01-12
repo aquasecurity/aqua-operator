@@ -229,6 +229,11 @@ func (gw *AquaGatewayHelper) getEnvVars(cr *operatorv1alpha1.AquaGateway) []core
 		Value: fmt.Sprintf(consts.GatewayServiceName, cr.Name),
 	})
 
+	result = append(result, corev1.EnvVar{
+		Name:  "AQUA_GRPC_MODE",
+		Value: "1",
+	})
+
 	if cr.Spec.Mtls {
 		mtlsServerEnv := []corev1.EnvVar{
 			{
