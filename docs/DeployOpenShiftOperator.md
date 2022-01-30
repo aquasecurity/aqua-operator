@@ -77,6 +77,12 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 * You can add environment variables using ```.spec.env```.
 * You can define the kube-enforcer resources requests/limits using ```.spec.deploy.resources```.
 
+**[AquaStarboard CRD](../deploy/crds/aquasecurity.github.io_aquastarboards_crd.yaml)** is used to deploy the AquaStarboard in your target cluster by kube-enforcer.
+
+**[ClusterConfigAuditReports CRD](../deploy/crds/aquasecurity.github.io_clusterconfigauditreports_crd.yaml)** is used to deploy the ClusterConfigAuditReports in your target cluster by starboard.
+
+**[ConfigAuditReports CRD](../deploy/crds/aquasecurity.github.io_configauditreports_crd.yaml)** is used to deploy the ConfigAuditReports in your target cluster by starboard.
+
 **[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
 * You need to provide the ```.spec.login.username``` and ```.spec.login.password``` to authenticate with the Aqua Server.
@@ -548,10 +554,10 @@ metadata:
 spec:
   infra:
     version: '6.5'
-    serviceAccount: aqua-kube-enforcer-sa
+    serviceAccount: aqua-kube-enforcer
   config:
     gateway_address: 'aqua-gateway.aqua:8443'     # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
-    cluster_name: aqua-secure                     # Required: provide your cluster name
+    cluster_name: aqua-secure                     # Required: provide your cluster namea1q  1
     imagePullSecret: aqua-registry                # Required: provide the imagePullSecret name
   deploy:
     service: ClusterIP
@@ -560,6 +566,20 @@ spec:
       tag: "<<KUBE_ENFORCER_TAG>>"
       repository: kube-enforcer
       pullPolicy: Always
+    starboard:
+      allowAnyVersion: true
+      infra:
+        version: 0.13.0
+        serviceAccount: starboard-operator
+      config:
+        imagePullSecret: starboard-registry
+      deploy:
+        replicas: 1
+        image:
+          registry: docker.io/aquasec
+          tag: ''
+          repository: starboard-operator
+          pullPolicy: IfNotPresent
   token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)    
 ```
 

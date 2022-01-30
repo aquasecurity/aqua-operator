@@ -10,8 +10,7 @@ import (
 
 // AquaKubeEnforcerSpec defines the desired state of AquaKubeEnforcer
 type AquaKubeEnforcerSpec struct {
-	Infrastructure *AquaInfrastructure `json:"infra,omitempty"`
-
+	Infrastructure         *AquaInfrastructure    `json:"infra,omitempty"`
 	Config                 AquaKubeEnforcerConfig `json:"config"`
 	Token                  string                 `json:"token,omitempty"`
 	RegistryData           *AquaDockerRegistry    `json:"registry,omitempty"`
@@ -21,6 +20,7 @@ type AquaKubeEnforcerSpec struct {
 	KubeEnforcerService    *AquaService           `json:"deploy,omitempty"`
 	Envs                   []corev1.EnvVar        `json:"env,omitempty"`
 	Mtls                   bool                   `json:"mtls,omitempty"`
+	DeployStarboard        *AquaStarboardDetails  `json:"starboard,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer
