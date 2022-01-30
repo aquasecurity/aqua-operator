@@ -25,6 +25,7 @@ import (
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
 
+	aquasecurity1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/secrets"
 
@@ -430,6 +431,10 @@ func (r *ReconcileAquaKubeEnforcer) Reconcile(request reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
+	if instance.Spec.DeployStarboard != nil {
+		r.installAquaStarboard(instance)
+	}
+
 	return reconcile.Result{Requeue: true}, nil
 }
 
@@ -700,12 +705,17 @@ func (r *ReconcileAquaKubeEnforcer) addKEConfigMap(cr *operatorv1alpha1.AquaKube
 
 	// Define a new ClusterRoleBinding object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
+	deployStarboard := false
+	if cr.Spec.DeployStarboard != nil {
+		deployStarboard = true
+	}
 	configMap := enforcerHelper.CreateKEConfigMap(cr.Name,
 		cr.Namespace,
 		"aqua-csp-kube-enforcer",
 		"ke-configmap",
 		cr.Spec.Config.GatewayAddress,
-		cr.Spec.Config.ClusterName)
+		cr.Spec.Config.ClusterName,
+		deployStarboard)
 
 	// Set AquaCsp instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
@@ -922,6 +932,7 @@ func (r *ReconcileAquaKubeEnforcer) addKEDeployment(cr *operatorv1alpha1.AquaKub
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Deployment Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }
+
 func (r *ReconcileAquaKubeEnforcer) CreateImagePullSecret(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Csp Requirments Phase", "Create Image Pull Secret")
 	reqLogger.Info("Start creating aqua images pull secret")
@@ -969,10 +980,10 @@ func (r *ReconcileAquaKubeEnforcer) CreateClusterReaderRoleBinding(cr *operatorv
 		consts.AquaKubeEnforcerSAClusterReaderRoleBind,
 		fmt.Sprintf("%s-kube-enforcer-cluster-reader", cr.Name),
 		"Deploy Aqua KubeEnforcer Cluster Reader Role Binding",
-		"aqua-kube-enforcer-sa",
+		"aqua-kube-enforcer",
 		consts.ClusterReaderRole)
 
-	// Set AquaCsp instance as the owner and controller
+	// Set AquaKube-enforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, crb, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -1015,4 +1026,68 @@ func (r *ReconcileAquaKubeEnforcer) updateKubeEnforcerServerObject(serviceObject
 	}
 
 	return serviceObject
+}
+
+// Starboard functions
+
+func (r *ReconcileAquaKubeEnforcer) installAquaStarboard(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Kube-enforcer - AquaStarboard Phase", "Install Aqua Starboard")
+	reqLogger.Info("Start installing AquaStarboard")
+
+	// Define a new AquaServer object
+	aquaStarboardHelper := newAquaKubeEnforcerHelper(cr)
+
+	aquasb := aquaStarboardHelper.newStarboard(cr)
+
+	// Set AquaKube-enforcer instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, aquasb, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this AquaServer already exists
+	found := &aquasecurity1alpha1.AquaStarboard{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: aquasb.Name, Namespace: aquasb.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua AquaStarboard", "AquaStarboard.Namespace", aquasb.Namespace, "AquaStarboard.Name", aquasb.Name)
+		err = r.client.Create(context.TODO(), aquasb)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	} else if err != nil {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+	}
+
+	if found != nil {
+		size := aquasb.Spec.StarboardService.Replicas
+		if found.Spec.StarboardService.Replicas != size {
+			found.Spec.StarboardService.Replicas = size
+			err = r.client.Status().Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update aqua starboard replicas.", "AquaStarboard.Namespace", found.Namespace, "AquaStarboard.Name", found.Name)
+				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+		}
+
+		update := !reflect.DeepEqual(aquasb.Spec, found.Spec)
+
+		reqLogger.Info("Checking for AquaStarboard Upgrade", "aquasb", aquasb.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(aquasb.Spec.DeepCopy())
+			err = r.client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update AquaStarboard.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
+	// AquaStarboard already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Starboard Exists", "AquaStarboard.Namespace", found.Namespace, "AquaStarboard.Name", found.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }

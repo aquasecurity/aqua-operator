@@ -130,6 +130,31 @@ type AquaKubeEnforcerDetails struct {
 	Registry string `json:"registry,omitempty"`
 }
 
+type AquaStarboardConfig struct {
+	ImagePullSecret string `json:"imagePullSecret,omitempty"`
+}
+
+type AquaStarboardDetails struct {
+	Infrastructure                *AquaInfrastructure `json:"infra,omitempty"`
+	AllowAnyVersion               bool                `json:"allowAnyVersion,omitempty"`
+	StarboardService              *AquaService        `json:"deploy,required"`
+	Config                        AquaStarboardConfig `json:"config"`
+	RegistryData                  *AquaDockerRegistry `json:"registry,omitempty"`
+	ImageData                     *AquaImage          `json:"image,omitempty"`
+	Envs                          []corev1.EnvVar     `json:"env,omitempty"`
+	LogDevMode                    bool                `json:"logDevMode,omitempty"`
+	ConcurrentScanJobsLimit       string              `json:"concurrentScanJobsLimit,omitempty"`
+	ScanJobRetryAfter             string              `json:"scanJobRetryAfter,omitempty"`
+	MetricsBindAddress            string              `json:"metricsBindAddress,omitempty"`
+	HealthProbeBindAddress        string              `json:"healthProbeBindAddress,omitempty"`
+	CisKubernetesBenchmarkEnabled string              `json:"cisKubernetesBenchmarkEnabled,omitempty"`
+	VulnerabilityScannerEnabled   string              `json:"vulnerabilityScannerEnabled,omitempty"`
+	BatchDeleteLimit              string              `json:"batchDeleteLimit,omitempty"`
+	BatchDeleteDelay              string              `json:"batchDeleteDelay,omitempty"`
+	ImageTag                      string              `json:"tag,omitempty"`
+	Registry                      string              `json:"registry,omitempty"`
+}
+
 type AuditDBInformation struct {
 	AuditDBSecret *AquaSecret              `json:"secret,omitempty"`
 	Data          *AquaDatabaseInformation `json:"information,omitempty"`
