@@ -2,6 +2,7 @@ package extra
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -39,12 +40,18 @@ func checkForUpgrade(existingTag string) bool {
 }
 
 func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaImage, allowAnyVersion bool) (string, string, string, string) {
+
+	fmt.Printf("repo: %s", repo)
+	fmt.Printf("version: %s", version)
+	fmt.Printf("imageData: %s", imageData)
+
 	pullPolicy := consts.PullPolicy
 	repository := repo
 	tag := version
 	registry := consts.Registry
 
 	if len(tag) == 0 {
+		fmt.Printf("Setting latest tag version %s", consts.LatestVersion)
 		tag = consts.LatestVersion
 	}
 
@@ -54,6 +61,7 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		}
 
 		if len(imageData.Repository) != 0 {
+			fmt.Printf("Setting repo %s", imageData.Repository)
 			repository = imageData.Repository
 		}
 
@@ -62,6 +70,7 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		}
 
 		if len(imageData.Registry) != 0 {
+			fmt.Printf("Setting registry %s", imageData.Registry)
 			registry = imageData.Registry
 		}
 	}
