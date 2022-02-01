@@ -980,7 +980,7 @@ func (r *ReconcileAquaKubeEnforcer) CreateClusterReaderRoleBinding(cr *operatorv
 		consts.AquaKubeEnforcerSAClusterReaderRoleBind,
 		fmt.Sprintf("%s-kube-enforcer-cluster-reader", cr.Name),
 		"Deploy Aqua KubeEnforcer Cluster Reader Role Binding",
-		"aqua-kube-enforcer",
+		"aqua-kube-enforcer-sa",
 		consts.ClusterReaderRole)
 
 	// Set AquaKube-enforcer instance as the owner and controller

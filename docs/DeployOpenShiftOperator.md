@@ -554,10 +554,10 @@ metadata:
 spec:
   infra:
     version: '6.5'
-    serviceAccount: aqua-kube-enforcer
+    serviceAccount: aqua-kube-enforcer-sa
   config:
     gateway_address: 'aqua-gateway.aqua:8443'     # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
-    cluster_name: aqua-secure                     # Required: provide your cluster namea1q  1
+    cluster_name: aqua-secure                     # Required: provide your cluster name
     imagePullSecret: aqua-registry                # Required: provide the imagePullSecret name
   deploy:
     service: ClusterIP

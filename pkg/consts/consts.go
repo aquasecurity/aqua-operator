@@ -43,8 +43,8 @@ const (
 	// AquaSAClusterReaderRoleBind is Openshift cluster role binding between aqua-sa and ClusterReaderRole
 	AquaSAClusterReaderRoleBind = "aqua-sa-cluster-reader-crb"
 
-	// AquaKubeEnforcerSAClusterReaderRoleBind is Openshift cluster role binding between aqua-kube-enforcer and ClusterReaderRole
-	AquaKubeEnforcerSAClusterReaderRoleBind = "aqua-kube-enforcer-cluster-reader-crb"
+	// AquaKubeEnforcerSAClusterReaderRoleBind is Openshift cluster role binding between aqua-kube-enforcer-sa and ClusterReaderRole
+	AquaKubeEnforcerSAClusterReaderRoleBind = "aqua-kube-enforcer-sa-cluster-reader-crb"
 
 	// AquaStarboardSAClusterReaderRoleBind is Openshift cluster role binding between aqua-starboard-sa and ClusterReaderRole
 	AquaStarboardSAClusterReaderRoleBind = "aqua-starboard-sa-cluster-reader-crb"
