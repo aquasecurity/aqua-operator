@@ -551,36 +551,46 @@ apiVersion: operator.aquasec.com/v1alpha1
 kind: AquaKubeEnforcer
 metadata:
   name: aqua
+  namespace: aqua
 spec:
   infra:
     version: '6.5'
     serviceAccount: aqua-kube-enforcer-sa
   config:
-    gateway_address: 'aqua-gateway.aqua:8443'     # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
+    gateway_address: 'aqua-gateway:8443'          # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
     cluster_name: aqua-secure                     # Required: provide your cluster name
     imagePullSecret: aqua-registry                # Required: provide the imagePullSecret name
   deploy:
     service: ClusterIP
     image:
-      registry: "registry.aquasec.com"
-      tag: "<<KUBE_ENFORCER_TAG>>"
+      registry: registry.aquasec.com
+      tag: <<KUBE_ENFORCER_TAG>>
       repository: kube-enforcer
       pullPolicy: Always
-    starboard:
-      allowAnyVersion: true
-      infra:
-        version: 0.13.0
-        serviceAccount: starboard-operator
-      config:
-        imagePullSecret: starboard-registry
-      deploy:
-        replicas: 1
-        image:
-          registry: docker.io/aquasec
-          tag: ''
-          repository: starboard-operator
-          pullPolicy: IfNotPresent
-  token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)    
+  token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)
+  starboard:
+    allowAnyVersion: true
+    infra:
+      version: 0.13.0
+      serviceAccount: starboard-operator
+    config:
+      imagePullSecret: starboard-registry
+    deploy:
+      replicas: 1
+      image:
+        registry: docker.io/aquasec
+        tag: ''
+        repository: starboard-operator
+        pullPolicy: IfNotPresent
+    logDevMode: false
+    concurrentScanJobsLimit: ''
+    scanJobRetryAfter: ''
+    metricsBindAddress: ''
+    healthProbeBindAddress: ''
+    cisKubernetesBenchmarkEnable: ''
+    vulnerabilityScannerEnabled: ''
+    batchDeleteLimit: ''
+    batchDeleteDelay: ''    
 ```
 
 #### Example: Deploy the Aqua Scanner
