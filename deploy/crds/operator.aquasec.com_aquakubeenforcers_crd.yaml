@@ -20,11 +20,11 @@ spec:
         - name: Status
           type: string
           description: Aqua KubeEnforcer status
-          JSONPath: .status.state
+          jsonPath: .status.state
         - name: Age
           type: date
           description: Aqua KubeEnforcer Age
-          JSONPath: .metadata.creationTimestamp
+          jsonPath: .metadata.creationTimestamp
       served: true
       storage: true
       subresources:

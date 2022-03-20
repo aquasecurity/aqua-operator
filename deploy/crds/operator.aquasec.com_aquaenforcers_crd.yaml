@@ -20,15 +20,15 @@ spec:
         - name: Replicas
           type: integer
           description: Replicas Number
-          JSONPath: .spec.deploy.replicas
+          jsonPath: .spec.deploy.replicas
         - name: Age
           type: date
           description: Aqua Enforcer Age
-          JSONPath: .metadata.creationTimestamp
+          jsonPath: .metadata.creationTimestamp
         - name: Status
           type: string
           description: Aqua Enforcer status
-          JSONPath: .status.state
+          jsonPath: .status.state
       served: true
       storage: true
       subresources:
