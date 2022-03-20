@@ -20,19 +20,19 @@ spec:
         - name: Replicas
           type: integer
           description: Replicas Number
-          JSONPath: .spec.deploy.replicas
+          jsonPath: .spec.deploy.replicas
         - name: Age
           type: date
           description: Aqua Server Age
-          JSONPath: .metadata.creationTimestamp
+          jsonPath: .metadata.creationTimestamp
         - name: Status
           type: string
           description: Aqua Server status
-          JSONPath: .status.state
+          jsonPath: .status.state
         - name: Nodes
           type: string
           description: List Of Nodes (Pods)
-          JSONPath: .status.nodes
+          jsonPath: .status.nodes
       served: true
       storage: true
       subresources:

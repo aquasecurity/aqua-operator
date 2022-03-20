@@ -20,11 +20,11 @@ spec:
         - name: Age
           type: date
           description: Aqua Csp Age
-          JSONPath: .metadata.creationTimestamp
+          jsonPath: .metadata.creationTimestamp
         - name: Status
           type: string
           description: Aqua Csp status
-          JSONPath: .status.state
+          jsonPath: .status.state
       served: true
       storage: true
       subresources:
