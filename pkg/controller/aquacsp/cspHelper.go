@@ -31,6 +31,7 @@ func (csp *AquaCspHelper) newAquaDatabase(cr *operatorv1alpha1.AquaCsp) *operato
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "database",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Database (not for production environments)",
@@ -64,6 +65,7 @@ func (csp *AquaCspHelper) newAquaGateway(cr *operatorv1alpha1.AquaCsp) *operator
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "gateway",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Gateway",
@@ -99,6 +101,7 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "server",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Server",
@@ -144,6 +147,7 @@ func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operato
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "enforcer",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Enforcer",
@@ -206,6 +210,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 		"app":                cr.Name + "-csp",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "kubeenforcer",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua KubeEnforcer",
