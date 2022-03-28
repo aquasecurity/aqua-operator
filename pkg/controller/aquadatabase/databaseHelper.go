@@ -47,6 +47,7 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, d
 		"app":                app,
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "database",
 	}
 	annotations := map[string]string{
 		"description": "Deploy the aqua database server",
