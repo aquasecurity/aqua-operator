@@ -571,7 +571,7 @@ spec:
   starboard:
     allowAnyVersion: true
     infra:
-      version: 0.13.0
+      version: 0.14.1
       serviceAccount: starboard-operator
     config:
       imagePullSecret: starboard-registry
