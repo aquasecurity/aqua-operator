@@ -40,6 +40,7 @@ func (enf *AquaEnforcerHelper) CreateTokenSecret(cr *operatorv1alpha1.AquaEnforc
 		"app":                cr.Name + "-requirments",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "enforcer",
 	}
 	annotations := map[string]string{
 		"description": "Secret for aqua database password",

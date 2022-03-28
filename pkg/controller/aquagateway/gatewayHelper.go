@@ -49,6 +49,7 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
 		"type":               "aqua-gateway",
+		"aqua.component":     "gateway",
 	}
 	annotations := map[string]string{
 		"description": "Deploy the aqua gateway server",

@@ -51,6 +51,7 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
 		"type":               "aqua-server",
+		"aqua.component":     "server",
 	}
 	annotations := map[string]string{
 		"description": "Deploy the aqua console server",

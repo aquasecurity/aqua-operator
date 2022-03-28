@@ -42,6 +42,7 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 		"app":                cr.Name + "-scanner",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "scanner",
 	}
 
 	annotations := map[string]string{
