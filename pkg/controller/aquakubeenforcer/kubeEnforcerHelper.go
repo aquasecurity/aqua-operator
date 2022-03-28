@@ -812,6 +812,7 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 		"app":                cr.Name + "-kube-enforcer",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "kubeenforcer",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Starboard",
