@@ -21,6 +21,7 @@ type AquaEnforcerSpec struct {
 	Token                  string                  `json:"token,required"`
 	Secret                 *AquaSecret             `json:"secret,required"`
 	Envs                   []corev1.EnvVar         `json:"env,required"`
+	ConfigMapData          map[string]string       `json:"config_map_data,omitempty"`
 	RunAsNonRoot           bool                    `json:"runAsNonRoot,omitempty"`
 	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
 	Mtls                   bool                    `json:"mtls,omitempty"`

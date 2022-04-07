@@ -23,6 +23,7 @@ type AquaServerSpec struct {
 	AdminPassword string                   `json:"adminPassword,omitempty"`
 	Enforcer      *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
 	Envs          []corev1.EnvVar          `json:"env,required"`
+	ConfigMapData map[string]string        `json:"config_map_data,required"`
 	RunAsNonRoot  bool                     `json:"runAsNonRoot,omitempty"`
 	Route         bool                     `json:"route,omitempty"`
 	Mtls          bool                     `json:"mtls,omitempty"`

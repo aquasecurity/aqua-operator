@@ -2,14 +2,13 @@ package aquascanner
 
 import (
 	"fmt"
-	"os"
-
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 )
 
 type ScannerParameters struct {
@@ -28,6 +27,68 @@ func newAquaScannerHelper(cr *operatorv1alpha1.AquaScanner) *AquaScannerHelper {
 	return &AquaScannerHelper{
 		Parameters: params,
 	}
+}
+
+func (as *AquaScannerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaScanner) *corev1.ConfigMap {
+
+	labels := map[string]string{
+		"app":                "aqua-scanner-config",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+
+	annotations := map[string]string{
+		"description": "Deploy Aqua aqua-csp-scanner ConfigMap",
+	}
+
+	data := map[string]string{
+		"AQUA_SERVER": cr.Spec.Login.Host,
+	}
+
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        consts.ScannerConfigMapName,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Data: data,
+	}
+	return configMap
+}
+
+func (as *AquaScannerHelper) CreateTokenSecret(cr *operatorv1alpha1.AquaScanner) *corev1.Secret {
+	labels := map[string]string{
+		"app":                cr.Name + "-requirments",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Aqua Scanner username and password",
+	}
+	token := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "core/v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        consts.ScannerSecretName,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"AQUA_SCANNER_USERNAME": []byte(cr.Spec.Login.Username),
+			"AQUA_SCANNER_PASSWORD": []byte(cr.Spec.Login.Password),
+		},
+	}
+
+	return token
 }
 
 func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *appsv1.Deployment {
@@ -86,14 +147,38 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "AQUA_SCANNER_LOGICAL_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+							},
+							EnvFrom: []corev1.EnvFromSource{
+								{
+									SecretRef: &corev1.SecretEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: consts.ScannerSecretName,
+										},
+									},
+								},
+								{
+									ConfigMapRef: &corev1.ConfigMapEnvSource{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: consts.ScannerConfigMapName,
+										},
+									},
+								},
+							},
 							Args: []string{
-								"daemon",
-								"--user",
-								cr.Spec.Login.Username,
-								"--password",
-								cr.Spec.Login.Password,
-								"--host",
-								cr.Spec.Login.Host,
+								"-c",
+								"/opt/aquasec/scannercli daemon --user ${AQUA_SCANNER_USERNAME} --password ${AQUA_SCANNER_PASSWORD} --host ${AQUA_SERVER}",
+							},
+							Command: []string{
+								"/bin/sh",
 							},
 							Ports: []corev1.ContainerPort{
 								{
