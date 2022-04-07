@@ -94,6 +94,10 @@ const (
 
 	ScannerDeployName = "%s-scanner"
 
+	ScannerSecretName = "aqua-scanner"
+
+	ScannerConfigMapName = "aqua-scanner-config"
+
 	EmptyString = ""
 
 	AquaRunAsUser  = int64(11431)
@@ -133,4 +137,8 @@ const (
 	OperatorBatchDeleteLimit = "10"
 
 	OperatorBatchDeleteDelay = "10s"
+
+	ServerConfigMapName = "aqua-csp-server-config"
+
+	EnforcerConfigMapName = "aqua-csp-enforcer"
 )

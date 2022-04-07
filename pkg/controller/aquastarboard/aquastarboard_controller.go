@@ -332,14 +332,14 @@ func (r *ReconcileAquaStarboard) addStarboardConfigMap(cr *v1alpha1.AquaStarboar
 	configMaps := []*corev1.ConfigMap{
 		starboardHelper.CreateStarboardConftestConfigMap(cr.Name,
 			cr.Namespace,
-			"aqua-starboard",
+			"starboard-conftest-config",
 			"starboard-conftest-configmap",
-			cr.Spec.Infrastructure.Version,
+			cr.Spec.KubeEnforcerVersion,
 		),
 		starboardHelper.CreateStarboardConfigMap(cr.Name,
 			cr.Namespace,
 			"starboard",
-			"starboard-confte-configmap",
+			"starboard",
 		),
 	}
 

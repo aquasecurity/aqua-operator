@@ -590,6 +590,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 		"app":                app,
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "kubeenforcer",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Kube Enforcer Deployment",
@@ -671,22 +672,38 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
 							LivenessProbe: &corev1.Probe{
+								FailureThreshold: 3,
 								Handler: corev1.Handler{
-									TCPSocket: &corev1.TCPSocketAction{
-										Port: intstr.FromInt(8080),
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8080),
+										},
+										Scheme: "HTTP",
 									},
 								},
 								InitialDelaySeconds: 60,
 								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
 							},
 							ReadinessProbe: &corev1.Probe{
+								FailureThreshold: 3,
 								Handler: corev1.Handler{
-									TCPSocket: &corev1.TCPSocketAction{
-										Port: intstr.FromInt(8080),
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readyz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8080),
+										},
+										Scheme: "HTTP",
 									},
 								},
 								InitialDelaySeconds: 60,
 								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
 							},
 							Ports: ports,
 							Env:   envVars,
@@ -812,7 +829,6 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 		"app":                cr.Name + "-kube-enforcer",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
-		"aqua.component":     "kubeenforcer",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Starboard",
@@ -837,6 +853,7 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 			RegistryData:                  cr.Spec.DeployStarboard.RegistryData,
 			ImageData:                     cr.Spec.DeployStarboard.ImageData,
 			Envs:                          cr.Spec.DeployStarboard.Envs,
+			KubeEnforcerVersion:           cr.Spec.Infrastructure.Version,
 			LogDevMode:                    cr.Spec.DeployStarboard.LogDevMode,
 			ConcurrentScanJobsLimit:       cr.Spec.DeployStarboard.ConcurrentScanJobsLimit,
 			ScanJobRetryAfter:             cr.Spec.DeployStarboard.ScanJobRetryAfter,

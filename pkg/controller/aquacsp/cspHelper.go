@@ -70,7 +70,7 @@ func (csp *AquaCspHelper) newAquaGateway(cr *operatorv1alpha1.AquaCsp) *operator
 	annotations := map[string]string{
 		"description": "Deploy Aqua Gateway",
 	}
-	aquadb := &operatorv1alpha1.AquaGateway{
+	aquagateway := &operatorv1alpha1.AquaGateway{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operator.aquasec.com/v1alpha1",
 			Kind:       "AquaGateway",
@@ -93,7 +93,7 @@ func (csp *AquaCspHelper) newAquaGateway(cr *operatorv1alpha1.AquaCsp) *operator
 		},
 	}
 
-	return aquadb
+	return aquagateway
 }
 
 func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaServer {
@@ -106,7 +106,7 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 	annotations := map[string]string{
 		"description": "Deploy Aqua Server",
 	}
-	aquadb := &operatorv1alpha1.AquaServer{
+	aquaServer := &operatorv1alpha1.AquaServer{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operator.aquasec.com/v1alpha1",
 			Kind:       "AquaServer",
@@ -127,12 +127,13 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 			Enforcer:       csp.Parameters.AquaCsp.Spec.Enforcer,
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 			Envs:           csp.Parameters.AquaCsp.Spec.ServerEnvs,
+			ConfigMapData:  csp.Parameters.AquaCsp.Spec.ConfigMapData,
 			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
 			Route:          csp.Parameters.AquaCsp.Spec.Route,
 		},
 	}
 
-	return aquadb
+	return aquaServer
 }
 
 func (csp *AquaCspHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaCsp) *operatorv1alpha1.AquaEnforcer {
