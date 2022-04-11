@@ -21,6 +21,7 @@ type AquaStarboardSpec struct {
 	RegistryData                  *v1alpha1.AquaDockerRegistry `json:"registry,omitempty"`
 	ImageData                     *v1alpha1.AquaImage          `json:"image,omitempty"`
 	Envs                          []corev1.EnvVar              `json:"env,omitempty"`
+	KubeEnforcerVersion           string                       `json:"kube_enforcer_version,omitempty"`
 	LogDevMode                    bool                         `json:"logDevMode,omitempty"`
 	ConcurrentScanJobsLimit       string                       `json:"concurrentScanJobsLimit,omitempty"`
 	ScanJobRetryAfter             string                       `json:"scanJobRetryAfter,omitempty"`

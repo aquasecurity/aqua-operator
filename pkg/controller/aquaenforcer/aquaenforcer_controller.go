@@ -199,7 +199,14 @@ func (r *ReconcileAquaEnforcer) Reconcile(request reconcile.Request) (reconcile.
 			}
 		}
 
+		_, err = r.addEnforcerConfigMap(instance)
+
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
 		_, err = r.InstallEnforcerDaemonSet(instance)
+
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -350,5 +357,40 @@ func (r *ReconcileAquaEnforcer) InstallEnforcerToken(cr *operatorv1alpha1.AquaEn
 
 	// Secret already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Enforcer Token Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaEnforcer) addEnforcerConfigMap(cr *operatorv1alpha1.AquaEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Enforcer", "Create ConfigMap")
+	reqLogger.Info("Start creating ConfigMap")
+	//reqLogger.Info(fmt.Sprintf("cr object : %v", cr.ObjectMeta))
+
+	// Define a new ClusterRoleBinding object
+	enforcerHelper := newAquaEnforcerHelper(cr)
+
+	configMap := enforcerHelper.CreateConfigMap(cr)
+
+	// Set AquaScanner instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this ClusterRoleBinding already exists
+	found := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Aqua Scanner: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+		err = r.client.Create(context.TODO(), configMap)
+		if err != nil {
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// MutatingWebhookConfiguration already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Enforcer ConfigMap Exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }

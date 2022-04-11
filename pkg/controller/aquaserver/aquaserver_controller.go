@@ -248,6 +248,9 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 			instance.Spec.AuditDB = common.UpdateAquaAuditDB(instance.Spec.AuditDB, instance.Name)
 		}
 
+		reqLogger.Info("Start Creating Aqua server ConfigMap")
+		_, err = r.CreateServerConfigMap(instance)
+
 		reqLogger.Info("Start Creating Aqua Server Deployment...")
 		_, err = r.InstallServerDeployment(instance)
 		if err != nil {
@@ -423,6 +426,42 @@ func (r *ReconcileAquaServer) CreateLicenseSecret(cr *operatorv1alpha1.AquaServe
 	// Secrets already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Server License Token Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *ReconcileAquaServer) CreateServerConfigMap(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Server Aqua Phase", "Create Server ConfigMap")
+	reqLogger.Info("Start creating aqua server configMap")
+
+	// Define a new ConfigMap object
+	serverHelper := newAquaServerHelper(cr)
+	configMaps := []*corev1.ConfigMap{
+		serverHelper.CreateConfigMap(cr),
+	}
+
+	// Set AquaStarboard instance as the owner and controller
+	requeue := true
+	for _, configMap := range configMaps {
+		// Check if this ClusterRoleBinding already exists
+		if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		// Check if this ClusterRoleBinding already exists
+		found := &corev1.ConfigMap{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, found)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Aqua Server: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+			err = r.client.Create(context.TODO(), configMap)
+			if err == nil {
+				requeue = false
+			}
+		} else if err != nil {
+			return reconcile.Result{}, err
+		}
+		// MutatingWebhookConfiguration already exists - don't requeue
+		reqLogger.Info("Skip reconcile: Aqua Server ConfigMap Exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
+	}
+	return reconcile.Result{Requeue: requeue}, nil
 }
 
 func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {
