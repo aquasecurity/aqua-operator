@@ -88,7 +88,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaGateway{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaServer{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.AquaCsp{},
 	})
@@ -96,7 +96,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaServer{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.AquaGateway{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.AquaCsp{},
 	})
@@ -300,32 +300,17 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 			reqLogger.Error(syserrors.New("Missing Aqua Server Deployment Data!, Please fix and redeploy template!"), "Aqua CSP Deployment Missing Server Deployment Data!")
 		}
 		if instance.Spec.DeployKubeEnforcer != nil {
-			envList := []corev1.EnvVar{
-				{
-					Name:  "BATCH_INSTALL_GATEWAY",
-					Value: fmt.Sprintf(consts.GatewayServiceName, instance.Name),
-				},
-				{
-					Name:  "AQUA_KE_GROUP_NAME",
-					Value: "operator-default-ke-group",
-				},
-				{
-					Name:  "AQUA_KE_GROUP_TOKEN",
-					Value: consts.DefaultKubeEnforcerToken,
-				},
-			}
-			for _, envVar := range envList {
-				instance.Spec.ServerEnvs = extra.AppendEnvVar(instance.Spec.ServerEnvs, envVar)
-				instance.Spec.GatewayEnvs = extra.AppendEnvVar(instance.Spec.GatewayEnvs, envVar)
-
-			}
+			instance.Spec.ConfigMapData["BATCH_INSTALL_GATEWAY"] = fmt.Sprintf(consts.GatewayServiceName, instance.Name)
+			instance.Spec.ConfigMapData["AQUA_KE_GROUP_NAME"] = "operator-default-ke-group"
+			instance.Spec.ConfigMapData["AQUA_KE_GROUP_TOKEN"] = consts.DefaultKubeEnforcerToken
 		}
-		_, err = r.InstallAquaGateway(instance)
+
+		_, err = r.InstallAquaServer(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 		}
 
-		_, err = r.InstallAquaServer(instance)
+		_, err = r.InstallAquaGateway(instance)
 		if err != nil {
 			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
 		}
@@ -534,7 +519,7 @@ func (r *ReconcileAquaCsp) InstallAquaDatabase(cr *operatorv1alpha1.AquaCsp) (re
 }
 
 func (r *ReconcileAquaCsp) InstallAquaGateway(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
-	reqLogger := log.WithValues("CSP - AquaGateway Phase", "Install Aqua Database")
+	reqLogger := log.WithValues("CSP - AquaGateway Phase", "Install Aqua Gateway")
 	reqLogger.Info("Start installing AquaGateway")
 
 	// Define a new AquaGateway object
@@ -595,7 +580,7 @@ func (r *ReconcileAquaCsp) InstallAquaGateway(cr *operatorv1alpha1.AquaCsp) (rec
 }
 
 func (r *ReconcileAquaCsp) InstallAquaServer(cr *operatorv1alpha1.AquaCsp) (reconcile.Result, error) {
-	reqLogger := log.WithValues("CSP - AquaServer Phase", "Install Aqua Database")
+	reqLogger := log.WithValues("CSP - AquaServer Phase", "Install Aqua Server")
 	reqLogger.Info("Start installing AquaServer")
 
 	// Define a new AquaServer object

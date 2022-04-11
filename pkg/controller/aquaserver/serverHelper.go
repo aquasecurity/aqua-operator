@@ -2,10 +2,9 @@ package aquaserver
 
 import (
 	"fmt"
+	routev1 "github.com/openshift/api/route/v1"
 	"os"
 	"strings"
-
-	routev1 "github.com/openshift/api/route/v1"
 
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s/services"
 
@@ -38,6 +37,105 @@ func newAquaServerHelper(cr *operatorv1alpha1.AquaServer) *AquaServerHelper {
 	}
 }
 
+func (sr *AquaServerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaServer) *corev1.ConfigMap {
+
+	dbuser := "postgres"
+	dbhost := fmt.Sprintf(consts.DbDeployName, cr.Name)
+	dbport := 5432
+
+	if cr.Spec.ExternalDb != nil {
+		dbuser = cr.Spec.ExternalDb.Username
+		dbhost = cr.Spec.ExternalDb.Host
+		dbport = int(cr.Spec.ExternalDb.Port)
+	}
+
+	dbAuditUser := dbuser
+	dbAuditHost := dbhost
+	dbAuditPort := dbport
+
+	if cr.Spec.Common.SplitDB {
+		dbAuditHost = cr.Spec.AuditDB.Data.Host
+		dbAuditUser = cr.Spec.AuditDB.Data.Username
+		dbAuditPort = int(cr.Spec.AuditDB.Data.Port)
+	}
+
+	labels := map[string]string{
+		"app":                "aqua-csp-server-config",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua aqua-csp-server-config ConfigMap",
+	}
+
+	data := map[string]string{
+		//db
+		"SCALOCK_DBUSER":       dbuser,
+		"SCALOCK_DBNAME":       "scalock",
+		"SCALOCK_DBHOST":       dbhost,
+		"SCALOCK_DBPORT":       fmt.Sprintf("%d", dbport),
+		"SCALOCK_AUDIT_DBUSER": dbAuditUser,
+		"SCALOCK_AUDIT_DBNAME": "slk_audit",
+		"SCALOCK_AUDIT_DBHOST": dbAuditHost,
+		"SCALOCK_AUDIT_DBPORT": fmt.Sprintf("%d", dbAuditPort),
+		"SCALOCK_DBSSL":        "require",
+		"SCALOCK_AUDIT_DBSSL":  "require",
+		//	gw
+		"HEALTH_MONITOR":              "0.0.0.0:8082",
+		"AQUA_CONSOLE_SECURE_ADDRESS": fmt.Sprintf("%s:443", fmt.Sprintf(consts.ServerServiceName, cr.Name)),
+		"SCALOCK_GATEWAY_PUBLIC_IP":   fmt.Sprintf(consts.GatewayServiceName, cr.Name),
+		"AQUA_GRPC_MODE":              "1",
+	}
+
+	if cr.Spec.Common.ActiveActive {
+		data["AQUA_PUBSUB_DBNAME"] = "aqua_pubsub"
+		data["AQUA_PUBSUB_DBHOST"] = dbhost
+		data["AQUA_PUBSUB_DBPORT"] = fmt.Sprintf("%d", dbport)
+		data["AQUA_PUBSUB_DBUSER"] = dbuser
+	}
+
+	if cr.Spec.Mtls {
+		data["AQUA_PRIVATE_KEY"] = "/opt/aquasec/ssl/key.pem"
+		data["AQUA_PUBLIC_KEY"] = "/opt/aquasec/ssl/cert.pem"
+		data["AQUA_ROOT_CA"] = "/opt/aquasec/ssl/ca.pem"
+		data["AQUA_VERIFY_ENFORCER"] = "1"
+	}
+
+	orcType := "Kubernetes"
+	if strings.ToLower(cr.Spec.Infrastructure.Platform) == "openshift" || strings.ToLower(cr.Spec.Infrastructure.Platform) == "pks" {
+		orcType = strings.ToLower(cr.Spec.Infrastructure.Platform)
+	}
+
+	data["BATCH_INSTALL_ORCHESTRATOR"] = orcType
+
+	if cr.Spec.Enforcer != nil {
+		data["BATCH_INSTALL_GATEWAY"] = cr.Spec.Enforcer.Gateway
+		data["BATCH_INSTALL_NAME"] = cr.Spec.Enforcer.Name
+		data["BATCH_INSTALL_TOKEN"] = fmt.Sprintf("%s-enforcer-token", cr.Name)
+		data["BATCH_INSTALL_ORCHESTRATOR"] = orcType
+
+		if cr.Spec.Enforcer.EnforceMode {
+			data["BATCH_INSTALL_ENFORCE_MODE"] = "true"
+		}
+	}
+
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        consts.ServerConfigMapName,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Data: data,
+	}
+
+	return configMap
+}
+
 func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *appsv1.Deployment {
 	pullPolicy, registry, repository, tag := extra.GetImageData("console", cr.Spec.Infrastructure.Version, cr.Spec.ServerService.ImageData, cr.Spec.Common.AllowAnyVersion)
 
@@ -62,6 +160,16 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 
 	if cr.Spec.RunAsNonRoot {
 		privileged = false
+	}
+
+	envFromSource := []corev1.EnvFromSource{
+		{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: consts.ServerConfigMapName,
+				},
+			},
+		},
 	}
 
 	deployment := &appsv1.Deployment{
@@ -104,7 +212,42 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 									ContainerPort: 8443,
 								},
 							},
-							Env: envVars,
+							Env:     envVars,
+							EnvFrom: envFromSource,
+							LivenessProbe: &corev1.Probe{
+								FailureThreshold: 3,
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8080),
+										},
+										Scheme: "HTTP",
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
+							},
+							ReadinessProbe: &corev1.Probe{
+								FailureThreshold: 3,
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8080),
+										},
+										Scheme: "HTTP",
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
+							},
 						},
 					},
 				},
@@ -255,49 +398,6 @@ func (sr *AquaServerHelper) getEnvVars(cr *operatorv1alpha1.AquaServer) []corev1
 		Name:  "AQUA_DOCKERLESS_SCANNING",
 		Value: "1",
 	})
-
-	if cr.Spec.Enforcer != nil {
-		enforcerEnvs := []corev1.EnvVar{
-			{
-				Name:  "BATCH_INSTALL_GATEWAY",
-				Value: cr.Spec.Enforcer.Gateway,
-			},
-			{
-				Name:  "BATCH_INSTALL_NAME",
-				Value: cr.Spec.Enforcer.Name,
-			},
-			{
-				Name: "BATCH_INSTALL_TOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: fmt.Sprintf("%s-enforcer-token", cr.Name),
-						},
-						Key: "token",
-					},
-				},
-			},
-		}
-
-		if cr.Spec.Enforcer.EnforceMode {
-			enforcerEnvs = append(enforcerEnvs, corev1.EnvVar{
-				Name:  "BATCH_INSTALL_ENFORCE_MODE",
-				Value: "true",
-			})
-		}
-
-		orcType := "Kubernetes"
-		if strings.ToLower(cr.Spec.Infrastructure.Platform) == "openshift" || strings.ToLower(cr.Spec.Infrastructure.Platform) == "pks" {
-			orcType = strings.ToLower(cr.Spec.Infrastructure.Platform)
-		}
-
-		enforcerEnvs = append(enforcerEnvs, corev1.EnvVar{
-			Name:  "BATCH_INSTALL_ORCHESTRATOR",
-			Value: orcType,
-		})
-
-		result = append(result, enforcerEnvs...)
-	}
 
 	if cr.Spec.Mtls {
 		mtlsServerEnv := []corev1.EnvVar{

@@ -63,6 +63,16 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 		privileged = false
 	}
 
+	envFromSource := []corev1.EnvFromSource{
+		{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: consts.ServerConfigMapName,
+				},
+			},
+		},
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -103,7 +113,40 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 									ContainerPort: 8443,
 								},
 							},
-							Env: envVars,
+							Env:     envVars,
+							EnvFrom: envFromSource,
+							LivenessProbe: &corev1.Probe{
+								FailureThreshold: 3,
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8082),
+										},
+										Scheme: "HTTP",
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
+							},
+							ReadinessProbe: &corev1.Probe{
+								FailureThreshold: 3,
+								Handler: corev1.Handler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8443),
+										},
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
+							},
 						},
 					},
 				},
@@ -214,48 +257,6 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 func (gw *AquaGatewayHelper) getEnvVars(cr *operatorv1alpha1.AquaGateway) []corev1.EnvVar {
 	envsHelper := common.NewAquaEnvsHelper(cr.Spec.Infrastructure, cr.Spec.Common, cr.Spec.ExternalDb, cr.Name, cr.Spec.AuditDB)
 	result, _ := envsHelper.GetDbEnvVars()
-
-	result = append(result, corev1.EnvVar{
-		Name:  "HEALTH_MONITOR",
-		Value: "0.0.0.0:8082",
-	})
-
-	result = append(result, corev1.EnvVar{
-		Name:  "AQUA_CONSOLE_SECURE_ADDRESS",
-		Value: fmt.Sprintf("%s:443", fmt.Sprintf(consts.ServerServiceName, cr.Name)),
-	})
-
-	result = append(result, corev1.EnvVar{
-		Name:  "SCALOCK_GATEWAY_PUBLIC_IP",
-		Value: fmt.Sprintf(consts.GatewayServiceName, cr.Name),
-	})
-
-	result = append(result, corev1.EnvVar{
-		Name:  "AQUA_GRPC_MODE",
-		Value: "1",
-	})
-
-	if cr.Spec.Mtls {
-		mtlsServerEnv := []corev1.EnvVar{
-			{
-				Name:  "AQUA_PRIVATE_KEY",
-				Value: "/opt/aquasec/ssl/key.pem",
-			},
-			{
-				Name:  "AQUA_PUBLIC_KEY",
-				Value: "/opt/aquasec/ssl/cert.pem",
-			},
-			{
-				Name:  "AQUA_ROOT_CA",
-				Value: "/opt/aquasec/ssl/ca.pem",
-			},
-			{
-				Name:  "AQUA_VERIFY_ENFORCER",
-				Value: "1",
-			},
-		}
-		result = append(result, mtlsServerEnv...)
-	}
 
 	if cr.Spec.Envs != nil {
 		for _, env := range cr.Spec.Envs {

@@ -2,9 +2,8 @@ package aquaenforcer
 
 import (
 	"fmt"
-	"os"
-
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"os"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -40,7 +39,6 @@ func (enf *AquaEnforcerHelper) CreateTokenSecret(cr *operatorv1alpha1.AquaEnforc
 		"app":                cr.Name + "-requirments",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
-		"aqua.component":     "enforcer",
 	}
 	annotations := map[string]string{
 		"description": "Secret for aqua database password",
@@ -65,6 +63,42 @@ func (enf *AquaEnforcerHelper) CreateTokenSecret(cr *operatorv1alpha1.AquaEnforc
 	return token
 }
 
+func (enf *AquaEnforcerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaEnforcer) *corev1.ConfigMap {
+
+	labels := map[string]string{
+		"app":                "aqua-csp-enforcer",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+
+	annotations := map[string]string{
+		"description": "Deploy Aqua aqua-csp-enforcer ConfigMap",
+	}
+
+	data := map[string]string{
+		"AQUA_HEALTH_MONITOR_ENABLED": "true",
+		"AQUA_INSTALL_PATH":           "/var/lib/aquasec",
+		"AQUA_LOGICAL_NAME":           "",
+		"AQUA_SERVER":                 fmt.Sprintf("%s:%d", cr.Spec.Gateway.Host, cr.Spec.Gateway.Port),
+		"RESTART_CONTAINERS":          "no",
+	}
+
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        consts.EnforcerConfigMapName,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Data: data,
+	}
+	return configMap
+}
+
 // CreateDaemonSet :
 func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer) *appsv1.DaemonSet {
 	pullPolicy, registry, repository, tag := extra.GetImageData("enforcer", cr.Spec.Infrastructure.Version, cr.Spec.EnforcerService.ImageData, cr.Spec.Common.AllowAnyVersion)
@@ -78,6 +112,7 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		"app":                cr.Name + "-requirments",
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "enforcer",
 	}
 	annotations := map[string]string{
 		"description": "Secret for aqua database password",
@@ -94,6 +129,16 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 	}
 
 	envVars := enf.getEnvVars(cr)
+
+	envFromSource := []corev1.EnvFromSource{
+		{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: consts.EnforcerConfigMapName,
+				},
+			},
+		},
+	}
 
 	ds := &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
@@ -166,7 +211,42 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 									MountPath: "/data",
 								},
 							},
-							Env: envVars,
+							Env:     envVars,
+							EnvFrom: envFromSource,
+							LivenessProbe: &corev1.Probe{
+								FailureThreshold: 3,
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8096),
+										},
+										Scheme: "HTTP",
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
+							},
+							ReadinessProbe: &corev1.Probe{
+								FailureThreshold: 3,
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/readinessz",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(8096),
+										},
+										Scheme: "HTTP",
+									},
+								},
+								InitialDelaySeconds: 60,
+								PeriodSeconds:       30,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      1,
+							},
 						},
 					},
 					Volumes: []corev1.Volume{
@@ -359,6 +439,15 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 func (ebf *AquaEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaEnforcer) []corev1.EnvVar {
 	result := []corev1.EnvVar{
 		{
+			Name: "AQUA_NODE_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "spec.nodeName",
+				},
+			},
+		},
+		{
 			Name: "AQUA_TOKEN",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -368,14 +457,6 @@ func (ebf *AquaEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaEnforcer) []c
 					Key: cr.Spec.Secret.Key,
 				},
 			},
-		},
-		{
-			Name:  "AQUA_SERVER",
-			Value: fmt.Sprintf("%s:%d", cr.Spec.Gateway.Host, cr.Spec.Gateway.Port),
-		},
-		{
-			Name:  "AQUA_INSTALL_PATH",
-			Value: "/var/lib/aquasec",
 		},
 	}
 
