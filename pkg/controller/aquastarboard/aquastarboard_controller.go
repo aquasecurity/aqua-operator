@@ -292,10 +292,10 @@ func (r *ReconcileAquaStarboard) addStarboardClusterRoleBinding(cr *v1alpha1.Aqu
 	starboardHelper := newAquaStarboardHelper(cr)
 	crb := starboardHelper.CreateClusterRoleBinding(cr.Name,
 		cr.Namespace,
-		"aqua-starboard",
+		"starboard-operator",
 		"ke-crb",
 		cr.Spec.Infrastructure.ServiceAccount,
-		"aqua-starboard")
+		"starboard-operator")
 
 	// Set AquaStarboard instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, crb, r.scheme); err != nil {

@@ -44,7 +44,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 	rules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{
-				"*",
+				"",
 			},
 			Resources: []string{
 				"pods", "pods/log", "replicationcontrollers", "services",
@@ -55,7 +55,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
-				"*",
+				"",
 			},
 			Resources: []string{
 				"nodes",
@@ -66,7 +66,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
-				"*",
+				"",
 			},
 			Resources: []string{
 				"configmaps", "secrets", "serviceaccounts",
@@ -77,7 +77,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
-				"*",
+				"",
 			},
 			Resources: []string{
 				"secrets",
@@ -88,7 +88,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
-				"*",
+				"",
 			},
 			Resources: []string{
 				"events",
@@ -176,7 +176,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 	}
 
-	crole := rbac.CreateClusterRole(name, namespace, "aqua-starboard", fmt.Sprintf("%s-rbac", "aqua-sb"), "Deploy Aqua Starboard Cluster Role", rules)
+	crole := rbac.CreateClusterRole(name, namespace, "starboard-operator", fmt.Sprintf("%s-rbac", "aqua-sb"), "Deploy Aqua Starboard Cluster Role", rules)
 
 	return crole
 }
@@ -201,6 +201,11 @@ func (enf *AquaStarboardHelper) CreateStarboardServiceAccount(cr, namespace, app
 			Namespace:   namespace,
 			Labels:      labels,
 			Annotations: annotations,
+		},
+		ImagePullSecrets: []corev1.LocalObjectReference{
+			{
+				Name: "aqua-registry",
+			},
 		},
 	}
 
