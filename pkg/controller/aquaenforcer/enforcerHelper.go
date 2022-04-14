@@ -81,6 +81,11 @@ func (enf *AquaEnforcerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaEnforcer
 		"AQUA_LOGICAL_NAME":           "",
 		"AQUA_SERVER":                 fmt.Sprintf("%s:%d", cr.Spec.Gateway.Host, cr.Spec.Gateway.Port),
 		"RESTART_CONTAINERS":          "no",
+		"AQUA_EXPRESS_MODE":           "false",
+	}
+
+	if cr.Spec.AquaExpressMode {
+		data["AQUA_EXPRESS_MODE"] = "true"
 	}
 
 	configMap := &corev1.ConfigMap{

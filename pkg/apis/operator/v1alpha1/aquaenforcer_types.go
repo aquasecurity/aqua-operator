@@ -25,6 +25,7 @@ type AquaEnforcerSpec struct {
 	RunAsNonRoot           bool                    `json:"runAsNonRoot,omitempty"`
 	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
 	Mtls                   bool                    `json:"mtls,omitempty"`
+	AquaExpressMode        bool                    `json:"aqua_express_mode,omitempty"`
 }
 
 // AquaEnforcerStatus defines the observed state of AquaEnforcer
