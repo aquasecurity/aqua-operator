@@ -558,7 +558,7 @@ spec:
     serviceAccount: aqua-kube-enforcer-sa
   config:
     gateway_address: 'aqua-gateway:8443'          # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
-    cluster_name: aqua-secure                     # Required: provide your cluster name
+    cluster_name: Default-cluster-name                     # Required: provide your cluster name
     imagePullSecret: aqua-registry                # Required: provide the imagePullSecret name
   deploy:
     service: ClusterIP

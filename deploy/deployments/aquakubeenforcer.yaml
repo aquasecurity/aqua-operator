@@ -8,7 +8,7 @@ spec:
     serviceAccount: aqua-kube-enforcer-sa
   config:
     gateway_address: 'aqua-gateway:8443'
-    cluster_name: aqua-secure
+    cluster_name: Default-cluster-name
     imagePullSecret: aqua-registry
   deploy:
     service: ClusterIP
