@@ -57,7 +57,12 @@ The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different c
 * You can omit the Enforcer and KubeEnforcer components by removing them from the CR.
 * You can add server/gateway environment variables with ```.spec.<<serverEnvs/gatewayEnvs>>``` (same convention of name value as k8s deployment).
 * You can define the server/gateway resources requests/limits with ```.spec.<<server/gateway>>.resources```
-
+* You can define the server/gateway nodeSelector with
+   ```.spec.<<server/gateway>>.nodeSelector```
+* You can define the server/gateway affinity with
+   ```.spec.<<server/gateway>>.affinity```
+* You can define the server/gateway toleration with
+   ```.spec.<<server/gateway>>.tolerations```
 
 The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, **[AquaDatabase CRD](../deploy/crds/operator_v1alpha1_aquadatabase_cr.yaml)**, and **[AquaGateway CRD](../deploy/crds/operator_v1alpha1_aquagateway_cr.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
 
@@ -68,6 +73,12 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
     If you choose to run old/custom Aqua Enforcer version, you must set ```.spec.common.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the enforcer resources requests/limits using ```.spec.deploy.resources```.
+* You can define the enforcer nodeSelector with
+  ```.spec.deploy.nodeSelector```
+* You can define the enforcer affinity with
+  ```.spec.deploy.affinity```
+* You can define the enforcer toleration with
+  ```.spec.deploy.tolerations```
 
 **[AquaKubeEnforcer CRD](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the KubeEnforcer to the Aqua Server.
@@ -76,6 +87,12 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
     If you choose to run old/custom Aqua KubeEnforcer version, you must set ```.spec.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the kube-enforcer resources requests/limits using ```.spec.deploy.resources```.
+* You can define the kube-enforcer nodeSelector with
+  ```.spec.deploy.nodeSelector```
+* You can define the kube-enforcer affinity with
+  ```.spec.deploy.affinity```
+* You can define the kube-enforcer toleration with
+  ```.spec.deploy.tolerations```
 
 **[AquaStarboard CRD](../deploy/crds/aquasecurity.github.io_aquastarboards_crd.yaml)** is used to deploy the AquaStarboard in your target cluster by kube-enforcer.
 
@@ -89,6 +106,13 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 * You can set ``.spec.login.tlsNoVerify`` if you connect scanner to HTTPS server, and don't want to use mTLS verification.  
 * You can choose to deploy a different version of the Aqua Scanner by setting the ```.spec.image.tag``` property.
     If you choose to run old/custom Aqua Scanner version, you must set ```.spec.common.allowAnyVersion``` .
+* You can define the scanner resources requests/limits using ```.spec.deploy.resources```.
+* You can define the scanner nodeSelector with
+  ```.spec.deploy.nodeSelector```
+* You can define the scanner affinity with
+  ```.spec.deploy.affinity```
+* You can define the scanner toleration with
+  ```.spec.deploy.tolerations```  
 
 ## Advanced Configuration ##
 ### Configuring mTLS
@@ -238,6 +262,76 @@ spec:
    
    <img src="../images/whoami.png"/>
    
+### Assign Pods to Nodes
+
+#### NodeSelector
+
+1. Add a label to a node, with the following command:
+   
+   ```
+   kubectl label nodes <your-node-name> <key>=<value>
+   ```
+   Example:
+   ```
+   kubectl label nodes node1 aquadeployments=true
+   ```
+2. Verify that your chosen node has yours <key>=<value> label:
+   
+   ```
+   kubectl get nodes --selector=<key>=<value>
+   ```
+   Example:
+   ```
+   kubectl get nodes --selector=aquadeployments=true
+   ```
+   Example output:
+   ```
+   NAME     STATUS   ROLES    AGE   VERSION
+   node1    Ready    worker   4d    v1.20.14+0d60930
+   ```
+3. Set\Create ```.spec.deploy.nodeSelector``` property with ```map[string]string``` value, example:
+    ```yaml
+    spec:
+      nodeSelector:
+        key: value
+    ```
+   example:
+    ```yaml
+    spec:
+      nodeSelector:
+        aquadeployments: "true"
+    ```
+#### Affinity
+
+1. Set\Create ```.spec.deploy.affinity``` property
+   example:   
+    ```yaml
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - store
+            topologyKey: "kubernetes.io/hostname"
+    ```
+### Toleration
+
+1. add a taint to a node 
+2. Set\Create ```.spec.deploy.tolerations``` property
+   
+   example:
+    ```yaml
+    spec:
+      tolerations:
+      - key: "key1"
+        operator: "Exists"
+        value: "value1"
+        effect: "NoSchedule"
+   ```
 ## Operator Upgrades ##
 **Major versions** - When switching from an older operator channel to this channel,
 the operator will update the Aqua components to this channel Aqua version.
