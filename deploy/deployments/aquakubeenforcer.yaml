@@ -4,7 +4,7 @@ metadata:
   name: aquakubeenforcer
 spec:
   infra:
-    version: '6.5'
+    version: '2022.4'
     serviceAccount: aqua-kube-enforcer-sa
   config:
     gateway_address: 'aqua-gateway:8443'

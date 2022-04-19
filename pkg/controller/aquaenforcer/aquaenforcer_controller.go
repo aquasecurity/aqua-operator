@@ -3,6 +3,8 @@ package aquaenforcer
 import (
 	"context"
 	"fmt"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"reflect"
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
@@ -369,17 +371,22 @@ func (r *ReconcileAquaEnforcer) addEnforcerConfigMap(cr *operatorv1alpha1.AquaEn
 	enforcerHelper := newAquaEnforcerHelper(cr)
 
 	configMap := enforcerHelper.CreateConfigMap(cr)
+	hash, err := extra.GenerateMD5ForSpec(configMap.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum = hash
 
 	// Set AquaScanner instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Check if this ClusterRoleBinding already exists
-	found := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, found)
+	// Check if this ConfigMap already exists
+	foundConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua Scanner: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+		reqLogger.Info("Aqua Enforcer: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 		err = r.client.Create(context.TODO(), configMap)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
@@ -390,7 +397,19 @@ func (r *ReconcileAquaEnforcer) addEnforcerConfigMap(cr *operatorv1alpha1.AquaEn
 		return reconcile.Result{}, err
 	}
 
-	// MutatingWebhookConfiguration already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Aqua Enforcer ConfigMap Exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
+	// Check if the ConfigMap Data, matches the found Data
+	if !equality.Semantic.DeepDerivative(configMap.Data, foundConfigMap.Data) {
+		foundConfigMap = configMap
+		log.Info("Aqua Enforcer: Updating ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+		err := r.client.Update(context.TODO(), foundConfigMap)
+		if err != nil {
+			log.Error(err, "Failed to update ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
+	}
+
+	reqLogger.Info("Skip reconcile: Aqua Enforcer ConfigMap Exists", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
 	return reconcile.Result{Requeue: true}, nil
 }

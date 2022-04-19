@@ -21,6 +21,7 @@ type AquaKubeEnforcerSpec struct {
 	Envs                   []corev1.EnvVar        `json:"env,omitempty"`
 	Mtls                   bool                   `json:"mtls,omitempty"`
 	DeployStarboard        *AquaStarboardDetails  `json:"starboard,omitempty"`
+	ConfigMapChecksum      string                 `json:"config_map_checksum,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer

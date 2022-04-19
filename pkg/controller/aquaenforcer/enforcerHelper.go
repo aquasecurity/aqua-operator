@@ -115,7 +115,8 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		"aqua.component":     "enforcer",
 	}
 	annotations := map[string]string{
-		"description": "Secret for aqua database password",
+		"description":       "Secret for aqua database password",
+		"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 	}
 
 	privileged := true
@@ -214,7 +215,6 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 							Env:     envVars,
 							EnvFrom: envFromSource,
 							LivenessProbe: &corev1.Probe{
-								FailureThreshold: 3,
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/healthz",
@@ -227,11 +227,8 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 								},
 								InitialDelaySeconds: 60,
 								PeriodSeconds:       30,
-								SuccessThreshold:    1,
-								TimeoutSeconds:      1,
 							},
 							ReadinessProbe: &corev1.Probe{
-								FailureThreshold: 3,
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/readinessz",
@@ -244,8 +241,6 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 								},
 								InitialDelaySeconds: 60,
 								PeriodSeconds:       30,
-								SuccessThreshold:    1,
-								TimeoutSeconds:      1,
 							},
 						},
 					},
