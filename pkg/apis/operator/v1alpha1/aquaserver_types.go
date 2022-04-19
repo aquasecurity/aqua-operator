@@ -16,17 +16,18 @@ type AquaServerSpec struct {
 	Infrastructure *AquaInfrastructure `json:"infra"`
 	Common         *AquaCommon         `json:"common"`
 
-	ServerService *AquaService             `json:"deploy,required"`
-	ExternalDb    *AquaDatabaseInformation `json:"externalDb,omitempty"`
-	AuditDB       *AuditDBInformation      `json:"auditDB,omitempty"`
-	LicenseToken  string                   `json:"licenseToken,omitempty"`
-	AdminPassword string                   `json:"adminPassword,omitempty"`
-	Enforcer      *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
-	Envs          []corev1.EnvVar          `json:"env,required"`
-	ConfigMapData map[string]string        `json:"config_map_data,required"`
-	RunAsNonRoot  bool                     `json:"runAsNonRoot,omitempty"`
-	Route         bool                     `json:"route,omitempty"`
-	Mtls          bool                     `json:"mtls,omitempty"`
+	ServerService     *AquaService             `json:"deploy,required"`
+	ExternalDb        *AquaDatabaseInformation `json:"externalDb,omitempty"`
+	AuditDB           *AuditDBInformation      `json:"auditDB,omitempty"`
+	LicenseToken      string                   `json:"licenseToken,omitempty"`
+	AdminPassword     string                   `json:"adminPassword,omitempty"`
+	Enforcer          *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
+	Envs              []corev1.EnvVar          `json:"env,required"`
+	ConfigMapData     map[string]string        `json:"config_map_data,required"`
+	RunAsNonRoot      bool                     `json:"runAsNonRoot,omitempty"`
+	Route             bool                     `json:"route,omitempty"`
+	Mtls              bool                     `json:"mtls,omitempty"`
+	ConfigMapChecksum string                   `json:"config_map_checksum,omitempty"`
 }
 
 // AquaServerStatus defines the observed state of AquaServer

@@ -31,6 +31,7 @@ type AquaStarboardSpec struct {
 	VulnerabilityScannerEnabled   string                       `json:"vulnerabilityScannerEnabled,omitempty"`
 	BatchDeleteLimit              string                       `json:"batchDeleteLimit,omitempty"`
 	BatchDeleteDelay              string                       `json:"batchDeleteDelay,omitempty"`
+	ConfigMapChecksum             string                       `json:"config_map_checksum,omitempty"`
 }
 
 // AquaStarboardStatus defines the observed state of AquaStarboard

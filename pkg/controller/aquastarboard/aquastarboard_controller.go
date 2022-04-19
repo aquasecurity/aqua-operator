@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/aquasecurity/aqua-operator/pkg/apis/aquasecurity/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"reflect"
 	"strings"
 
@@ -230,7 +231,7 @@ func (r *ReconcileAquaStarboard) addStarboardClusterRole(cr *v1alpha1.AquaStarbo
 
 	// Check if this ClusterRole already exists
 	found := &rbacv1.ClusterRole{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: crole.Name, Namespace: crole.Namespace}, found)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: crole.Name}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua Starboard: Creating a New ClusterRole", "ClusterRole.Namespace", crole.Namespace, "ClusterRole.Name", crole.Name)
 		err = r.client.Create(context.TODO(), crole)
@@ -241,6 +242,25 @@ func (r *ReconcileAquaStarboard) addStarboardClusterRole(cr *v1alpha1.AquaStarbo
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	// Check if the ClusterRole Rules, matches the found Rules
+	equal, err := k8s.CompareByHash(crole.Rules, found.Rules)
+
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !equal {
+		found = crole
+		log.Info("Aqua Starboard: Updating ClusterRole", "ClusterRole.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
+		err := r.client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update ClusterRole", "ClusterRole.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// ClusterRole already exists - don't requeue
@@ -343,6 +363,20 @@ func (r *ReconcileAquaStarboard) addStarboardConfigMap(cr *v1alpha1.AquaStarboar
 		),
 	}
 
+	configMapsData := make(map[string]string)
+
+	for _, configMap := range configMaps {
+		for k, v := range configMap.Data {
+			configMapsData[k] = v
+		}
+	}
+
+	hash, err := extra.GenerateMD5ForSpec(configMapsData)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum = hash
+
 	// Set AquaStarboard instance as the owner and controller
 	requeue := true
 	for _, configMap := range configMaps {
@@ -352,8 +386,8 @@ func (r *ReconcileAquaStarboard) addStarboardConfigMap(cr *v1alpha1.AquaStarboar
 		}
 
 		// Check if this ClusterRoleBinding already exists
-		found := &corev1.ConfigMap{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, found)
+		foundConfigMap := &corev1.ConfigMap{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 		if err != nil && errors.IsNotFound(err) {
 			reqLogger.Info("Aqua Starboard: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 			err = r.client.Create(context.TODO(), configMap)
@@ -363,8 +397,21 @@ func (r *ReconcileAquaStarboard) addStarboardConfigMap(cr *v1alpha1.AquaStarboar
 		} else if err != nil {
 			return reconcile.Result{}, err
 		}
+
+		// Check if the ConfigMap Data, matches the found Data
+		if !equality.Semantic.DeepDerivative(configMap.Data, foundConfigMap.Data) {
+			foundConfigMap = configMap
+			log.Info("Aqua Starboard: Updating ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+			err := r.client.Update(context.TODO(), foundConfigMap)
+			if err != nil {
+				log.Error(err, "Aqua Starboard: Failed to update ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+
 		// MutatingWebhookConfiguration already exists - don't requeue
-		reqLogger.Info("Skip reconcile: Aqua Starboard ConfigMap Exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
+		reqLogger.Info("Skip reconcile: Aqua Starboard ConfigMap Exists", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
 	}
 	return reconcile.Result{Requeue: requeue}, nil
 }
