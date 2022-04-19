@@ -4,11 +4,11 @@ metadata:
   name: aqua
 spec:
   infra:
-    version: '6.5'
+    version: '2022.4'
     serviceAccount: aqua-kube-enforcer-sa
   config:
     gateway_address: aqua-gateway:8443
-    cluster_name: aqua-secure
+    cluster_name: Default-cluster-name
     imagePullSecret: aqua-registry
   token: "<<KUBE_ENFORCER_GROUP_TOKEN>>"
   allowAnyVersion:                        # Optional: running all types of images
@@ -16,7 +16,7 @@ spec:
     service: ClusterIP
     image:
       registry: registry.aquasec.com
-      tag: "6.5"
+      tag: "2022.4"
       repository: kube-enforcer
       pullPolicy: Always
     resources:                              # Optional: Set resources requests/limits for kube-enforcer

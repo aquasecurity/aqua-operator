@@ -4,6 +4,7 @@ import (
 	"context"
 	syserrors "errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"reflect"
 	"strings"
 
@@ -250,7 +251,9 @@ func (r *ReconcileAquaServer) Reconcile(request reconcile.Request) (reconcile.Re
 
 		reqLogger.Info("Start Creating Aqua server ConfigMap")
 		_, err = r.CreateServerConfigMap(instance)
-
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		reqLogger.Info("Start Creating Aqua Server Deployment...")
 		_, err = r.InstallServerDeployment(instance)
 		if err != nil {
@@ -434,34 +437,51 @@ func (r *ReconcileAquaServer) CreateServerConfigMap(cr *operatorv1alpha1.AquaSer
 
 	// Define a new ConfigMap object
 	serverHelper := newAquaServerHelper(cr)
-	configMaps := []*corev1.ConfigMap{
-		serverHelper.CreateConfigMap(cr),
+
+	configMap := serverHelper.CreateConfigMap(cr)
+	hash, err := extra.GenerateMD5ForSpec(configMap.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum = hash
+
+	// Set AquaServer instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
+		return reconcile.Result{}, err
 	}
 
-	// Set AquaStarboard instance as the owner and controller
-	requeue := true
-	for _, configMap := range configMaps {
-		// Check if this ClusterRoleBinding already exists
-		if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
+	// Check if this ClusterRoleBinding already exists
+	foundConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Aqua Server: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+		err = r.client.Create(context.TODO(), configMap)
+
+		if err != nil {
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if the ConfigMap Data, matches the found Data
+	if !equality.Semantic.DeepDerivative(configMap.Data, foundConfigMap.Data) {
+		foundConfigMap = configMap
+		log.Info("Aqua Server: Updating ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+		err := r.client.Update(context.TODO(), foundConfigMap)
+		if err != nil {
+			log.Error(err, "Aqua Server: Failed to update ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
 			return reconcile.Result{}, err
 		}
 
-		// Check if this ClusterRoleBinding already exists
-		found := &corev1.ConfigMap{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, found)
-		if err != nil && errors.IsNotFound(err) {
-			reqLogger.Info("Aqua Server: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
-			err = r.client.Create(context.TODO(), configMap)
-			if err == nil {
-				requeue = false
-			}
-		} else if err != nil {
-			return reconcile.Result{}, err
-		}
-		// MutatingWebhookConfiguration already exists - don't requeue
-		reqLogger.Info("Skip reconcile: Aqua Server ConfigMap Exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
+		return reconcile.Result{Requeue: true}, nil
 	}
-	return reconcile.Result{Requeue: requeue}, nil
+
+	reqLogger.Info("Skip reconcile: Aqua Server ConfigMap Exists", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+
+	return reconcile.Result{Requeue: true}, nil
 }
 
 func (r *ReconcileAquaServer) InstallServerDeployment(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {

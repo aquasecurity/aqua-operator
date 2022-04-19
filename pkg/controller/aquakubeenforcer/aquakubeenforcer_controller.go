@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	syserrors "errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"math/big"
 	"reflect"
 	"strings"
@@ -460,7 +461,8 @@ func (r *ReconcileAquaKubeEnforcer) addKubeEnforcerClusterRole(cr *operatorv1alp
 
 	// Check if this ClusterRole already exists
 	found := &rbacv1.ClusterRole{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: crole.Name, Namespace: crole.Namespace}, found)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: crole.Name}, found)
+
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New ClusterRole", "ClusterRole.Namespace", crole.Namespace, "ClusterRole.Name", crole.Name)
 		err = r.client.Create(context.TODO(), crole)
@@ -471,6 +473,25 @@ func (r *ReconcileAquaKubeEnforcer) addKubeEnforcerClusterRole(cr *operatorv1alp
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	// Check if the ClusterRole Rules, matches the found Rules
+	equal, err := k8s.CompareByHash(crole.Rules, found.Rules)
+
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !equal {
+		found = crole
+		log.Info("Aqua KubeEnforcer: Updating ClusterRole", "ClusterRole.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
+		err := r.client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update ClusterRole", "ClusterRole.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// ClusterRole already exists - don't requeue
@@ -564,7 +585,7 @@ func (r *ReconcileAquaKubeEnforcer) addKubeEnforcerRole(cr *operatorv1alpha1.Aqu
 		return reconcile.Result{}, err
 	}
 
-	// Check if this ClusterRole already exists
+	// Check if this Role already exists
 	found := &rbacv1.Role{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: role.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
@@ -577,6 +598,25 @@ func (r *ReconcileAquaKubeEnforcer) addKubeEnforcerRole(cr *operatorv1alpha1.Aqu
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	// Check if the Role Rules, matches the found Rules
+	equal, err := k8s.CompareByHash(role.Rules, found.Rules)
+
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !equal {
+		found = role
+		log.Info("Aqua KubeEnforcer: Updating Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+		err := r.client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// ClusterRole already exists - don't requeue
@@ -716,15 +756,20 @@ func (r *ReconcileAquaKubeEnforcer) addKEConfigMap(cr *operatorv1alpha1.AquaKube
 		cr.Spec.Config.GatewayAddress,
 		cr.Spec.Config.ClusterName,
 		deployStarboard)
+	hash, err := extra.GenerateMD5ForSpec(configMap.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum = hash
 
 	// Set AquaCsp instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, configMap, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Check if this ClusterRoleBinding already exists
-	found := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, found)
+	// Check if this ConfigMap already exists
+	foundConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua CSP: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 		err = r.client.Create(context.TODO(), configMap)
@@ -737,8 +782,21 @@ func (r *ReconcileAquaKubeEnforcer) addKEConfigMap(cr *operatorv1alpha1.AquaKube
 		return reconcile.Result{}, err
 	}
 
+	// Check if the ConfigMap Data, matches the found Data
+	if !equality.Semantic.DeepDerivative(configMap.Data, foundConfigMap.Data) {
+		foundConfigMap = configMap
+		log.Info("Aqua KubeEnforcer: Updating ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+		err := r.client.Update(context.TODO(), foundConfigMap)
+		if err != nil {
+			log.Error(err, "Failed to update ConfigMap", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
+	}
+
 	// MutatingWebhookConfiguration already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer ConfigMap Exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
+	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer ConfigMap Exists", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
 	return reconcile.Result{Requeue: true}, nil
 }
 
