@@ -3,6 +3,7 @@ package k8s
 import (
 	syserrors "errors"
 	"fmt"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 
@@ -121,4 +122,22 @@ func CheckForK8sObjectUpdate(objectName string, found, desired runtime.Object) (
 		"upgrade bool", upgrade)
 
 	return upgrade, nil
+}
+
+func CompareByHash(a, b interface{}) (bool, error) {
+
+	aMd5, err := extra.GenerateMD5ForSpec(a)
+	if err != nil {
+		return false, err
+	}
+	bMd5, err := extra.GenerateMD5ForSpec(b)
+	if err != nil {
+		return false, err
+	}
+	fmt.Printf("aMd5: %s", aMd5)
+	fmt.Printf("bMd5: %s", bMd5)
+	if aMd5 == bMd5 {
+		return true, nil
+	}
+	return false, nil
 }

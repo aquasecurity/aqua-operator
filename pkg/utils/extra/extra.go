@@ -1,9 +1,14 @@
 package extra
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"io"
 	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
@@ -117,4 +122,19 @@ func GetCurrentNameSpace() string {
 		os.Exit(1)
 	}
 	return namespace
+}
+
+func GenerateMD5ForSpec(spec interface{}) (string, error) {
+	b, err := json.Marshal(spec)
+	if err != nil {
+		return "", err
+	}
+	/* #nosec */
+	hash := md5.New()
+	_, err = io.Copy(hash, bytes.NewReader(b))
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }

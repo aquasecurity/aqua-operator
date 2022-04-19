@@ -107,7 +107,8 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 	}
 
 	annotations := map[string]string{
-		"description": "Deploy the aqua scanner",
+		"description":       "Deploy the aqua scanner",
+		"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 	}
 
 	privileged := true

@@ -152,7 +152,8 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 		"aqua.component":     "server",
 	}
 	annotations := map[string]string{
-		"description": "Deploy the aqua console server",
+		"description":       "Deploy the aqua console server",
+		"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 	}
 
 	envVars := sr.getEnvVars(cr)
