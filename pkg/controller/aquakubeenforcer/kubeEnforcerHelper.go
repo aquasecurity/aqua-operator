@@ -593,7 +593,8 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 		"aqua.component":     "kubeenforcer",
 	}
 	annotations := map[string]string{
-		"description": "Deploy Kube Enforcer Deployment",
+		"description":       "Deploy Kube Enforcer Deployment",
+		"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 	}
 
 	envVars := enf.getEnvVars(cr)
@@ -825,6 +826,9 @@ func (ebf *AquaKubeEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaKubeEnfor
 // Starboard functions
 
 func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnforcer) *aquasecurity1alpha1.AquaStarboard {
+
+	_, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
+
 	labels := map[string]string{
 		"app":                cr.Name + "-kube-enforcer",
 		"deployedby":         "aqua-operator",
@@ -853,7 +857,7 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 			RegistryData:                  cr.Spec.DeployStarboard.RegistryData,
 			ImageData:                     cr.Spec.DeployStarboard.ImageData,
 			Envs:                          cr.Spec.DeployStarboard.Envs,
-			KubeEnforcerVersion:           cr.Spec.Infrastructure.Version,
+			KubeEnforcerVersion:           fmt.Sprintf("%s/%s:%s", registry, repository, tag),
 			LogDevMode:                    cr.Spec.DeployStarboard.LogDevMode,
 			ConcurrentScanJobsLimit:       cr.Spec.DeployStarboard.ConcurrentScanJobsLimit,
 			ScanJobRetryAfter:             cr.Spec.DeployStarboard.ScanJobRetryAfter,
