@@ -188,7 +188,10 @@ func (sr *AquaServerHelper) newDeployment(cr *operatorv1alpha1.AquaServer) *apps
 			Replicas: extra.Int32Ptr(int32(cr.Spec.ServerService.Replicas)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": cr.Name + "-server",
+					"app":                cr.Name + "-server",
+					"deployedby":         "aqua-operator",
+					"aquasecoperator_cr": cr.Name,
+					"type":               "aqua-server",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
