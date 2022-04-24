@@ -160,7 +160,9 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *operatorv1alpha1.AquaEnforcer
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": cr.Name + "-requirments",
+					"app":                cr.Name + "-requirments",
+					"deployedby":         "aqua-operator",
+					"aquasecoperator_cr": cr.Name,
 				},
 			},
 			Template: corev1.PodTemplateSpec{

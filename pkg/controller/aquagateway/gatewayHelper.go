@@ -88,7 +88,10 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 			Replicas: extra.Int32Ptr(int32(cr.Spec.GatewayService.Replicas)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": cr.Name + "-gateway",
+					"app":                cr.Name + "-gateway",
+					"deployedby":         "aqua-operator",
+					"aquasecoperator_cr": cr.Name,
+					"type":               "aqua-gateway",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
