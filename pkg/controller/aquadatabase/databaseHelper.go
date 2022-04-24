@@ -109,7 +109,11 @@ func (db *AquaDatabaseHelper) newDeployment(cr *operatorv1alpha1.AquaDatabase, d
 		Spec: appsv1.DeploymentSpec{
 			Replicas: extra.Int32Ptr(int32(cr.Spec.DbService.Replicas)),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: map[string]string{
+					"app":                app,
+					"deployedby":         "aqua-operator",
+					"aquasecoperator_cr": cr.Name,
+				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
