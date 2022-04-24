@@ -132,7 +132,9 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 			Replicas: extra.Int32Ptr(int32(cr.Spec.ScannerService.Replicas)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": cr.Name + "-scanner",
+					"app":                cr.Name + "-scanner",
+					"deployedby":         "aqua-operator",
+					"aquasecoperator_cr": cr.Name,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
