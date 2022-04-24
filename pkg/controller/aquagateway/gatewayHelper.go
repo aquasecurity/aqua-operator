@@ -87,7 +87,9 @@ func (gw *AquaGatewayHelper) newDeployment(cr *operatorv1alpha1.AquaGateway) *ap
 		Spec: appsv1.DeploymentSpec{
 			Replicas: extra.Int32Ptr(int32(cr.Spec.GatewayService.Replicas)),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: map[string]string{
+					"app": cr.Name + "-gateway",
+				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

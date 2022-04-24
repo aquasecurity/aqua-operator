@@ -131,7 +131,9 @@ func (as *AquaScannerHelper) newDeployment(cr *operatorv1alpha1.AquaScanner) *ap
 		Spec: appsv1.DeploymentSpec{
 			Replicas: extra.Int32Ptr(int32(cr.Spec.ScannerService.Replicas)),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: map[string]string{
+					"app": cr.Name + "-scanner",
+				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
