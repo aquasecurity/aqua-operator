@@ -70,6 +70,9 @@ spec:
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   adminPassword:                            # Optional: Aqua Admin Password String
   licenseToken:                             # Optional: License Token String
+  serverConfigMapData:                   # Optional: configMap data to add to the server map[string]string
+    key1: "value1"
+    key2: "value2"
   serverEnvs:                               # Optional: environment variables to add to the server (name:value)
   - name: "SOME ENV"
     value: "SOME ENV VALUE"

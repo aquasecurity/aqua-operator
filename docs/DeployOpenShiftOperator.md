@@ -56,6 +56,7 @@ The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different c
 * You can choose to use an external database by providing the ```.spec.externalDB```  property details.
 * You can omit the Enforcer and KubeEnforcer components by removing them from the CR.
 * You can add server/gateway environment variables with ```.spec.<<serverEnvs/gatewayEnvs>>``` (same convention of name value as k8s deployment).
+* You can add server configmap variables with ```.spec.configMapData``` (same convention of name value as k8s deployment).
 * You can define the server/gateway resources requests/limits with ```.spec.<<server/gateway>>.resources```
 * You can define the server/gateway nodeSelector with
    ```.spec.<<server/gateway>>.nodeSelector```
