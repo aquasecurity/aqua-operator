@@ -119,6 +119,12 @@ func (sr *AquaServerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaServer) *co
 		}
 	}
 
+	if cr.Spec.ConfigMapData != nil {
+		for k, v := range cr.Spec.ConfigMapData {
+			data[k] = v
+		}
+	}
+
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

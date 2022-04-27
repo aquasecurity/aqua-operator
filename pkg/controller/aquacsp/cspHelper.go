@@ -127,7 +127,7 @@ func (csp *AquaCspHelper) newAquaServer(cr *operatorv1alpha1.AquaCsp) *operatorv
 			Enforcer:       csp.Parameters.AquaCsp.Spec.Enforcer,
 			RunAsNonRoot:   csp.Parameters.AquaCsp.Spec.RunAsNonRoot,
 			Envs:           csp.Parameters.AquaCsp.Spec.ServerEnvs,
-			ConfigMapData:  csp.Parameters.AquaCsp.Spec.ConfigMapData,
+			ConfigMapData:  csp.Parameters.AquaCsp.Spec.ServerConfigMapData,
 			AuditDB:        csp.Parameters.AquaCsp.Spec.AuditDB,
 			Route:          csp.Parameters.AquaCsp.Spec.Route,
 		},
@@ -216,6 +216,25 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 	annotations := map[string]string{
 		"description": "Deploy Aqua KubeEnforcer",
 	}
+
+	AquaStarboardDetails := operatorv1alpha1.AquaStarboardDetails{
+		AllowAnyVersion: true,
+		Infrastructure: &operatorv1alpha1.AquaInfrastructure{
+			Version:        "0.14.1",
+			ServiceAccount: "starboard-operator",
+		},
+		Config: operatorv1alpha1.AquaStarboardConfig{
+			ImagePullSecret: "starboard-registry",
+		},
+		StarboardService: &operatorv1alpha1.AquaService{
+			Replicas: 1,
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry:   "docker.io/aquasec",
+				Repository: "starboard-operator",
+				PullPolicy: "IfNotPresent",
+			},
+		},
+	}
 	aquaKubeEnf := &operatorv1alpha1.AquaKubeEnforcer{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operator.aquasec.com/v1alpha1",
@@ -242,6 +261,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *operatorv1alpha1.AquaCsp) *ope
 				Tag:        tag,
 				PullPolicy: "Always",
 			},
+			DeployStarboard: &AquaStarboardDetails,
 		},
 	}
 
