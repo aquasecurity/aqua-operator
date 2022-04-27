@@ -56,6 +56,7 @@ The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different c
 * You can choose to use an external database by providing the ```.spec.externalDB```  property details.
 * You can omit the Enforcer and KubeEnforcer components by removing them from the CR.
 * You can add server/gateway environment variables with ```.spec.<<serverEnvs/gatewayEnvs>>``` (same convention of name value as k8s deployment).
+* You can add server configmap variables with ```.spec.serverConfigMapData``` (same convention of name value as k8s deployment).
 * You can define the server/gateway resources requests/limits with ```.spec.<<server/gateway>>.resources```
 * You can define the server/gateway nodeSelector with
    ```.spec.<<server/gateway>>.nodeSelector```
@@ -622,7 +623,7 @@ metadata:
 spec:
   infra:                                    
     serviceAccount: "aqua-sa"                
-    version: "2022.4"                          # Optional: auto generate to latest version
+    version: "2022.4"                       # Optional: auto generate to latest version
   common:
     imagePullSecret: "aqua-registry"        # Optional: if already created image pull secret then mention in here
   deploy:                                   # Optional: information about Aqua Enforcer deployment
@@ -636,6 +637,7 @@ spec:
     port: 8443
   token: "<<your-token>>"                   # Required: The Enforcer group token can use an existing secret instead (you can create a token from the Aqua console)
   aqua_express_mode: false                  # Optional: Change to true, to enable express mode deployment of enforcer
+  rhcosVersion: "<<VERSION>>"               # Optional: Set the RHCOS_VERSION with the exact OCP version to allow accurate vulnerability scanning.
 ```
 
 #### Example: Deploying the KubeEnforcer
