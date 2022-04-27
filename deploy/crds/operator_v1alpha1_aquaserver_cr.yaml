@@ -49,3 +49,6 @@ spec:
   licenseToken:                             # Optional: License Token String
   runAsNonRoot:                             # Optional: true/false
   route:                                    # Optional: true/false
+  configMapData:                          # Optional: configMap data to add to the server map[string]string
+    key1: "value1"
+    key2: "value2"

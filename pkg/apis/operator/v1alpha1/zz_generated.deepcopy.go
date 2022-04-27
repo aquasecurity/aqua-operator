@@ -164,8 +164,8 @@ func (in *AquaCspSpec) DeepCopyInto(out *AquaCspSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.ConfigMapData != nil {
-		in, out := &in.ConfigMapData, &out.ConfigMapData
+	if in.ServerConfigMapData != nil {
+		in, out := &in.ServerConfigMapData, &out.ServerConfigMapData
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -470,13 +470,6 @@ func (in *AquaEnforcerSpec) DeepCopyInto(out *AquaEnforcerSpec) {
 		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	if in.ConfigMapData != nil {
-		in, out := &in.ConfigMapData, &out.ConfigMapData
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
 		}
 	}
 	if in.EnforcerUpdateApproved != nil {
