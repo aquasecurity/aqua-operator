@@ -21,12 +21,12 @@ type AquaEnforcerSpec struct {
 	Token                  string                  `json:"token,required"`
 	Secret                 *AquaSecret             `json:"secret,required"`
 	Envs                   []corev1.EnvVar         `json:"env,required"`
-	ConfigMapData          map[string]string       `json:"config_map_data,omitempty"`
 	RunAsNonRoot           bool                    `json:"runAsNonRoot,omitempty"`
 	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
 	Mtls                   bool                    `json:"mtls,omitempty"`
 	ConfigMapChecksum      string                  `json:"config_map_checksum,omitempty"`
 	AquaExpressMode        bool                    `json:"aqua_express_mode,omitempty"`
+	RhcosVersion           string                  `json:"rhcosVersion,omitempty"`
 }
 
 // AquaEnforcerStatus defines the observed state of AquaEnforcer
