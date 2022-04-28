@@ -300,9 +300,18 @@ func (r *ReconcileAquaCsp) Reconcile(request reconcile.Request) (reconcile.Resul
 			reqLogger.Error(syserrors.New("Missing Aqua Server Deployment Data!, Please fix and redeploy template!"), "Aqua CSP Deployment Missing Server Deployment Data!")
 		}
 		if instance.Spec.DeployKubeEnforcer != nil {
-			instance.Spec.ConfigMapData["BATCH_INSTALL_GATEWAY"] = fmt.Sprintf(consts.GatewayServiceName, instance.Name)
-			instance.Spec.ConfigMapData["AQUA_KE_GROUP_NAME"] = "operator-default-ke-group"
-			instance.Spec.ConfigMapData["AQUA_KE_GROUP_TOKEN"] = consts.DefaultKubeEnforcerToken
+			keConfigMapData := map[string]string{
+				"BATCH_INSTALL_GATEWAY": fmt.Sprintf(consts.GatewayServiceName, instance.Name),
+				"AQUA_KE_GROUP_NAME":    "operator-default-ke-group",
+				"AQUA_KE_GROUP_TOKEN":   consts.DefaultKubeEnforcerToken,
+			}
+			if instance.Spec.ServerConfigMapData != nil {
+				for k, v := range keConfigMapData {
+					instance.Spec.ServerConfigMapData[k] = v
+				}
+			} else {
+				instance.Spec.ServerConfigMapData = keConfigMapData
+			}
 		}
 
 		_, err = r.InstallAquaServer(instance)
