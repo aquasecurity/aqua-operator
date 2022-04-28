@@ -33,3 +33,4 @@ spec:
     key:
   runAsNonRoot:                             # Optional: true/false
   aqua_express_mode: false                  # Optional: Change to true, to enable express mode deployment of enforcer
+  rhcosVersion: "SOME VALUE"                # Optional: Set the RHCOS_VERSION with the exact OCP version to allow accurate vulnerability scanning.

@@ -88,6 +88,10 @@ func (enf *AquaEnforcerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaEnforcer
 		data["AQUA_EXPRESS_MODE"] = "true"
 	}
 
+	if len(cr.Spec.RhcosVersion) != 0 {
+		data["RHCOS_VERSION"] = cr.Spec.RhcosVersion
+	}
+
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
