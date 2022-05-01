@@ -89,7 +89,7 @@ func (enf *AquaEnforcerHelper) CreateConfigMap(cr *operatorv1alpha1.AquaEnforcer
 	}
 
 	if len(cr.Spec.RhcosVersion) != 0 {
-		data["RHCOS_VERSION"] = cr.Spec.RhcosVersion
+		data["AQUA_OCP_FULL_VERSION"] = cr.Spec.RhcosVersion
 	}
 
 	configMap := &corev1.ConfigMap{
