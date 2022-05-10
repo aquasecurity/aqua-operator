@@ -639,7 +639,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: extra.Int32Ptr(int32(2)),
+			//Replicas: extra.Int32Ptr(int32(2)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectors,
 			},
