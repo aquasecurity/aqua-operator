@@ -11,8 +11,7 @@ spec:
     listKind: ConfigAuditReportList
     plural: configauditreports
     singular: configauditreport
-    categories:
-      - all
+    categories: []
     shortNames:
       - configaudit
   scope: Namespaced
