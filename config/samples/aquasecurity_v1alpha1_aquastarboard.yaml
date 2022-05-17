@@ -1,0 +1,6 @@
+apiVersion: aquasecurity.github.io/v1alpha1
+kind: AquaStarboard
+metadata:
+  name: aquastarboard-sample
+spec:
+  # TODO(user): Add fields here
