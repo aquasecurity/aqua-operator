@@ -2,14 +2,14 @@
 
 Support only Kubernetes 1.11+
 
-### Requirments (Optional)
-You can create before using the operator but in Kubernetes the operator able to create all the requirments:
+### Requirements (Optional)
+You can create before using the operator but in Kubernetes the operator able to create all the requirements:
 * Namespace
 * Service Account
 * Docker Pull Image Secret
 * Aqua Database Password Secret
 
-> Note: We recommended to use the automatic requirments generate by the operator in Kuberntes
+> Note: We are recommended to use the automatic requirements generate by the operator in Kubernetes
 
 ```shell
 kubectl create namespace aqua
@@ -33,7 +33,7 @@ EOF
 
 Support only Openshift 3.11+
 
-### Requirments
+### Requirements
 
 First of all you need to create:
 * Namespace

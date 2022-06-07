@@ -1,0 +1,36 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaEnforcer
+metadata:
+  name: aquaenforcer-sample
+spec:
+  infra:                                    # Required: Infrastructure information
+    serviceAccount: "aqua-sa"               # Required:
+    version: "2022.4"                       # Optional: auto generate to latest version
+  common:
+    imagePullSecret:                        # Optional: if already created image pull secret then mention in here
+  deploy:                                   # Optional: information about aqua enforcer deployment
+    image:                                  # Optional: if not given take the default value and version from infra.version
+      repository: "enforcer"                # Optional: if not given take the default value - enforcer
+      registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
+      tag: "2022.4"                         # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
+      pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
+    resources:                              # Optional: Set resources requests/limits for enforcers
+      limits:
+        cpu: "SOME VALUE"
+        memory: "SOME VALUE"
+      requests:
+        cpu: "SOME VALUE"
+        memory: "SOME VALUE"
+  gateway:                                  # Required: data about the gateway address
+    host: aqua-gateway
+    port: 8443
+  token: "token"                            # Required: enforcer group token also can use an existing secret instead
+  env:                                      # Optional: environment variables to add to the enforcer
+  - name: "SOME ENV"
+    value: "SOME ENV VALUE"
+  secret:                                   # Optional: secret for the enforcer token
+    name:
+    key:
+  runAsNonRoot:                             # Optional: true/false
+  aqua_express_mode: false                  # Optional: Change to true, to enable express mode deployment of enforcer
+  rhcosVersion: "SOME VALUE"                # Optional: Set the RHCOS_VERSION with the exact OCP version to allow accurate vulnerability scanning.

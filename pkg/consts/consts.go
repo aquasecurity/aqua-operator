@@ -46,6 +46,12 @@ const (
 	// AquaKubeEnforcerSAClusterReaderRoleBind is Openshift cluster role binding between aqua-kube-enforcer-sa and ClusterReaderRole
 	AquaKubeEnforcerSAClusterReaderRoleBind = "aqua-kube-enforcer-sa-cluster-reader-crb"
 
+	AquaKubeEnforcerFinalizer                          = "aquakubeenforcers.operator.aquasec.com/finalizer"
+	AquaKubeEnforcerMutantingWebhookConfigurationName  = "kube-enforcer-me-injection-hook-config"
+	AquaKubeEnforcerValidatingWebhookConfigurationName = "kube-enforcer-admission-hook-config"
+	AquaKubeEnforcerClusterRoleName                    = "aqua-kube-enforcer"
+	AquaKubeEnforcerClusterRoleBidingName              = "aqua-kube-enforcer"
+
 	// AquaStarboardSAClusterReaderRoleBind is Openshift cluster role binding between aqua-starboard-sa and ClusterReaderRole
 	AquaStarboardSAClusterReaderRoleBind = "aqua-starboard-sa-cluster-reader-crb"
 
@@ -71,7 +77,7 @@ const (
 	DbPvcSize = 10
 
 	// LatestVersion Latest supported aqua version in operator
-	LatestVersion = "2022.4"
+	LatestVersion = "6.5"
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter5.aquasec.com"
