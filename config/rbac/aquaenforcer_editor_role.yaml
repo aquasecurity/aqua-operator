@@ -1,0 +1,24 @@
+# permissions for end users to edit aquaenforcers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aquaenforcer-editor-role
+rules:
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquaenforcers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquaenforcers/status
+  verbs:
+  - get

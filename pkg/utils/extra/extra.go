@@ -7,13 +7,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"io"
 	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 
-	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/pkg/apis/operator/v1alpha1"
+	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 
@@ -116,12 +115,26 @@ func AppendEnvVar(envs []corev1.EnvVar, item corev1.EnvVar) []corev1.EnvVar {
 
 func GetCurrentNameSpace() string {
 	var log = logf.Log.WithName("GetWatchNamespace")
-	namespace, err := k8sutil.GetWatchNamespace()
+	namespace, err := GetWatchNamespace()
 	if err != nil {
 		log.Error(err, "Failed to get watch namespace")
 		os.Exit(1)
 	}
 	return namespace
+}
+
+// GetWatchNamespace returns the Namespace the operator should be watching for changes
+func GetWatchNamespace() (string, error) {
+	// WatchNamespaceEnvVar is the constant for env variable WATCH_NAMESPACE
+	// which specifies the Namespace to watch.
+	// An empty value means the operator is running with cluster scope.
+	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
+
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
+	}
+	return ns, nil
 }
 
 func GenerateMD5ForSpec(spec interface{}) (string, error) {
