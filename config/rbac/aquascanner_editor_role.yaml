@@ -1,0 +1,24 @@
+# permissions for end users to edit aquascanners.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aquascanner-editor-role
+rules:
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquascanners
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquascanners/status
+  verbs:
+  - get
