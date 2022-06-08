@@ -46,6 +46,12 @@ const (
 	// AquaKubeEnforcerSAClusterReaderRoleBind is Openshift cluster role binding between aqua-kube-enforcer-sa and ClusterReaderRole
 	AquaKubeEnforcerSAClusterReaderRoleBind = "aqua-kube-enforcer-sa-cluster-reader-crb"
 
+	AquaKubeEnforcerFinalizer                          = "aquakubeenforcers.operator.aquasec.com/finalizer"
+	AquaKubeEnforcerMutantingWebhookConfigurationName  = "kube-enforcer-me-injection-hook-config"
+	AquaKubeEnforcerValidatingWebhookConfigurationName = "kube-enforcer-admission-hook-config"
+	AquaKubeEnforcerClusterRoleName                    = "aqua-kube-enforcer"
+	AquaKubeEnforcerClusterRoleBidingName              = "aqua-kube-enforcer"
+
 	// AquaStarboardSAClusterReaderRoleBind is Openshift cluster role binding between aqua-starboard-sa and ClusterReaderRole
 	AquaStarboardSAClusterReaderRoleBind = "aqua-starboard-sa-cluster-reader-crb"
 

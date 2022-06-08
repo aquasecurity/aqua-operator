@@ -1,0 +1,20 @@
+# permissions for end users to view aquacsps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aquacsp-viewer-role
+rules:
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquacsps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquacsps/status
+  verbs:
+  - get

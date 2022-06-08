@@ -1,0 +1,83 @@
+domain: aquasec.com
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: aqua-oprator
+repo: github.com/aquasecurity/aqua-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaCsp
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaDatabase
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaEnforcer
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaGateway
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaKubeEnforcer
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaScanner
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: operator
+  kind: AquaServer
+  path: github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: aquasecurity
+  kind: AquaStarboard
+  path: github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1
+  version: v1alpha1
+version: "3"
