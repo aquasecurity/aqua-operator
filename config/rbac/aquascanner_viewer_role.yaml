@@ -1,0 +1,20 @@
+# permissions for end users to view aquascanners.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aquascanner-viewer-role
+rules:
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquascanners
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aquascanners/status
+  verbs:
+  - get

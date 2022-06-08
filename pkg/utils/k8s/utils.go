@@ -3,6 +3,7 @@ package k8s
 import (
 	syserrors "errors"
 	"fmt"
+
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"

@@ -1,6 +1,6 @@
 ## General 
 
-This guide explains how to deploy and use the Aqua Security Operator to manage Aqua's deployments in an OpenShift 4.x enviornemnt. You can use the Operator to deploy Aqua Entperiese or any of its components -
+This guide explains how to deploy and use the Aqua Security Operator to manage Aqua's deployments in an OpenShift 4.x environment. You can use the Operator to deploy Aqua Enterprise or any of its components -
 * Server (aka “console”)
 * Database (optional; you can map an external database as well) 
 * Gateway 
@@ -14,7 +14,8 @@ Use the Aqua Operator to:
 * Assign metadata tags to Aqua Enterprise components
 * Easily add and delete Aqua components like Scanner daemons, Kube-Enforcers and Enforcers
 	
-You can find all Aqua's Operator CRs and their properties at [Custom Resources](../deploy/crds). 
+You can find all Aqua's Operator CRs and their properties at [Custom Resources](../config/crd/bases), 
+ [Properties](../config/samples).
 	   
 ## Prerequisites 
 
@@ -22,8 +23,8 @@ Make sure you have a license and access to the Aqua registry. To obtain a licens
 
 It is advised that you read about the [Aqua Environment and Configuration](https://docs.aquasec.com/docs/purpose-of-this-section) and [Aqua's sizing guide](https://docs.aquasec.com/docs/sizing-guide) before deploying and using the Operator. 
 
-## Types of Aqua Opertaor
-Aqua Security maintans three types of Operators:
+## Types of Aqua Operator
+Aqua Security maintains three types of Operators:
 * **Marketplace** - The marketplace operator is purchased through Red Hat Marketplace.
 * **Community** - Aqua's official Operator. It typically represents the latest and newest version of the Operator. 
 * **Certified** - Aqua's official Operator vetted and certified by RedHat. The certified Operator is based on the latest community Operator. It is packaged in a mode that allows it to work in disconnected networks, and contains UBI images as part of the package.  
@@ -38,7 +39,7 @@ Aqua Security maintans three types of Operators:
 oc create secret generic aqua-database-password --from-literal=db-password=<password> -n aqua
 ```
 
-4. To work with the community Operator, you need to create a registry secret to Aqua's images registry. Aqua's registry credentials are identical to the username and password for Aqua's supprot portal (https://success.aquasec.com.) -
+4. To work with the community Operator, you need to create a registry secret to Aqua's images registry. Aqua's registry credentials are identical to the username and password for Aqua's support portal (https://success.aquasec.com.) -
 ```bash
 oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
 ```
@@ -48,7 +49,7 @@ oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.
 The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different configurations. Before you create your deployment CR, please review commons CR examples in the section *CR Examples* below.
 
 
-**[AquaCSP CRD](../deploy/crds/operator.aquasec.com_aquacsps_crd.yaml)** provides the fastest methods to deploy Aqua Enterprise in a single cluster. AquaCSP defines how to deploy the Server, Gateway, Aqua Enforcer, and KubeEnforcer in the target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquacsp_cr.yaml) for the listing of all fields and configurations.
+**[AquaCSP CRD](../config/crd/bases/operator.aquasec.com_aquacsps.yaml)** provides the fastest methods to deploy Aqua Enterprise in a single cluster. AquaCSP defines how to deploy the Server, Gateway, Aqua Enforcer, and KubeEnforcer in the target cluster. Please see the [example CR](../config/samples/operator_v1alpha1_aquacsp.yaml) for the listing of all fields and configurations.
 * You can set the enforcement mode using the ```.spec.enforcer.enforceMode``` property in the CR file.
 * You can deploy a Route by setting the  ```.spec.route``` property to "true".
 * The default service type for the Console and Gateway is ClusterIP. You can change the service type in the CR.
@@ -65,9 +66,9 @@ The Aqua Operator includes a few CRDs to allow you to deploy Aqua in different c
 * You can define the server/gateway toleration with
    ```.spec.<<server/gateway>>.tolerations```
 
-The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, **[AquaDatabase CRD](../deploy/crds/operator_v1alpha1_aquadatabase_cr.yaml)**, and **[AquaGateway CRD](../deploy/crds/operator_v1alpha1_aquagateway_cr.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
+The **[AquaServer CRD](../config/crd/bases/operator.aquasec.com_aquaservers.yaml)**, **[AquaDatabase CRD](../config/samples/operator_v1alpha1_aquadatabase.yaml)**, and **[AquaGateway CRD](../config/samples/operator_v1alpha1_aquagateway.yaml)** are used for advanced configurations where the server components are deployed across multiple clusters.
 
-**[AquaEnforcer CRD](../deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml)** is used to deploy the Aqua Enforcer in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml) for the listing of all fields and configurations.
+**[AquaEnforcer CRD](../config/samples/operator_v1alpha1_aquaenforcer.yaml)** is used to deploy the Aqua Enforcer in any cluster. Please see the [example CR](../config/samples/operator_v1alpha1_aquaenforcer.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the Aqua Enforcer.
 * You can set the target Gateway using the ```.spec.gateway.host```and ```.spec.gateway.port``` properties.
 * You can choose to deploy a different version of the Aqua Enforcer by setting the ```.spec.deploy.image.tag``` property. 
@@ -81,7 +82,7 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 * You can define the enforcer toleration with
   ```.spec.deploy.tolerations```
 
-**[AquaKubeEnforcer CRD](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquakubeenforcer_cr.yaml) for the listing of all fields and configurations.
+**[AquaKubeEnforcer CRD](../config/crd/bases/operator.aquasec.com_aquakubeenforcers.yaml)** is used to deploy the KubeEnforcer in your target cluster. Please see the [example CR](../config/samples/operator_v1alpha1_aquakubeenforcer.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the KubeEnforcer to the Aqua Server.
 * You can set the target Gateway using the ```.spec.config.gateway_address```  property.
 * You can choose to deploy a different version of the KubeEnforcer by setting the ```.spec.deploy.image.tag``` property.
@@ -95,13 +96,13 @@ The **[AquaServer CRD](../deploy/crds/operator_v1alpha1_aquaserver_cr.yaml)**, *
 * You can define the kube-enforcer toleration with
   ```.spec.deploy.tolerations```
 
-**[AquaStarboard CRD](../deploy/crds/aquasecurity.github.io_aquastarboards_crd.yaml)** is used to deploy the AquaStarboard in your target cluster by kube-enforcer.
+**[AquaStarboard CRD](../config/crd/bases/aquasecurity.github.io_aquastarboards.yaml)** is used to deploy the AquaStarboard in your target cluster by kube-enforcer.
 
-**[ClusterConfigAuditReports CRD](../deploy/crds/aquasecurity.github.io_clusterconfigauditreports_crd.yaml)** is used to deploy the ClusterConfigAuditReports in your target cluster by starboard.
+**[ClusterConfigAuditReports CRD](../config/crd/bases/aquasecurity.github.io_clusterconfigauditreports.yaml)** is used to deploy the ClusterConfigAuditReports in your target cluster by starboard.
 
-**[ConfigAuditReports CRD](../deploy/crds/aquasecurity.github.io_configauditreports_crd.yaml)** is used to deploy the ConfigAuditReports in your target cluster by starboard.
+**[ConfigAuditReports CRD](../config/crd/bases/aquasecurity.github.io_configauditreports.yaml)** is used to deploy the ConfigAuditReports in your target cluster by starboard.
 
-**[AquaScanner CRD](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../deploy/crds/operator_v1alpha1_aquascanner_cr.yaml) for the listing of all fields and configurations.
+**[AquaScanner CRD](../config/crd/bases/operator.aquasec.com_aquascanners.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../config/samples/operator_v1alpha1_aquascanner.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
 * You need to provide the ```.spec.login.username``` and ```.spec.login.password``` to authenticate with the Aqua Server.
 * You can set ``.spec.login.tlsNoVerify`` if you connect scanner to HTTPS server, and don't want to use mTLS verification.  
@@ -245,7 +246,7 @@ The mTLS will be enabled automatically if the following secretes are available i
 1. Create a new SCC (Security Context Constraint):
    
     The aqua-scc yaml defines the cluster’s security context constraints. We strongly recommend not changing anything in this yaml file.
-    * Download [aqua-scc](../deploy/aqua-scc.yaml) yaml.
+    * Download [aqua-scc](../config/rbac/aqua-scc.yaml) yaml.
     * Apply it by typing:
   ```shell
   oc apply -f aqua-scc.yaml
@@ -261,7 +262,7 @@ spec:
    
     Example result:
    
-   <img src="../images/whoami.png"/>
+   <img src="../images/whoami.png" alt=""/>
 
 ### Assign Pods to Nodes
 
@@ -611,7 +612,7 @@ spec:
 
 #### Example: Deploying Aqua Enforcer(s)
 
-If you haven't deployed any Aqua Enforcers, or if you want to deploy additional Enforcers, follow the instructions [here](https://github.com/aquasecurity/aqua-operator/blob/master/deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml).
+If you haven't deployed any Aqua Enforcers, or if you want to deploy additional Enforcers, follow the instructions [here](https://github.com/aquasecurity/aqua-operator/blob/master/config/crd/operator_v1alpha1_aquaenforcer.yaml).
 
 This is an example of a simple Enforcer deployment: 
 ```yaml

@@ -12,7 +12,7 @@ Use the Aqua-Operator to:
 * Assign metadata tags to Aqua Security components
 * Automatically scale the number of Aqua scanners based on the number of images in the scan queue
 	
-The Aqua Operator provides a few [Custom Resources](https://github.com/aquasecurity/aqua-operator/tree/master/deploy/crds) to manage the Aqua platform. 
+The Aqua Operator provides a few [Custom Resources](https://github.com/aquasecurity/aqua-operator/tree/master/config/crd) to manage the Aqua platform. 
 Please make sure to read the Aqua installation manual (https://docs.aquasec.com/docs) before using the Operator. 
 For advance configurations please consult with Aqua's support team.
     
@@ -20,7 +20,7 @@ How to deploy Aqua using the Operator -
 1. Install the Aqua Operator from RH's OperatorHub
 2. Manage all the prerequisites as covered in the instructions below (see "Before you begin using the Operator CRDs")
 3. Use the AquaCSP CRD to install Aqua in your cluster. AquaCSP CRD defines how to deploy the Console, Database, Scanner, and Gateway Custom Resources
-4. You can also use the AquaCSP CRD to deploy the default Enforcers and an OpenShift Route to access the console 
+4. You can also use the AquaCSP CRD to deploy the default Enforcers, and an OpenShift Route to access the console 
 5. You can install the Enforcers using the AquaEnforcer CRD, but you will need to first get a security token.  Access Aqua console and create a new Enforcer Group. Copy the group's 'token' and use it in the AquaEnforcer CRD
 	
 
@@ -30,7 +30,7 @@ You will need to supply two secrets during the installation -
 * A secret for the Docker registry
 * A secret for the database
 
-You can list the secrets in the YAML files or you can define secrets in the OpenShift project (see example below) -
+You can list the secrets in the YAML files or, you can define secrets in the OpenShift project (see example below) -
 ```bash
 oc create project aqua 
 oc create secret docker-registry aqua-registry --docker-server=registry.aquasec.com --docker-username=<AQUA_USERNAME> --docker-password=<AQUA_PASSWORD> --docker-email=<user email> -n aqua
@@ -39,7 +39,7 @@ oc secrets add aqua-sa aqua-registry --for=pull -n aqua
 ```
 
 ## Installing AquaCSP
-There are multiple options to deploy the AquaCSP CR. You can review the different options in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/deploy/crds/operator_v1alpha1_aquacsp_cr.yaml). 
+There are multiple options to deploy the AquaCSP CR. You can review the different options in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/config/crd/operator_v1alpha1_aquacsp_cr.yaml). 
 
 Here is an example of a simple deployment  - 
 ```yaml
@@ -53,7 +53,7 @@ spec:
   infra:                                    
     serviceAccount: "aqua-sa"               
     namespace: "aqua"                       
-    version: "4.6"                          
+    version: "2022.4"                          
     requirements: true                      
   common:
     imagePullSecret: "aqua-registry"        # Optional: if already created image pull secret then mention in here
@@ -72,11 +72,11 @@ spec:
   route: true                               # Optional: if defines and set to true, the operator will create a Route to enable access to the console
 ```
 
-If you haven't use the Route option in the AquaCsp CRD, you should define the a Route manually to enable external access to Aqua's console.
+If you haven't used the Route option in the AquaCsp CRD, you should define the Route manually to enable external access to Aqua's console.
 
 ## Installing AquaEnforcer
 If you haven't deployed the enforcer yet, or if you want to deploy additional enforcers, please follow the instruction below:
-You can review the different options to implement AquaEnforcer in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/deploy/crds/operator_v1alpha1_aquaenforcer_cr.yaml).
+You can review the different options to implement AquaEnforcer in the following [file](https://github.com/aquasecurity/aqua-operator/blob/master/config/crd/operator_v1alpha1_aquaenforcer_cr.yaml).
 
 Here is an example of a simple deployment  - 
 ```yaml
@@ -88,14 +88,14 @@ metadata:
 spec:
   infra:                                    
     serviceAccount: "aqua-sa"                
-    version: "4.6"                          # Optional: auto generate to latest version
+    version: "2022.4"                          # Optional: auto generate to latest version
   common:
     imagePullSecret: "aqua-registry"            # Optional: if already created image pull secret then mention in here
   deploy:                                   # Optional: information about aqua enforcer deployment
     image:                                  # Optional: if not given take the default value and version from infra.version
       repository: "enforcer"                # Optional: if not given take the default value - enforcer
       registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
-      tag: "4.6"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
+      tag: "2022.4"                            # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
       pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
   gateway:                                  # Required: data about the gateway address
     host: aqua-gateway
