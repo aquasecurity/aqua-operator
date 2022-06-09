@@ -17,7 +17,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - description: Replicas Number
-      jsonPath: .spec.deploy.replicas
+      jsonPath: .spec.replicas
       name: Replicas
       type: integer
     - description: Aqua Enforcer Age
