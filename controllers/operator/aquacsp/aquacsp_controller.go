@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var log = logf.Log.WithValues("controller_aquacsp")
+var log = logf.Log.WithName("controller_aquacsp")
 
 // AquaCspReconciler reconciles a AquaCsp object
 type AquaCspReconciler struct {
