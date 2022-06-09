@@ -702,12 +702,15 @@ spec:
   infra:
     serviceAccount: aqua-sa
     version: '6.5'
+  common:
+    imagePullSecret: aqua-registry  
   deploy:
     replicas: 1
     image:
       registry: "registry.aquasec.com"
       repository: "scanner"
       tag: "<<IMAGE TAG>>"
+  runAsNonRoot: false                  # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.  
   login:
     username: "<<YOUR AQUA USER NAME>>"
     password: "<<YOUR AQUA USER PASSWORD>>"
