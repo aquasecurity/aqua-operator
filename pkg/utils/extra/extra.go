@@ -83,6 +83,8 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		tag = consts.LatestVersion
 	}
 
+	fmt.Printf("pullPolicy: %s, registry: %s, repository: %s tag: %s", pullPolicy, registry, repository, tag)
+
 	return pullPolicy, registry, repository, tag
 }
 
