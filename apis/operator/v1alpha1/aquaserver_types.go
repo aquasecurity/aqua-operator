@@ -38,8 +38,8 @@ type AquaServerSpec struct {
 	LicenseToken      string                   `json:"licenseToken,omitempty"`
 	AdminPassword     string                   `json:"adminPassword,omitempty"`
 	Enforcer          *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
-	Envs              []corev1.EnvVar          `json:"env,required"`
-	ConfigMapData     map[string]string        `json:"configMapData,required"`
+	Envs              []corev1.EnvVar          `json:"env,omitempty"`
+	ConfigMapData     map[string]string        `json:"configMapData,omitempty"`
 	RunAsNonRoot      bool                     `json:"runAsNonRoot,omitempty"`
 	Route             bool                     `json:"route,omitempty"`
 	Mtls              bool                     `json:"mtls,omitempty"`
