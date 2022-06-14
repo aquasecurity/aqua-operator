@@ -44,10 +44,10 @@ func checkForUpgrade(existingTag string) bool {
 }
 
 func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaImage, allowAnyVersion bool) (string, string, string, string) {
-
-	fmt.Printf("repo: %s", repo)
-	fmt.Printf("version: %s", version)
-	fmt.Printf("imageData: %s", imageData)
+	log := logf.Log.WithName("GetImageData")
+	log.Info("repo: %s", repo)
+	log.Info("version: %s", version)
+	log.Info("imageData: %s", imageData)
 
 	pullPolicy := consts.PullPolicy
 	repository := repo
@@ -55,7 +55,7 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 	registry := consts.Registry
 
 	if len(tag) == 0 {
-		fmt.Printf("Setting latest tag version %s", consts.LatestVersion)
+		log.Info("Setting latest tag version %s", consts.LatestVersion)
 		tag = consts.LatestVersion
 	}
 
@@ -65,7 +65,7 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		}
 
 		if len(imageData.Repository) != 0 {
-			fmt.Printf("Setting repo %s", imageData.Repository)
+			log.Info("Setting repo %s", imageData.Repository)
 			repository = imageData.Repository
 		}
 
@@ -74,7 +74,7 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		}
 
 		if len(imageData.Registry) != 0 {
-			fmt.Printf("Setting registry %s", imageData.Registry)
+			log.Info("Setting registry %s", imageData.Registry)
 			registry = imageData.Registry
 		}
 	}
@@ -83,7 +83,7 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		tag = consts.LatestVersion
 	}
 
-	fmt.Printf("pullPolicy: %s, registry: %s, repository: %s tag: %s", pullPolicy, registry, repository, tag)
+	log.Info("pullPolicy: %s, registry: %s, repository: %s tag: %s", pullPolicy, registry, repository, tag)
 
 	return pullPolicy, registry, repository, tag
 }

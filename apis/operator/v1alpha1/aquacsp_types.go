@@ -45,8 +45,8 @@ type AquaCspSpec struct {
 	Enforcer               *AquaEnforcerDetailes    `json:"enforcer,omitempty"`
 	Route                  bool                     `json:"route,omitempty"`
 	RunAsNonRoot           bool                     `json:"runAsNonRoot,omitempty"`
-	ServerEnvs             []corev1.EnvVar          `json:"serverEnvs,required"`
-	GatewayEnvs            []corev1.EnvVar          `json:"gatewayEnvs,required"`
+	ServerEnvs             []corev1.EnvVar          `json:"serverEnvs,omitempty"`
+	GatewayEnvs            []corev1.EnvVar          `json:"gatewayEnvs,omitempty"`
 	ServerConfigMapData    map[string]string        `json:"serverConfigMapData,omitempty"`
 	DeployKubeEnforcer     *AquaKubeEnforcerDetails `json:"kubeEnforcer,omitempty"`
 	EnforcerUpdateApproved *bool                    `json:"updateEnforcer,omitempty"`
