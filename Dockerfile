@@ -23,9 +23,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 #FROM gcr.io/distroless/static:nonroot
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-#ENV OPERATOR=/usr/local/bin/aqua-operator \
-#    USER_UID=1001 \
-#    USER_NAME=aqua-operator
+ENV OPERATOR=/usr/local/bin/aqua-operator \
+    USER_UID=1001 \
+    USER_NAME=aqua-operator
 
 LABEL name="Aqua Operator" \
       vendor="Aqua Security Software Ltd." \
@@ -38,10 +38,8 @@ WORKDIR /
 
 COPY licenses /licenses
 COPY --from=builder /workspace/manager .
-#COPY build/bin /usr/local/bin
-#RUN  /usr/local/bin/user_setup
-USER 1001
-ENTRYPOINT ["/manager"]
-#ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
 USER ${USER_UID}
+ENTRYPOINT ["/manager"]
+
+
