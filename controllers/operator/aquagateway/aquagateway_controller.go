@@ -90,6 +90,7 @@ func (r *AquaGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	instance = r.updateGatewayObject(instance)
+	r.Client.Update(context.Background(), instance)
 
 	rbacHelper := common2.NewAquaRbacHelper(
 		instance.Spec.Infrastructure,
