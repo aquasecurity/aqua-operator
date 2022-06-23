@@ -88,6 +88,7 @@ func (r *AquaEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	instance = r.updateEnforcerObject(instance)
+	r.Client.Update(context.Background(), instance)
 
 	rbacHelper := common.NewAquaRbacHelper(
 		instance.Spec.Infrastructure,
