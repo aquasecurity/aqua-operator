@@ -152,6 +152,7 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	instance = r.updateKubeEnforcerObject(instance)
+	r.Client.Update(context.Background(), instance)
 
 	currentStatus := instance.Status.State
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, currentStatus) &&
