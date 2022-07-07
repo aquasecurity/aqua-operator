@@ -1,5 +1,5 @@
 name: validation
-on: [pull_request]
+on: [pull_request_target]
 types: [labeled]
 paths-ignore:
   - 'README.md'
