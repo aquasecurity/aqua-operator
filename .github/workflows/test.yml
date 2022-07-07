@@ -1,12 +1,13 @@
 name: validation
-on: [pull_request_target]
-types: [labeled]
-paths-ignore:
-  - 'README.md'
-  - 'docs/**'
-  - 'images/**'
-  - 'licenses/**'
-  - 'hack/**'
+on:
+  pull_request_target:
+    types: [labeled]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'images/**'
+      - 'licenses/**'
+      - 'hack/**'
 env:
   GO111MODULE: "on"
   PROJECTNAME: "aqua-operator"
@@ -15,33 +16,33 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'safe_to_test')
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.17
-      id: go
-    - name: Set up docker
-      run: |
-        docker version
-    - name: Install Kind
-      run: |
-        curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
-        chmod +x ./kind
-        sudo mv ./kind /usr/local/bin/kind
-    - name: Check out code into the Go module directory
-      # if you are using act to test it locally please set it to v1 because of a bug
-      #uses: actions/checkout@v1
-      uses: actions/checkout@v3.0.2
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
-    - name: run build
-      env:
-        LOG_STDOUT: "true"
-        CREATE_KIND: "true"
-        WATCH_NAMESPACE: "aqua"
-        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        LICENSE_TOKEN: ${{ secrets.LICENSE_TOKEN }}
-        REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-      run: |
-        make test
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.17
+        id: go
+      - name: Set up docker
+        run: |
+          docker version
+      - name: Install Kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+      - name: Check out code into the Go module directory
+        # if you are using act to test it locally please set it to v1 because of a bug
+        #uses: actions/checkout@v1
+        uses: actions/checkout@v3.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: run build
+        env:
+          LOG_STDOUT: "true"
+          CREATE_KIND: "true"
+          WATCH_NAMESPACE: "aqua"
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          LICENSE_TOKEN: ${{ secrets.LICENSE_TOKEN }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          make test
