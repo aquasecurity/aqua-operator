@@ -35,7 +35,7 @@ type AquaGatewaySpec struct {
 	GatewayService *AquaService             `json:"deploy,required"`
 	ExternalDb     *AquaDatabaseInformation `json:"externalDb,omitempty"`
 	AuditDB        *AuditDBInformation      `json:"auditDB,omitempty"`
-	Envs           []corev1.EnvVar          `json:"env,required"`
+	Envs           []corev1.EnvVar          `json:"env,omitempty"`
 	RunAsNonRoot   bool                     `json:"runAsNonRoot,omitempty"`
 	Route          bool                     `json:"route,omitempty"`
 	Mtls           bool                     `json:"mtls,omitempty"`

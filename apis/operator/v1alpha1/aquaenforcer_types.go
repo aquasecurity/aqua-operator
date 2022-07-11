@@ -35,8 +35,8 @@ type AquaEnforcerSpec struct {
 	EnforcerService        *AquaService            `json:"deploy,required"`
 	Gateway                *AquaGatewayInformation `json:"gateway,required"`
 	Token                  string                  `json:"token,required"`
-	Secret                 *AquaSecret             `json:"secret,required"`
-	Envs                   []corev1.EnvVar         `json:"env,required"`
+	Secret                 *AquaSecret             `json:"secret,omitempty"`
+	Envs                   []corev1.EnvVar         `json:"env,omitempty"`
 	RunAsNonRoot           bool                    `json:"runAsNonRoot,omitempty"`
 	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
 	Mtls                   bool                    `json:"mtls,omitempty"`

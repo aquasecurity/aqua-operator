@@ -1079,7 +1079,7 @@ func (r *AquaKubeEnforcerReconciler) installAquaStarboard(cr *operatorv1alpha1.A
 		size := aquasb.Spec.StarboardService.Replicas
 		if found.Spec.StarboardService.Replicas != size {
 			found.Spec.StarboardService.Replicas = size
-			err = r.Client.Status().Update(context.Background(), found)
+			err = r.Client.Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update aqua starboard replicas.", "AquaStarboard.Namespace", found.Namespace, "AquaStarboard.Name", found.Name)
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
