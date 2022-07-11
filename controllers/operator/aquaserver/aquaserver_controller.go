@@ -318,6 +318,7 @@ func (r *AquaServerReconciler) InstallServerDeployment(cr *operatorv1alpha1.Aqua
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
 			cr.Status.Nodes = podNames
+			r.Client.Status().Update(context.TODO(), cr)
 		}
 
 		currentState := cr.Status.State

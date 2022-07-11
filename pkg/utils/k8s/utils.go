@@ -135,8 +135,6 @@ func CompareByHash(a, b interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	fmt.Printf("aMd5: %s", aMd5)
-	fmt.Printf("bMd5: %s", bMd5)
 	if aMd5 == bMd5 {
 		return true, nil
 	}
