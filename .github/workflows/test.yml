@@ -47,8 +47,8 @@ jobs:
         run: |
           make test
       - name: Publish Test Results
-          uses: EnricoMi/publish-unit-test-result-action@v1.39
-          if: hashFiles('./controllers/test.xml') != ''
-          with:
-            files: "./controllers/test.xml"
-            job_summary: true
+        uses: EnricoMi/publish-unit-test-result-action@v1.39
+        if: hashFiles('./controllers/test.xml') != ''
+        with:
+          files: "./controllers/test.xml"
+          job_summary: true
