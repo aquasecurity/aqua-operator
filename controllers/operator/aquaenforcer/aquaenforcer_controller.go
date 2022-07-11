@@ -76,8 +76,11 @@ func (r *AquaEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	// Fetch the AquaEnforcer instance
 	instance := &operatorv1alpha1.AquaEnforcer{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
+	reqLogger.Info(fmt.Sprintf("Enforcer instance: %v", instance))
 	if err != nil {
+		reqLogger.Info(fmt.Sprintf("error: %v", err))
 		if errors.IsNotFound(err) {
+
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -86,9 +89,11 @@ func (r *AquaEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
+	reqLogger.Info("Going to updateEnforcerObject")
 	instance = r.updateEnforcerObject(instance)
+	r.Client.Update(context.Background(), instance)
 
+	reqLogger.Info(fmt.Sprintf("After update object: %v", instance.Spec.EnforcerService))
 	rbacHelper := common.NewAquaRbacHelper(
 		instance.Spec.Infrastructure,
 		instance.Name,
@@ -108,8 +113,10 @@ func (r *AquaEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdatePendingApproval, currentStatus) &&
 		!reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, currentStatus) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
+		reqLogger.Info(fmt.Sprintf("before update state: instance.Spec.EnforcerService: %v", instance.Spec.EnforcerService))
 		_ = r.Client.Status().Update(context.Background(), instance)
 	}
+	reqLogger.Info(fmt.Sprintf("later: instance.Spec.EnforcerService: %v", instance.Spec.EnforcerService))
 
 	if instance.Spec.EnforcerService != nil {
 		if len(instance.Spec.Token) != 0 {
@@ -117,6 +124,7 @@ func (r *AquaEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				Name: fmt.Sprintf(consts.EnforcerTokenSecretName, instance.Name),
 				Key:  consts.EnforcerTokenSecretKey,
 			}
+			reqLogger.Info(fmt.Sprintf("InstallEnforcerToken: %v", instance))
 
 			_, err = r.InstallEnforcerToken(instance)
 			if err != nil {
@@ -167,11 +175,12 @@ func (r *AquaEnforcerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 */
 
 func (r *AquaEnforcerReconciler) updateEnforcerObject(cr *operatorv1alpha1.AquaEnforcer) *operatorv1alpha1.AquaEnforcer {
+	reqLogger := log.WithValues("Aqua Enforcer updateEnforcerObject Phase", "updateEnforcerObject")
 	version := cr.Spec.Infrastructure.Version
 	if len(version) == 0 {
 		version = consts.LatestVersion
 	}
-
+	reqLogger.Info(fmt.Sprintf("before: cr.Spec.EnforcerService: %v", cr.Spec.EnforcerService))
 	if cr.Spec.EnforcerService == nil {
 		cr.Spec.EnforcerService = &operatorv1alpha1.AquaService{
 			ImageData: &operatorv1alpha1.AquaImage{
@@ -181,6 +190,7 @@ func (r *AquaEnforcerReconciler) updateEnforcerObject(cr *operatorv1alpha1.AquaE
 				PullPolicy: consts.PullPolicy,
 			},
 		}
+		reqLogger.Info(fmt.Sprintf("after: cr.Spec.EnforcerService: %v", cr.Spec.EnforcerService))
 	}
 
 	cr.Spec.Infrastructure = common.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)

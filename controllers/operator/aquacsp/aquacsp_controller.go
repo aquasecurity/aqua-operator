@@ -435,7 +435,7 @@ func (r *AquaCspReconciler) InstallAquaDatabase(cr *v1alpha1.AquaCsp) (reconcile
 		size := aquadb.Spec.DbService.Replicas
 		if found.Spec.DbService.Replicas != size {
 			found.Spec.DbService.Replicas = size
-			err = r.Client.Status().Update(context.Background(), found)
+			err = r.Client.Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua database replicas.", "AquaDatabase.Namespace", found.Namespace, "AquaDatabase.Name", found.Name)
 				return reconcile.Result{}, err
@@ -482,7 +482,7 @@ func (r *AquaCspReconciler) InstallAquaGateway(cr *v1alpha1.AquaCsp) (reconcile.
 		size := aquagw.Spec.GatewayService.Replicas
 		if found.Spec.GatewayService.Replicas != size {
 			found.Spec.GatewayService.Replicas = size
-			err = r.Client.Status().Update(context.Background(), found)
+			err = r.Client.Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua gateway replicas.", "AquaServer.Namespace", found.Namespace, "AquaServer.Name", found.Name)
 				return reconcile.Result{}, err
@@ -543,7 +543,7 @@ func (r *AquaCspReconciler) InstallAquaServer(cr *v1alpha1.AquaCsp) (reconcile.R
 		size := aquasr.Spec.ServerService.Replicas
 		if found.Spec.ServerService.Replicas != size {
 			found.Spec.ServerService.Replicas = size
-			err = r.Client.Status().Update(context.Background(), found)
+			err = r.Client.Update(context.Background(), found)
 			if err != nil {
 				reqLogger.Error(err, "Aqua CSP: Failed to update aqua server replicas.", "AquaServer.Namespace", found.Namespace, "AquaServer.Name", found.Name)
 				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err

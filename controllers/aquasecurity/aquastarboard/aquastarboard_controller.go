@@ -93,6 +93,7 @@ func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return reconcile.Result{}, err
 	}
 	instance = r.updateStarboardObject(instance)
+	r.Client.Update(context.Background(), instance)
 
 	if !reflect.DeepEqual(v1alpha1.AquaDeploymentStateRunning, instance.Status.State) &&
 		!reflect.DeepEqual(v1alpha1.AquaDeploymentUpdateInProgress, instance.Status.State) {
