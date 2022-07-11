@@ -95,6 +95,7 @@ func (r *AquaServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	instance = r.updateServerObject(instance)
+	r.Client.Update(context.Background(), instance)
 
 	rbacHelper := common.NewAquaRbacHelper(
 		instance.Spec.Infrastructure,
@@ -312,11 +313,48 @@ func (r *AquaServerReconciler) InstallServerDeployment(cr *operatorv1alpha1.Aqua
 			reqLogger.Error(err, "Aqua Server: Failed to list pods.", "AquaServer.Namespace", cr.Namespace, "AquaServer.Name", cr.Name)
 			return reconcile.Result{}, err
 		}
+
+		/////
+
+		err = r.Client.List(context.TODO(), podList, listOps)
+		if err != nil {
+			reqLogger.Error(err, "AquaServer: Failed to list pods.", "AquaServer.Namespace", cr.Namespace, "AquaServer.Name", cr.Name)
+			return reconcile.Result{}, err
+		}
+
 		podNames := k8s.PodNames(podList.Items)
 
 		// Update status.Nodes if needed
-		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
+		//if len(cr.Status.Nodes) == 0 {
+		//	cr.Status.Nodes = podNames
+		//}
+		nodes := cr.Status.Nodes
+		//var podsToAppend []string
+		//for _, pod := range podNames {
+		//	addPodName := true
+		//	for _, node := range nodes {
+		//		if pod == node {
+		//			addPodName = false
+		//		}
+		//	}
+		//	if addPodName {
+		//		podsToAppend = append(podsToAppend, pod)
+		//	}
+		//}
+		//if len(podsToAppend) > 0 {
+		//	for _, pod := range podsToAppend {
+		//		cr.Status.Nodes = append(cr.Status.Nodes, pod)
+		//	}
+		//	err := r.Client.Status().Update(context.Background(), cr)
+		//	if err != nil {
+		//		return reconcile.Result{}, err
+		//	}
+		//}
+
+		// Update status.Nodes if needed
+		if !reflect.DeepEqual(podNames, nodes) {
 			cr.Status.Nodes = podNames
+			r.Client.Status().Update(context.TODO(), cr)
 		}
 
 		currentState := cr.Status.State

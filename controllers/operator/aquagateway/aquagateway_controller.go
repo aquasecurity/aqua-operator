@@ -90,6 +90,7 @@ func (r *AquaGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	instance = r.updateGatewayObject(instance)
+	r.Client.Update(context.Background(), instance)
 
 	rbacHelper := common2.NewAquaRbacHelper(
 		instance.Spec.Infrastructure,
@@ -108,7 +109,7 @@ func (r *AquaGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if !reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStateRunning, instance.Status.State) &&
 		!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentUpdateInProgress, instance.Status.State) {
 		instance.Status.State = operatorv1alpha1.AquaDeploymentStatePending
-		_ = r.Client.Status().Update(context.Background(), instance)
+		r.Client.Status().Update(context.Background(), instance)
 	}
 
 	if instance.Spec.Common.SplitDB {
@@ -246,6 +247,7 @@ func (r *AquaGatewayReconciler) InstallGatewayDeployment(cr *operatorv1alpha1.Aq
 		// Update status.Nodes if needed
 		if !reflect.DeepEqual(podNames, cr.Status.Nodes) {
 			cr.Status.Nodes = podNames
+			_ = r.Client.Status().Update(context.Background(), cr)
 		}
 
 		currentState := cr.Status.State
