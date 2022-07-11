@@ -79,6 +79,9 @@ const (
 	// LatestVersion Latest supported aqua version in operator
 	LatestVersion = "6.5"
 
+	// StarboardVersion Latest starboard version
+	StarboardVersion = "0.14.1"
+
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter5.aquasec.com"
 
