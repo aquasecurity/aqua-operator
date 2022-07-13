@@ -3062,6 +3062,8 @@ spec:
                 type: boolean
               metricsBindAddress:
                 type: string
+              operator_cluster_compliance_enabled:
+                type: string
               registry:
                 properties:
                   email:
@@ -3085,6 +3087,7 @@ spec:
             required:
             - config
             - deploy
+            - operator_cluster_compliance_enabled
             type: object
           status:
             description: AquaStarboardStatus defines the observed state of AquaStarboard
