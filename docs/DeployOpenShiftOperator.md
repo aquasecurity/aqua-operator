@@ -641,6 +641,8 @@ spec:
 
 #### Example: Deploying the KubeEnforcer
 
+<h4 style="color:#ff0000">Please note: Starting from operator 2022.4.5 for getting the relevant starboard image, please remove `starboard.infra.version` from the AquaKubeEnforcer yaml or update the yaml like the following Example</h4>
+
 Here is an example of a KubeEnforcer deployment:
 ```yaml
 apiVersion: operator.aquasec.com/v1alpha1
@@ -665,28 +667,12 @@ spec:
       pullPolicy: Always
   token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)
   starboard:
-    allowAnyVersion: true
     infra:
-      version: 0.14.1
       serviceAccount: starboard-operator
     config:
       imagePullSecret: starboard-registry
     deploy:
       replicas: 1
-      image:
-        registry: docker.io/aquasec
-        tag: ''
-        repository: starboard-operator
-        pullPolicy: IfNotPresent
-    logDevMode: false
-    concurrentScanJobsLimit: ''
-    scanJobRetryAfter: ''
-    metricsBindAddress: ''
-    healthProbeBindAddress: ''
-    cisKubernetesBenchmarkEnable: ''
-    vulnerabilityScannerEnabled: ''
-    batchDeleteLimit: ''
-    batchDeleteDelay: ''    
 ```
 
 #### Example: Deploy the Aqua Scanner

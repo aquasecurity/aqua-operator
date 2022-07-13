@@ -11,17 +11,30 @@ import (
 )
 
 func UpdateAquaInfrastructure(infra *operatorv1alpha1.AquaInfrastructure, name, namespace string) *operatorv1alpha1.AquaInfrastructure {
+	return UpdateAquaInfrastructureFull(infra, name, namespace, "")
+}
+
+func UpdateAquaInfrastructureFull(infra *operatorv1alpha1.AquaInfrastructure, name, namespace, image string) *operatorv1alpha1.AquaInfrastructure {
 	if infra != nil {
 		if len(infra.Namespace) == 0 {
 			infra.Namespace = namespace
 		}
 
 		if len(infra.ServiceAccount) == 0 {
-			infra.ServiceAccount = fmt.Sprintf(consts.ServiceAccount, name)
+			if image == "starboard" {
+				infra.ServiceAccount = consts.StarboardServiceAccount
+			} else {
+				infra.ServiceAccount = fmt.Sprintf(consts.ServiceAccount, name)
+			}
+
 		}
 
 		if len(infra.Version) == 0 {
-			infra.Version = consts.LatestVersion
+			if image == "starboard" {
+				infra.Version = consts.StarboardVersion
+			} else {
+				infra.Version = consts.LatestVersion
+			}
 		}
 
 		if len(infra.Platform) == 0 {
