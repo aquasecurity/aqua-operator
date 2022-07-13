@@ -39,7 +39,6 @@ func Int32Ptr(i int32) *int32 {
 // checkForUpgrade is making sure that .infra.version contain the latest version.
 // if not, there is a need to upgrade the images.
 func checkForUpgrade(existingTag string) bool {
-
 	return !strings.Contains(existingTag, consts.LatestVersion)
 }
 
@@ -54,9 +53,17 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 	tag := version
 	registry := consts.Registry
 
+	if repo == "starboard-operator" {
+		registry = consts.StarboardRegistry
+	}
 	if len(tag) == 0 {
-		log.Info(fmt.Sprintf("Setting latest tag version %s", consts.LatestVersion))
-		tag = consts.LatestVersion
+		if repo == "starboard-operator" {
+			log.Info(fmt.Sprintf("Setting latest tag version %s", consts.StarboardVersion))
+			tag = consts.StarboardVersion
+		} else {
+			log.Info(fmt.Sprintf("Setting latest tag version %s", consts.LatestVersion))
+			tag = consts.LatestVersion
+		}
 	}
 
 	if imageData != nil {

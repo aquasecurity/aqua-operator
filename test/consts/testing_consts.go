@@ -37,5 +37,5 @@ const (
 	ServerAdminPassword        = "@Password1"
 	ServerHost                 = "http://aqua-server:8080"
 	GatewayAddress             = "aqua-gateway:8443"
-	ClusterName                = "aqua-secure"
+	ClusterName                = "Default-cluster-name"
 )
