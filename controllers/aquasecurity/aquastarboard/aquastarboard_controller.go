@@ -169,7 +169,7 @@ func (r *AquaStarboardReconciler) addStarboardDeployment(cr *aquasecurityv1alpha
 	reqLogger := log.WithValues("Starboard deployment phase", "Create Deployment")
 	reqLogger.Info("Start creating deployment")
 	reqLogger.Info("Aqua Starboard", "cr.Spec.Infrastructure.Version", cr.Spec.Infrastructure.Version)
-	pullPolicy, registry, repository, tag := extra.GetImageData("starboard", cr.Spec.Infrastructure.Version, cr.Spec.StarboardService.ImageData, cr.Spec.AllowAnyVersion)
+	pullPolicy, registry, repository, tag := extra.GetImageData("starboard-operator", cr.Spec.Infrastructure.Version, cr.Spec.StarboardService.ImageData, true)
 
 	starboardHelper := newAquaStarboardHelper(cr)
 	deployment := starboardHelper.CreateStarboardDeployment(cr,
@@ -280,7 +280,7 @@ func (r *AquaStarboardReconciler) updateStarboardServerObject(serviceObject *v1a
 
 func (r *AquaStarboardReconciler) updateStarboardObject(cr *aquasecurityv1alpha1.AquaStarboard) *aquasecurityv1alpha1.AquaStarboard {
 
-	cr.Spec.Infrastructure = common2.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)
+	cr.Spec.Infrastructure = common2.UpdateAquaInfrastructureFull(cr.Spec.Infrastructure, cr.Name, cr.Namespace, "starboard")
 	return cr
 }
 
@@ -419,8 +419,8 @@ func (r *AquaStarboardReconciler) addStarboardConfigMap(cr *aquasecurityv1alpha1
 	configMaps := []*corev1.ConfigMap{
 		starboardHelper.CreateStarboardConftestConfigMap(cr.Name,
 			cr.Namespace,
-			"starboard-conftest-config",
-			"starboard-conftest-configmap",
+			"starboard-policies-config",
+			"starboard-policies-configmap",
 			cr.Spec.KubeEnforcerVersion,
 		),
 		starboardHelper.CreateStarboardConfigMap(cr.Name,
@@ -447,20 +447,22 @@ func (r *AquaStarboardReconciler) addStarboardConfigMap(cr *aquasecurityv1alpha1
 	// Set AquaStarboard instance as the owner and controller
 	requeue := true
 	for _, configMap := range configMaps {
-		// Check if this ClusterRoleBinding already exists
+		// Set AquaStarboard instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, configMap, r.Scheme); err != nil {
 			return reconcile.Result{}, err
 		}
-
-		// Check if this ClusterRoleBinding already exists
+		// Check if ConfigMap already exists
 		foundConfigMap := &corev1.ConfigMap{}
 		err := r.Client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 		if err != nil && errors.IsNotFound(err) {
 			reqLogger.Info("Aqua Starboard: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 			err = r.Client.Create(context.TODO(), configMap)
-			if err == nil {
-				requeue = false
+
+			if err != nil {
+				reqLogger.Error(err, fmt.Sprintf("Failed to create configmap name: %s", configMap.Name))
+				return reconcile.Result{Requeue: true}, nil
 			}
+			return reconcile.Result{}, nil
 		} else if err != nil {
 			return reconcile.Result{}, err
 		}
