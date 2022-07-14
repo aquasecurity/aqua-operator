@@ -19,7 +19,7 @@ import (
 const (
 	timeout             = time.Minute * 6
 	interval            = time.Second * 30
-	enforcerTimeout     = time.Minute * 3
+	enforcerTimeout     = time.Minute * 4
 	scannerTimeout      = time.Minute * 1
 	KubeEnforcerTimeout = time.Minute * 5
 	StarboardTimeout    = time.Minute * 2
@@ -256,9 +256,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					},
 					Token: testingconsts.KubeEnforcerToken,
 					DeployStarboard: &operatorv1alpha1.AquaStarboardDetails{
-						AllowAnyVersion: true,
 						Infrastructure: &operatorv1alpha1.AquaInfrastructure{
-							Version:        testingconsts.StarboardVersion,
 							ServiceAccount: testingconsts.StarboardServiceAccount,
 						},
 						Config: operatorv1alpha1.AquaStarboardConfig{
@@ -266,13 +264,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						},
 						StarboardService: &operatorv1alpha1.AquaService{
 							Replicas: 1,
-							ImageData: &operatorv1alpha1.AquaImage{
-								Registry:   testingconsts.StarboardRegistry,
-								Repository: testingconsts.StarboardRepo,
-								PullPolicy: "IfNotPresent",
-							},
 						},
-						LogDevMode: false,
 					},
 				},
 			}
