@@ -220,7 +220,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaCsp) *v1alpha1.Aq
 	AquaStarboardDetails := v1alpha1.AquaStarboardDetails{
 		AllowAnyVersion: true,
 		Infrastructure: &v1alpha1.AquaInfrastructure{
-			Version:        "0.14.1",
+			Version:        consts.StarboardVersion,
 			ServiceAccount: "starboard-operator",
 		},
 		Config: v1alpha1.AquaStarboardConfig{
