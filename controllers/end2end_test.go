@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
 )
@@ -27,6 +28,7 @@ const (
 
 var _ = Describe("Aqua Controller", Serial, func() {
 	localLog := logf.Log.WithName("AquaCspControllerTest")
+	ubi := os.Getenv("RUN_UBI")
 
 	Context("Initial deployment", func() {
 		namespace := "aqua"
@@ -114,6 +116,11 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					RunAsNonRoot: false,
 				},
 			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.GatewayService.ImageData.Tag = testingconsts.UbiImageTag
+				instance.Spec.ServerService.ImageData.Tag = testingconsts.UbiImageTag
+			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
 			cspLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -163,6 +170,10 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					Token: testingconsts.EnforcerToken,
 				},
 			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.EnforcerService.ImageData.Tag = testingconsts.UbiImageTag
+			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
 			enforcerLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -210,6 +221,10 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						Host:     testingconsts.ServerHost,
 					},
 				},
+			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.ScannerService.ImageData.Tag = testingconsts.UbiImageTag
 			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
@@ -267,6 +282,10 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						},
 					},
 				},
+			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.KubeEnforcerService.ImageData.Tag = testingconsts.UbiImageTag
 			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
