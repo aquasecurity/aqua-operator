@@ -6,6 +6,7 @@ const (
 	Namespace                  = "aqua"
 	Version                    = consts.LatestVersion
 	StarboardVersion           = consts.StarboardVersion
+	UbiImageTag                = "2022.4.81-ubi8" //todo: update it to latest after we create ubi8 latest tag in the release process
 	NameSpace                  = "aqua"
 	CspServiceAccount          = "aqua-sa"
 	StarboardServiceAccount    = "starboard-operator"
