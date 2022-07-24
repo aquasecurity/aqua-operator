@@ -105,7 +105,8 @@ The **[AquaServer CRD](../config/crd/bases/operator.aquasec.com_aquaservers.yaml
 **[AquaScanner CRD](../config/crd/bases/operator.aquasec.com_aquascanners.yaml)** is used to deploy the Aqua Scanner in any cluster. Please see the [example CR](../config/samples/operator_v1alpha1_aquascanner.yaml) for the listing of all fields and configurations.
 * You need to set the target Aqua Server using the ```.spec.login.host```  property.
 * You need to provide the ```.spec.login.username``` and ```.spec.login.password``` to authenticate with the Aqua Server.
-* You can set ``.spec.login.tlsNoVerify`` if you connect scanner to HTTPS server, and don't want to use mTLS verification.  
+* You can choose to provide ```.spec.login.token``` to enable token based authentication with the aqua server, If the ```.spec.login.token``` is defined in spec username and password are not considered. Token authentication takes higher precedence over a username and password authentication.
+* You can set ``.spec.login.tlsNoVerify`` if you connect scanner to HTTPS server, and don't want to use mTLS verification.
 * You can choose to deploy a different version of the Aqua Scanner by setting the ```.spec.image.tag``` property.
     If you choose to run old/custom Aqua Scanner version, you must set ```.spec.common.allowAnyVersion``` .
 * You can define the scanner resources requests/limits using ```.spec.deploy.resources```.
@@ -114,7 +115,7 @@ The **[AquaServer CRD](../config/crd/bases/operator.aquasec.com_aquaservers.yaml
 * You can define the scanner affinity with
   ```.spec.deploy.affinity```
 * You can define the scanner toleration with
-  ```.spec.deploy.tolerations```  
+  ```.spec.deploy.tolerations```
 
 ## Advanced Configuration ##
 ### Configuring mTLS
@@ -605,7 +606,7 @@ spec:
       registry: "registry.aquasec.com"
       repository: "console"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always  
+      pullPolicy: Always
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
   runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
@@ -614,7 +615,7 @@ spec:
 
 If you haven't deployed any Aqua Enforcers, or if you want to deploy additional Enforcers, follow the instructions [here](https://github.com/aquasecurity/aqua-operator/blob/master/config/crd/operator_v1alpha1_aquaenforcer.yaml).
 
-This is an example of a simple Enforcer deployment: 
+This is an example of a simple Enforcer deployment:
 ```yaml
 ---
 apiVersion: operator.aquasec.com/v1alpha1
@@ -622,8 +623,8 @@ kind: AquaEnforcer
 metadata:
   name: aqua
 spec:
-  infra:                                    
-    serviceAccount: "aqua-sa"                
+  infra:
+    serviceAccount: "aqua-sa"
     version: "2022.4"                       # Optional: auto generate to latest version
   common:
     imagePullSecret: "aqua-registry"        # Optional: if already created image pull secret then mention in here
@@ -691,16 +692,17 @@ spec:
     serviceAccount: aqua-sa
     version: '2022.4'
   common:
-    imagePullSecret: aqua-registry  
+    imagePullSecret: aqua-registry
   deploy:
     replicas: 1
     image:
       registry: "registry.aquasec.com"
       repository: "scanner"
       tag: "<<IMAGE TAG>>"
-  runAsNonRoot: false                  # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.  
+  runAsNonRoot: false                  # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
   login:
     username: "<<YOUR AQUA USER NAME>>"
     password: "<<YOUR AQUA USER PASSWORD>>"
+    token: "<<YOUR AQUA SCANNER TOKEN>>" # Optional: provide scanner token generated in AQUA UI, If empty username and password considered for authentication
     host: 'http://aqua-server:8080'    #Required: provide <<(http:// or https://)Aqua Server IP or DNS: Aqua Server port>>
 ```

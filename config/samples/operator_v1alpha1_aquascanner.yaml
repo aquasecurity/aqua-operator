@@ -20,4 +20,6 @@ spec:
     username:
     password:
     host:
+    token:                                  # Optional, If it is an empty value username & password considered to authentication with server
+    tlsNoVerify:
   runAsNonRoot:                             # Optional: true/false
