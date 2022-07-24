@@ -2,13 +2,14 @@ package aquascanner
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 )
 
 type ScannerParameters struct {
@@ -99,6 +100,17 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 		image = fmt.Sprintf("%s/%s:%s", registry, repository, tag)
 	}
 
+	userarg := []string{
+		"--user",
+		"$(AQUA_SCANNER_USERNAME)",
+		"--password",
+		"$(AQUA_SCANNER_PASSWORD)",
+	}
+	tokenarg := []string{
+		"--token",
+		"$(AQUA_TOKEN)",
+	}
+
 	labels := map[string]string{
 		"app":                cr.Name + "-scanner",
 		"deployedby":         "aqua-operator",
@@ -179,11 +191,9 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 								},
 							},
 							Args: []string{
-								"-c",
-								"/opt/aquasec/scannercli daemon --user ${AQUA_SCANNER_USERNAME} --password ${AQUA_SCANNER_PASSWORD} --host ${AQUA_SERVER}",
-							},
-							Command: []string{
-								"/bin/sh",
+								"daemon",
+								"--host",
+								"$(AQUA_SERVER)",
 							},
 							Ports: []corev1.ContainerPort{
 								{
@@ -254,6 +264,13 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 
 	if cr.Spec.ScannerService.Volumes != nil {
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, cr.Spec.ScannerService.Volumes...)
+	}
+
+	if len(cr.Spec.Login.Token) != 0 {
+		deployment.Spec.Template.Spec.Containers[0].Env = append(deployment.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: "AQUA_TOKEN", Value: cr.Spec.Login.Token})
+		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, tokenarg...)
+	} else {
+		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, userarg...)
 	}
 
 	if cr.Spec.Login.Insecure {
