@@ -18,6 +18,8 @@ package aquascanner
 
 import (
 	"context"
+	"reflect"
+
 	"github.com/aquasecurity/aqua-operator/controllers/common"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
@@ -29,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -278,7 +279,7 @@ func (r *AquaScannerReconciler) addScannerConfigMap(cr *operatorv1alpha1.AquaSca
 	reqLogger.Info("Start creating ConfigMap")
 	//reqLogger.Info(fmt.Sprintf("cr object : %v", cr.ObjectMeta))
 
-	// Define a new ClusterRoleBinding object
+	// Define a new ConfigMap object
 	scannerHelper := newAquaScannerHelper(cr)
 
 	configMap := scannerHelper.CreateConfigMap(cr)
@@ -288,7 +289,7 @@ func (r *AquaScannerReconciler) addScannerConfigMap(cr *operatorv1alpha1.AquaSca
 		return reconcile.Result{}, err
 	}
 
-	// Check if this ClusterRoleBinding already exists
+	// Check if this ConfigMap already exists
 	foundConfigMap := &corev1.ConfigMap{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 	if err != nil && errors.IsNotFound(err) {

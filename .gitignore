@@ -23,3 +23,11 @@ testbin/*
 *.swp
 *.swo
 *~
+.vscode
+
+# skip vendor/
+vendor
+
+# Skip Generated local test.xml
+
+*test.xml

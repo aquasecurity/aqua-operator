@@ -2978,6 +2978,8 @@ spec:
                     type: boolean
                   username:
                     type: string
+                  token:
+                    type: string
                 required:
                 - host
                 - password

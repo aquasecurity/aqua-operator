@@ -3,6 +3,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	testingconsts "github.com/aquasecurity/aqua-operator/test/consts"
@@ -12,9 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 )
 
 const (
@@ -219,6 +220,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						Username: testingconsts.ServerAdminUser,
 						Password: testingconsts.ServerAdminPassword,
 						Host:     testingconsts.ServerHost,
+						Token:    testingconsts.ScannerToken,
 					},
 				},
 			}

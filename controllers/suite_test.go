@@ -19,6 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+
 	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/aquasecurity/aquastarboard"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquacsp"
@@ -32,10 +36,7 @@ import (
 	testutils "github.com/aquasecurity/aqua-operator/test/utils"
 	uzap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"testing"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
