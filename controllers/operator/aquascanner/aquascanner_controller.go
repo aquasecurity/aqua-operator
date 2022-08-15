@@ -18,6 +18,9 @@ package aquascanner
 
 import (
 	"context"
+	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
+	"reflect"
+
 	"github.com/aquasecurity/aqua-operator/controllers/common"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/k8s"
@@ -29,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -114,7 +116,7 @@ func (r *AquaScannerReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -238,7 +240,7 @@ func (r *AquaScannerReconciler) InstallScannerDeployment(cr *operatorv1alpha1.Aq
 
 	// Deployment already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Scanner Deployment Already Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaScannerReconciler) addScannerSecret(cr *operatorv1alpha1.AquaScanner) (reconcile.Result, error) {
@@ -247,6 +249,12 @@ func (r *AquaScannerReconciler) addScannerSecret(cr *operatorv1alpha1.AquaScanne
 
 	scannerHelper := newAquaScannerHelper(cr)
 	scannerSecret := scannerHelper.CreateTokenSecret(cr)
+	// Adding secret to the hashed data, for restart pods if token is changed
+	hash, err := extra.GenerateMD5ForSpec(scannerSecret.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaScanner instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, scannerSecret, r.Scheme); err != nil {
@@ -255,17 +263,27 @@ func (r *AquaScannerReconciler) addScannerSecret(cr *operatorv1alpha1.AquaScanne
 
 	// Check if this object already exists
 	found := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: scannerSecret.Name, Namespace: scannerSecret.Namespace}, found)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: scannerSecret.Name, Namespace: scannerSecret.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua Scanner: Creating a New scanner secret", "Secret.Namespace", scannerSecret.Namespace, "Secret.Name", scannerSecret.Name)
 		err = r.Client.Create(context.TODO(), scannerSecret)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
 		}
-
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+	// Check if the secret Data, matches the found Data
+	if !equality.Semantic.DeepDerivative(scannerSecret.Data, found.Data) {
+		found = scannerSecret
+		log.Info("Aqua Scanner: Updating Scanner Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+		err := r.Client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// object already exists - don't requeue
@@ -278,19 +296,25 @@ func (r *AquaScannerReconciler) addScannerConfigMap(cr *operatorv1alpha1.AquaSca
 	reqLogger.Info("Start creating ConfigMap")
 	//reqLogger.Info(fmt.Sprintf("cr object : %v", cr.ObjectMeta))
 
-	// Define a new ClusterRoleBinding object
+	// Define a new ConfigMap object
 	scannerHelper := newAquaScannerHelper(cr)
 
 	configMap := scannerHelper.CreateConfigMap(cr)
+	// Adding configmap to the hashed data, for restart pods if token is changed
+	hash, err := extra.GenerateMD5ForSpec(configMap.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaScanner instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, configMap, r.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Check if this ClusterRoleBinding already exists
+	// Check if this ConfigMap already exists
 	foundConfigMap := &corev1.ConfigMap{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua Scanner: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 		err = r.Client.Create(context.TODO(), configMap)

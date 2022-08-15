@@ -141,6 +141,9 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 					Name:   fmt.Sprintf(consts.ScannerDeployName, cr.Name),
+					Annotations: map[string]string{
+						"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
+					},
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: cr.Spec.Infrastructure.ServiceAccount,

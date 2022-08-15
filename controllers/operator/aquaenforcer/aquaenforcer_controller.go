@@ -146,7 +146,7 @@ func (r *AquaEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -276,7 +276,7 @@ func (r *AquaEnforcerReconciler) InstallEnforcerDaemonSet(cr *operatorv1alpha1.A
 
 	// DaemonSet already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Enforcer DaemonSet Already Exists", "DaemonSet.Namespace", found.Namespace, "DaemonSet.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaEnforcerReconciler) InstallEnforcerToken(cr *operatorv1alpha1.AquaEnforcer) (reconcile.Result, error) {
@@ -286,17 +286,23 @@ func (r *AquaEnforcerReconciler) InstallEnforcerToken(cr *operatorv1alpha1.AquaE
 	// Define a new DaemonSet object
 	enforcerHelper := newAquaEnforcerHelper(cr)
 	token := enforcerHelper.CreateTokenSecret(cr)
+	// Adding token to the hashed data, for restart pods if token is changed
+	hash, err := extra.GenerateMD5ForSpec(token.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, token, r.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Check if this DaemonSet already exists
+	// Check if this Secret already exists
 	found := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: token.Name, Namespace: token.Namespace}, found)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: token.Name, Namespace: token.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a New Aqua Database", "Secret.Namespace", token.Namespace, "Secret.Name", token.Name)
+		reqLogger.Info("Creating a New Enforcer Token Secret", "Secret.Namespace", token.Namespace, "Secret.Name", token.Name)
 		err = r.Client.Create(context.TODO(), token)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -307,9 +313,21 @@ func (r *AquaEnforcerReconciler) InstallEnforcerToken(cr *operatorv1alpha1.AquaE
 		return reconcile.Result{}, err
 	}
 
+	if !equality.Semantic.DeepDerivative(token.Data, found.Data) {
+		found = token
+		log.Info("Aqua Enforcer: Updating Enforcer Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+		err := r.Client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update Enforcer Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
+	}
+
 	// Secret already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Enforcer Token Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaEnforcerReconciler) addEnforcerConfigMap(cr *operatorv1alpha1.AquaEnforcer) (reconcile.Result, error) {
@@ -321,11 +339,12 @@ func (r *AquaEnforcerReconciler) addEnforcerConfigMap(cr *operatorv1alpha1.AquaE
 	enforcerHelper := newAquaEnforcerHelper(cr)
 
 	configMap := enforcerHelper.CreateConfigMap(cr)
+	// Adding configmap to the hashed data, for restart pods if token is changed
 	hash, err := extra.GenerateMD5ForSpec(configMap.Data)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	cr.Spec.ConfigMapChecksum = hash
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaScanner instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, configMap, r.Scheme); err != nil {
