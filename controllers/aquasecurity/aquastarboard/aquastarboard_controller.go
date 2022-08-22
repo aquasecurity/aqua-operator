@@ -142,7 +142,7 @@ func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return reconcile.Result{}, err
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -255,7 +255,7 @@ func (r *AquaStarboardReconciler) addStarboardDeployment(cr *aquasecurityv1alpha
 
 	// object already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Starboard Deployment Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaStarboardReconciler) updateStarboardServerObject(serviceObject *v1alpha1.AquaService, StarboardImageData *v1alpha1.AquaImage) *v1alpha1.AquaService {
@@ -442,7 +442,7 @@ func (r *AquaStarboardReconciler) addStarboardConfigMap(cr *aquasecurityv1alpha1
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	cr.Spec.ConfigMapChecksum = hash
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaStarboard instance as the owner and controller
 	requeue := true
@@ -496,6 +496,12 @@ func (r *AquaStarboardReconciler) addStarboardSecret(cr *aquasecurityv1alpha1.Aq
 		"ke-token-secret",
 	)
 
+	hash, err := extra.GenerateMD5ForSpec(starboardSecret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
+
 	// Set AquaStarboard instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, starboardSecret, r.Scheme); err != nil {
 		return reconcile.Result{}, err
@@ -503,7 +509,7 @@ func (r *AquaStarboardReconciler) addStarboardSecret(cr *aquasecurityv1alpha1.Aq
 
 	// Check if this object already exists
 	found := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: starboardSecret.Name, Namespace: starboardSecret.Namespace}, found)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: starboardSecret.Name, Namespace: starboardSecret.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua Starboard: Creating a New token secret", "Secret.Namespace", starboardSecret.Namespace, "Secret.Name", starboardSecret.Name)
 		err = r.Client.Create(context.TODO(), starboardSecret)

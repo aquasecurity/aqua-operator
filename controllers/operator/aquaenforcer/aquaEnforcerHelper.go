@@ -115,7 +115,7 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *v1alpha1.AquaEnforcer) *appsv
 		"aqua.component":     "enforcer",
 	}
 	annotations := map[string]string{
-		"description":       "Secret for aqua database password",
+		"description":       "Deploy aqua Enforcer",
 		"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 	}
 
@@ -164,6 +164,9 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *v1alpha1.AquaEnforcer) *appsv
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 					Name:   fmt.Sprintf(consts.EnforcerDeamonsetName, cr.Name),
+					Annotations: map[string]string{
+						"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
+					},
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: cr.Spec.Infrastructure.ServiceAccount,

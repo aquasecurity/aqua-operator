@@ -414,6 +414,9 @@ func (enf *AquaStarboardHelper) CreateStarboardDeployment(cr *aquasecurityv1alph
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: selectors,
+					Annotations: map[string]string{
+						"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
+					},
 				},
 				Spec: corev1.PodSpec{
 					//SecurityContext: &corev1.PodSecurityContext{
