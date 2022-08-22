@@ -74,7 +74,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"secrets",
 			},
 			Verbs: []string{
-				"get", "list", "watch", "update", "create",
+				"get", "list", "watch", "update", "create", "delete",
 			},
 		},
 		{
@@ -217,6 +217,17 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 			},
 			Verbs: []string{
 				"create", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"leases",
+			},
+			Verbs: []string{
+				"get", "list", "create", "update",
 			},
 		},
 		{
@@ -794,6 +805,14 @@ func (ebf *AquaKubeEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaKubeEnfor
 						Name: "aqua-kube-enforcer-token",
 					},
 					Key: "token",
+				},
+			},
+		},
+		{
+			Name: "POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
 				},
 			},
 		},
