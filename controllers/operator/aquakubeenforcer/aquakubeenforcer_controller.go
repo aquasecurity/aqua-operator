@@ -250,7 +250,7 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		r.installAquaStarboard(instance)
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -505,7 +505,7 @@ func (r *AquaKubeEnforcerReconciler) addKEDeployment(cr *operatorv1alpha1.AquaKu
 
 	// object already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Deployment Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaKubeEnforcerReconciler) addKubeEnforcerClusterRole(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
@@ -855,11 +855,12 @@ func (r *AquaKubeEnforcerReconciler) addKEConfigMap(cr *operatorv1alpha1.AquaKub
 		cr.Spec.Config.GatewayAddress,
 		cr.Spec.Config.ClusterName,
 		deployStarboard)
+	// Adding configmap to the hashed data, for restart pods if token is changed
 	hash, err := extra.GenerateMD5ForSpec(configMap.Data)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	cr.Spec.ConfigMapChecksum = hash
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaKubeEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, configMap, r.Scheme); err != nil {
@@ -909,6 +910,12 @@ func (r *AquaKubeEnforcerReconciler) addKESecretToken(cr *operatorv1alpha1.AquaK
 		"aqua-kube-enforcer-token",
 		"ke-token-secret",
 		cr.Spec.Token)
+	// Adding secret to the hashed data, for restart pods if token is changed
+	hash, err := extra.GenerateMD5ForSpec(tokenSecret.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaKubeEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, tokenSecret, r.Scheme); err != nil {
@@ -917,7 +924,7 @@ func (r *AquaKubeEnforcerReconciler) addKESecretToken(cr *operatorv1alpha1.AquaK
 
 	// Check if this object already exists
 	found := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: tokenSecret.Name, Namespace: tokenSecret.Namespace}, found)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: tokenSecret.Name, Namespace: tokenSecret.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New token secret", "Secret.Namespace", tokenSecret.Namespace, "Secret.Name", tokenSecret.Name)
 		err = r.Client.Create(context.TODO(), tokenSecret)
@@ -928,6 +935,18 @@ func (r *AquaKubeEnforcerReconciler) addKESecretToken(cr *operatorv1alpha1.AquaK
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if !equality.Semantic.DeepDerivative(tokenSecret.Data, found.Data) {
+		found = tokenSecret
+		log.Info("Aqua Enforcer: Updating KubeEnforcer Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+		err := r.Client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update KubeEnforcer Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// object already exists - don't requeue
