@@ -26,6 +26,11 @@ import (
 	"encoding/pem"
 	syserrors "errors"
 	"fmt"
+	"math/big"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/common"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -41,13 +46,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"math/big"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -246,6 +247,14 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, err
 	}
 
+	if instance.Spec.AquaExpressMode.AquaExpressMode {
+		_, err = r.addExpressModeEnforcerSecretToken(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		r.deployAquaEnforcerExpress(instance)
+	}
+
 	if instance.Spec.DeployStarboard != nil {
 		r.installAquaStarboard(instance)
 	}
@@ -393,9 +402,12 @@ func createKECerts() (*KubeEnforcerCertificates, error) {
 	return certs, nil
 }
 
-/*	----------------------------------------------------------------------------------------------------------------
-							Aqua Kube-Enforcer
-	----------------------------------------------------------------------------------------------------------------
+/*
+----------------------------------------------------------------------------------------------------------------
+
+	Aqua Kube-Enforcer
+
+----------------------------------------------------------------------------------------------------------------
 */
 func (r *AquaKubeEnforcerReconciler) updateKubeEnforcerServerObject(serviceObject *operatorv1alpha1.AquaService, kubeEnforcerImageData *operatorv1alpha1.AquaImage) *operatorv1alpha1.AquaService {
 
@@ -1125,6 +1137,110 @@ func (r *AquaKubeEnforcerReconciler) installAquaStarboard(cr *operatorv1alpha1.A
 	// AquaStarboard already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Starboard Exists", "AquaStarboard.Namespace", found.Namespace, "AquaStarboard.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+}
+
+// Aqua Express Mode
+
+func (r *AquaKubeEnforcerReconciler) deployAquaEnforcerExpress(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("CSP - AquaEnforcer Phase", "Install Aqua Enforcer")
+	reqLogger.Info("Start installing AquaEnforcer")
+
+	// Define a new AquaEnforcer object
+	expressModeHelper := newAquaKubeEnforcerHelper(cr)
+	enforcer := expressModeHelper.newAquaEnforcer(cr)
+
+	// Set AquaCsp instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, enforcer, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this AquaEnforcer already exists
+	found := &operatorv1alpha1.AquaEnforcer{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: enforcer.Name, Namespace: enforcer.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua Enforcer", "AquaEnforcer.Namespace", enforcer.Namespace, "AquaEnforcer.Name", enforcer.Name)
+		err = r.Client.Create(context.TODO(), enforcer)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	} else if err != nil {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+	}
+	// AquaEnforcer already exists - don't requeue
+
+	if found != nil {
+		update := !reflect.DeepEqual(enforcer.Spec, found.Spec)
+
+		reqLogger.Info("Checking for AquaEnforcer Upgrade", "enforcer", enforcer.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(enforcer.Spec.DeepCopy())
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaEnforcer.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			// Spec updated - return and requeue
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
+	reqLogger.Info("Skip reconcile: Aqua Enforcer Exists", "AquaEnforcer.Namespace", found.Namespace, "AquaEnforcer.Name", found.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+}
+
+// Aqua Express Mode Token Secret
+
+func (r *AquaKubeEnforcerReconciler) addExpressModeEnforcerSecretToken(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Enforcer Requirements Phase", "Create Aqua Enforcer Token Secret")
+	reqLogger.Info("Start creating enforcer token secret")
+
+	// Define a new DaemonSet object
+	expressModeHelper := newAquaKubeEnforcerHelper(cr)
+	token := expressModeHelper.CreateAETokenSecret(cr)
+	// Adding token to the hashed data, for restart pods if token is changed
+	hash, err := extra.GenerateMD5ForSpec(token.Data)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
+
+	// Set AquaEnforcer instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, token, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this Secret already exists
+	found := &corev1.Secret{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: token.Name, Namespace: token.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Enforcer Token Secret", "Secret.Namespace", token.Namespace, "Secret.Name", token.Name)
+		err = r.Client.Create(context.TODO(), token)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !equality.Semantic.DeepDerivative(token.Data, found.Data) {
+		found = token
+		log.Info("Aqua Enforcer: Updating Enforcer Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+		err := r.Client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update Enforcer Token Secret", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
+	}
+
+	// Secret already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Enforcer Token Secret Already Exists", "Secret.Namespace", found.Namespace, "Secret.Name", found.Name)
+	return reconcile.Result{}, nil
 }
 
 // finalizers

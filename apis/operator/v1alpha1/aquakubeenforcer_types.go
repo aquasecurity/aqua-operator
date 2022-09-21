@@ -28,19 +28,19 @@ import (
 type AquaKubeEnforcerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	Infrastructure         *AquaInfrastructure    `json:"infra,omitempty"`
-	Config                 AquaKubeEnforcerConfig `json:"config"`
-	Token                  string                 `json:"token,omitempty"`
-	RegistryData           *AquaDockerRegistry    `json:"registry,omitempty"`
-	ImageData              *AquaImage             `json:"image,omitempty"`
-	EnforcerUpdateApproved *bool                  `json:"updateEnforcer,omitempty"`
-	AllowAnyVersion        bool                   `json:"allowAnyVersion,omitempty"`
-	KubeEnforcerService    *AquaService           `json:"deploy,omitempty"`
-	Envs                   []corev1.EnvVar        `json:"env,omitempty"`
-	Mtls                   bool                   `json:"mtls,omitempty"`
-	DeployStarboard        *AquaStarboardDetails  `json:"starboard,omitempty"`
-	ConfigMapChecksum      string                 `json:"config_map_checksum,omitempty"`
+	Infrastructure         *AquaInfrastructure     `json:"infra,omitempty"`
+	Config                 AquaKubeEnforcerConfig  `json:"config"`
+	Token                  string                  `json:"token,omitempty"`
+	RegistryData           *AquaDockerRegistry     `json:"registry,omitempty"`
+	ImageData              *AquaImage              `json:"image,omitempty"`
+	EnforcerUpdateApproved *bool                   `json:"updateEnforcer,omitempty"`
+	AllowAnyVersion        bool                    `json:"allowAnyVersion,omitempty"`
+	KubeEnforcerService    *AquaService            `json:"deploy,omitempty"`
+	Envs                   []corev1.EnvVar         `json:"env,omitempty"`
+	Mtls                   bool                    `json:"mtls,omitempty"`
+	DeployStarboard        *AquaStarboardDetails   `json:"starboard,omitempty"`
+	ConfigMapChecksum      string                  `json:"config_map_checksum,omitempty"`
+	AquaExpressMode        *AquaExpressModeDetails `json:"aquaExpressMode"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer

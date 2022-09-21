@@ -2,11 +2,15 @@ package aquakubeenforcer
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
+	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	rbac2 "github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
-	"os"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -891,4 +895,95 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 		},
 	}
 	return aquasb
+}
+
+// Aqua Enforcer Functions
+func (enf *AquaKubeEnforcerHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaKubeEnforcer) *operatorv1alpha1.AquaEnforcer {
+	registry := consts.Registry
+	gwsplit := strings.Split(cr.Spec.Config.GatewayAddress, ":")
+	gatewayHost := gwsplit[0]
+	gatewayPort, err := strconv.ParseInt(gwsplit[1], 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	if cr.Spec.RegistryData != nil {
+		if len(cr.Spec.RegistryData.URL) > 0 {
+			registry = cr.Spec.RegistryData.URL
+		}
+	}
+
+	labels := map[string]string{
+		"app":                cr.Name + "-kube-enforcer",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+		"aqua.component":     "enforcer",
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua Enforcer",
+	}
+	aquaenf := &operatorv1alpha1.AquaEnforcer{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operator.aquasec.com/v1alpha1",
+			Kind:       "AquaEnforcer",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: operatorv1alpha1.AquaEnforcerSpec{
+			Infrastructure: enf.Parameters.KubeEnforcer.Spec.Infrastructure,
+			Common: &operatorv1alpha1.AquaCommon{
+				ImagePullSecret: cr.Spec.Config.ImagePullSecret,
+			},
+			Gateway: &operatorv1alpha1.AquaGatewayInformation{
+				Host: gatewayHost,
+				Port: gatewayPort,
+			},
+			Secret: &operatorv1alpha1.AquaSecret{
+				Name: fmt.Sprintf("%s-enforcer-token", cr.Name),
+				Key:  "token",
+			},
+			EnforcerService: &operatorv1alpha1.AquaService{
+				ImageData: &operatorv1alpha1.AquaImage{
+					Registry: registry,
+				},
+			},
+			RunAsNonRoot:           enf.Parameters.KubeEnforcer.Spec.AquaExpressMode.RunAsNonRoot,
+			EnforcerUpdateApproved: enf.Parameters.KubeEnforcer.Spec.AquaExpressMode.EnforcerUpdateApproved,
+			AquaExpressMode:        enf.Parameters.KubeEnforcer.Spec.AquaExpressMode.AquaExpressMode,
+		},
+	}
+	return aquaenf
+}
+
+// CreateTokenSecret : Create Enforcer Token Secret For The Enforcer connection to the aqua csp environment
+func (enf *AquaKubeEnforcerHelper) CreateAETokenSecret(cr *operatorv1alpha1.AquaKubeEnforcer) *corev1.Secret {
+	labels := map[string]string{
+		"app":                cr.Name + "-requirments",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Secret for aqua enforcer token",
+	}
+	token := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "core/v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        fmt.Sprintf(consts.EnforcerTokenSecretName, cr.Name),
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			consts.EnforcerTokenSecretKey: []byte(cr.Spec.AquaExpressMode.Token),
+		},
+	}
+
+	return token
 }

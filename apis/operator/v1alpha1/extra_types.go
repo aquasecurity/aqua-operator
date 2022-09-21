@@ -155,6 +155,24 @@ type AquaStarboardDetails struct {
 	ImageTag                      string              `json:"tag,omitempty"`
 }
 
+type AquaGatewayInformation1 struct {
+	Host string `json:"host"`
+	Port string `json:"port"`
+}
+type AquaExpressModeDetails struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+	EnforcerService        *AquaService    `json:"deploy,required"`
+	Token                  string          `json:"token,required"`
+	Secret                 *AquaSecret     `json:"secret,omitempty"`
+	Envs                   []corev1.EnvVar `json:"env,omitempty"`
+	RunAsNonRoot           bool            `json:"runAsNonRoot,omitempty"`
+	EnforcerUpdateApproved *bool           `json:"updateEnforcer,omitempty"`
+	Mtls                   bool            `json:"mtls,omitempty"`
+	ConfigMapChecksum      string          `json:"config_map_checksum,omitempty"`
+	AquaExpressMode        bool            `json:"aqua_express_mode,omitempty"`
+	RhcosVersion           string          `json:"rhcosVersion,omitempty"`
+}
 type AuditDBInformation struct {
 	AuditDBSecret *AquaSecret              `json:"secret,omitempty"`
 	Data          *AquaDatabaseInformation `json:"information,omitempty"`
