@@ -40,7 +40,8 @@ type AquaKubeEnforcerSpec struct {
 	Mtls                   bool                    `json:"mtls,omitempty"`
 	DeployStarboard        *AquaStarboardDetails   `json:"starboard,omitempty"`
 	ConfigMapChecksum      string                  `json:"config_map_checksum,omitempty"`
-	AquaExpressMode        *AquaExpressModeDetails `json:"aquaExpressMode"`
+	EnableAquaEnfrocer     bool                    `json:"aqua_enforcer_enable,omitempty"`
+	AquaExpressMode        *AquaExpressModeDetails `json:"aqua_enforcer_spec,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer

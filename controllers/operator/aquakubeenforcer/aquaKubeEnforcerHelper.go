@@ -897,6 +897,36 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 	return aquasb
 }
 
+// CreateTokenSecret : Create Enforcer Token Secret For The Enforcer connection to the aqua csp environment
+func (enf *AquaKubeEnforcerHelper) CreateAETokenSecret(cr *operatorv1alpha1.AquaKubeEnforcer) *corev1.Secret {
+	labels := map[string]string{
+		"app":                cr.Name + "-requirments",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Secret for aqua enforcer token",
+	}
+	token := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "core/v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        fmt.Sprintf(consts.EnforcerTokenSecretName, cr.Name),
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			consts.EnforcerTokenSecretKey: []byte(cr.Spec.AquaExpressMode.Token),
+		},
+	}
+
+	return token
+}
+
 // Aqua Enforcer Functions
 func (enf *AquaKubeEnforcerHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaKubeEnforcer) *operatorv1alpha1.AquaEnforcer {
 	registry := consts.Registry
@@ -956,34 +986,4 @@ func (enf *AquaKubeEnforcerHelper) newAquaEnforcer(cr *operatorv1alpha1.AquaKube
 		},
 	}
 	return aquaenf
-}
-
-// CreateTokenSecret : Create Enforcer Token Secret For The Enforcer connection to the aqua csp environment
-func (enf *AquaKubeEnforcerHelper) CreateAETokenSecret(cr *operatorv1alpha1.AquaKubeEnforcer) *corev1.Secret {
-	labels := map[string]string{
-		"app":                cr.Name + "-requirments",
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr.Name,
-	}
-	annotations := map[string]string{
-		"description": "Secret for aqua enforcer token",
-	}
-	token := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "core/v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf(consts.EnforcerTokenSecretName, cr.Name),
-			Namespace:   cr.Namespace,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			consts.EnforcerTokenSecretKey: []byte(cr.Spec.AquaExpressMode.Token),
-		},
-	}
-
-	return token
 }

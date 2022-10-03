@@ -1,38 +1,38 @@
-## General 
+## General
 
 This guide explains how to deploy and use the Aqua Security Operator to manage Aqua's deployments in an OpenShift 4.x environment. You can use the Operator to deploy Aqua Enterprise or any of its components -
 * Server (aka “console”)
-* Database (optional; you can map an external database as well) 
-* Gateway 
+* Database (optional; you can map an external database as well)
+* Gateway
 * Enforcer
 * Scanner
 * KubeEnforcer
 
-Use the Aqua Operator to: 
+Use the Aqua Operator to:
 * Easily deploy Aqua Enterprise on OpenShift
 * Manage and scale up Aqua security components with additional replicas
 * Assign metadata tags to Aqua Enterprise components
 * Easily add and delete Aqua components like Scanner daemons, Kube-Enforcers and Enforcers
-	
-You can find all Aqua's Operator CRs and their properties at [Custom Resources](../config/crd/bases), 
+
+You can find all Aqua's Operator CRs and their properties at [Custom Resources](../config/crd/bases),
  [Properties](../config/samples).
-	   
-## Prerequisites 
+
+## Prerequisites
 
 Make sure you have a license and access to the Aqua registry. To obtain a license, please contact Aqua Security at https://www.aquasec.com/about-us/contact-us/.
 
-It is advised that you read about the [Aqua Environment and Configuration](https://docs.aquasec.com/docs/purpose-of-this-section) and [Aqua's sizing guide](https://docs.aquasec.com/docs/sizing-guide) before deploying and using the Operator. 
+It is advised that you read about the [Aqua Environment and Configuration](https://docs.aquasec.com/docs/purpose-of-this-section) and [Aqua's sizing guide](https://docs.aquasec.com/docs/sizing-guide) before deploying and using the Operator.
 
 ## Types of Aqua Operator
 Aqua Security maintains three types of Operators:
 * **Marketplace** - The marketplace operator is purchased through Red Hat Marketplace.
-* **Community** - Aqua's official Operator. It typically represents the latest and newest version of the Operator. 
-* **Certified** - Aqua's official Operator vetted and certified by RedHat. The certified Operator is based on the latest community Operator. It is packaged in a mode that allows it to work in disconnected networks, and contains UBI images as part of the package.  
+* **Community** - Aqua's official Operator. It typically represents the latest and newest version of the Operator.
+* **Certified** - Aqua's official Operator vetted and certified by RedHat. The certified Operator is based on the latest community Operator. It is packaged in a mode that allows it to work in disconnected networks, and contains UBI images as part of the package.
 
 ## Deploying the Aqua Operator
 1. Create a new namespace/project called "aqua" for the Aqua deployment.
 
-2. Install the Aqua Operator from Red Hat's OperatorHub and add it to the "aqua" namespace. 
+2. Install the Aqua Operator from Red Hat's OperatorHub and add it to the "aqua" namespace.
 
 3. Create a secret for the database password
 ```
@@ -71,7 +71,7 @@ The **[AquaServer CRD](../config/crd/bases/operator.aquasec.com_aquaservers.yaml
 **[AquaEnforcer CRD](../config/samples/operator_v1alpha1_aquaenforcer.yaml)** is used to deploy the Aqua Enforcer in any cluster. Please see the [example CR](../config/samples/operator_v1alpha1_aquaenforcer.yaml) for the listing of all fields and configurations.
 * You need to provide a token to identify the Aqua Enforcer.
 * You can set the target Gateway using the ```.spec.gateway.host```and ```.spec.gateway.port``` properties.
-* You can choose to deploy a different version of the Aqua Enforcer by setting the ```.spec.deploy.image.tag``` property. 
+* You can choose to deploy a different version of the Aqua Enforcer by setting the ```.spec.deploy.image.tag``` property.
     If you choose to run old/custom Aqua Enforcer version, you must set ```.spec.common.allowAnyVersion``` .
 * You can add environment variables using ```.spec.env```.
 * You can define the enforcer resources requests/limits using ```.spec.deploy.resources```.
@@ -126,7 +126,7 @@ The mTLS will be enabled automatically if the following secretes are available i
 * aqua-grpc-gateway
 * aqua-grpc-enforcer
 * aqua-grpc-kube-enforcer
-    
+
 
 1. Generate TLS certificates signed by a public CA or Self-Signed CA for server and gateway
 
@@ -141,14 +141,14 @@ The mTLS will be enabled automatically if the following secretes are available i
    #############################################################################################################
    # Generate Aqua component certificates
    #############################################################################################################
-   
+
    # Create keys (You can skip this step if you have already created a CSR file for the different components)
    openssl genrsa -out aqua_web.key 2048
    openssl genrsa -out aqua_gateway.key 2048
    openssl genrsa -out aqua_enforcer.key 2048
-   openssl genrsa -out aqua_kube-enforcer.key 2048   
+   openssl genrsa -out aqua_kube-enforcer.key 2048
    # Create config files
-   ## Create the aqua-web SSL config file   
+   ## Create the aqua-web SSL config file
    cat >aqua-web.conf <<EOF
    [ req ]default_bits = 2048
    distinguished_name = req_distinguished_name
@@ -166,8 +166,8 @@ The mTLS will be enabled automatically if the following secretes are available i
    DNS.1 = <console host public DNS>
    DNS.2 = <console service DNS e.g. aqua-web>
    IP.1 = <console service IP e.g. 10.X.X.X>
-   EOF   
-   ## Create the Aqua Gateway SSL config file   
+   EOF
+   ## Create the Aqua Gateway SSL config file
    cat >aqua-gateway.conf <<EOF
    [ req ]default_bits = 2048
    distinguished_name = req_distinguished_name
@@ -184,75 +184,75 @@ The mTLS will be enabled automatically if the following secretes are available i
    [alt_names]
    DNS.1 = <gateway public DNS>
    DNS.2 = <gateway service DNS e.g. aqua-gateway>
-   EOF   
+   EOF
    # Generate signings (csr)
-   ## Generate a CSR file for aqua_web csr   
+   ## Generate a CSR file for aqua_web csr
    openssl req -new -sha256 -key aqua_web.key -config aqua-web.conf \
-     -out aqua_web.csr   
-   ## Generate a CSR file for aqua_gateway csr   
+     -out aqua_web.csr
+   ## Generate a CSR file for aqua_gateway csr
    openssl req -new -sha256 -key aqua_gateway.key -config aqua-gateway.conf \
-     -out aqua_gateway.csr   
-   ## Create the Aqua Enforcer csr   
+     -out aqua_gateway.csr
+   ## Create the Aqua Enforcer csr
    openssl req -new -sha256 -key aqua_enforcer.key \
      -subj "/C=US/ST=MA/O=aqua/CN=aqua-agent" \
-     -out aqua_enforcer.csr   
-   ## Create the Aqua Kube Enforcer csr    
+     -out aqua_enforcer.csr
+   ## Create the Aqua Kube Enforcer csr
    openssl req -new -sha256 -key aqua_kube-enforcer.key \
      -subj "/C=US/ST=MA/O=aqua/CN=aqua-kube-enforcer" \
-     -out aqua_kube-enforcer.csr      
+     -out aqua_kube-enforcer.csr
    # Generate the certificates
-   ## Generate aqua web certificate using the CSR along with appropriate private keys and get it signed by the CA root key      
+   ## Generate aqua web certificate using the CSR along with appropriate private keys and get it signed by the CA root key
    openssl x509 -req -in aqua_web.csr -CA rootCA.crt\
      -CAkey rootCA.key -CAcreateserial \
      -out aqua_web.crt -days 500 -sha256 \
-     -extensions req_ext -extfile aqua-web.conf      
-   ## Generate aqua gateway certificate using the CSR along with appropriate private keys and get it signed by the CA root key   
+     -extensions req_ext -extfile aqua-web.conf
+   ## Generate aqua gateway certificate using the CSR along with appropriate private keys and get it signed by the CA root key
    openssl x509 -req -in aqua_gateway.csr -CA rootCA.crt -CAkey rootCA.key \
      -CAcreateserial -out aqua_gateway.crt -days 500 \
-     -sha256 -extensions req_ext -extfile aqua-gateway.conf   
-   ## Generate aqua enforcer certificate using the CSR along with appropriate private keys and get it signed by the CA root key  
+     -sha256 -extensions req_ext -extfile aqua-gateway.conf
+   ## Generate aqua enforcer certificate using the CSR along with appropriate private keys and get it signed by the CA root key
    openssl x509 -req -in aqua_enforcer.csr -CA rootCA.crt \
      -CAkey rootCA.key -CAcreateserial -out aqua_enforcer.crt \
-     -days 500 -sha256   
-   ## Generate aqua kube enforcer certificate using the CSR along with appropriate private keys and get it signed by the CA root key     
+     -days 500 -sha256
+   ## Generate aqua kube enforcer certificate using the CSR along with appropriate private keys and get it signed by the CA root key
    openssl x509 -req -in aqua_kube-enforcer.csr -CA rootCA.crt \
      -CAkey rootCA.key -CAcreateserial -out aqua_kube-enforcer.crt \
-     -days 500 -sha256   
-   # Verify certificates (optional)   
-   openssl x509 -in aqua_web.crt -text -noout  
-   openssl x509 -in aqua_gateway.crt -text -noout  
-   openssl x509 -in aqua_enforcer.crt -text -noout  
+     -days 500 -sha256
+   # Verify certificates (optional)
+   openssl x509 -in aqua_web.crt -text -noout
+   openssl x509 -in aqua_gateway.crt -text -noout
+   openssl x509 -in aqua_enforcer.crt -text -noout
    openssl x509 -in aqua_kube-enforcer.crt -text -noout
    ```
 
 2.  Create secrets for server, gateway, enforcer and kube-enforcer components using the generated SSL certificates.
 
     ```shell
-    # Aqua web:   
+    # Aqua web:
     oc create secret generic aqua-grpc-web --from-file=rootCA.crt \
-     --from-file=aqua_web.crt --from-file=aqua_web.key -n aqua    
-    # Aqua gateway    
+     --from-file=aqua_web.crt --from-file=aqua_web.key -n aqua
+    # Aqua gateway
     oc create secret generic aqua-grpc-gateway --from-file=rootCA.crt \
-     --from-file=aqua_gateway.crt --from-file=aqua_gateway.key -n aqua    
-    # Aqua enforcer   
+     --from-file=aqua_gateway.crt --from-file=aqua_gateway.key -n aqua
+    # Aqua enforcer
     oc create secret generic aqua-grpc-enforcer --from-file=rootCA.crt \
-     --from-file=aqua_enforcer.crt --from-file=aqua_enforcer.key -n aqua    
-    # Aqua kube-enforcer    
+     --from-file=aqua_enforcer.crt --from-file=aqua_enforcer.key -n aqua
+    # Aqua kube-enforcer
     oc create secret generic aqua-grpc-kube-enforcer \
      --from-file=rootCA.crt --from-file=aqua_kube-enforcer.crt \
      --from-file=aqua_kube-enforcer.key -n aqua
-    ``` 
+    ```
 ### Running as unprivileged
 
 1. Create a new SCC (Security Context Constraint):
-   
+
     The aqua-scc yaml defines the cluster’s security context constraints. We strongly recommend not changing anything in this yaml file.
     * Download [aqua-scc](../config/rbac/aqua-scc.yaml) yaml.
     * Apply it by typing:
   ```shell
   oc apply -f aqua-scc.yaml
   ```
-  
+
 2. set\create ```.spec.runAsNonRoot``` property with ```true``` value, example:
 ```yaml
 spec:
@@ -260,9 +260,9 @@ spec:
 ```
 3. To verify it, please run the following command in the relevant pod:
    ```whoami```
-   
+
     Example result:
-   
+
    <img src="../images/whoami.png" alt=""/>
 
 ### Assign Pods to Nodes
@@ -270,7 +270,7 @@ spec:
 #### NodeSelector
 
 1. Add a label to a node, with the following command:
-   
+
    ```
    kubectl label nodes <your-node-name> <key>=<value>
    ```
@@ -279,7 +279,7 @@ spec:
    kubectl label nodes node1 aquadeployments=true
    ```
 2. Verify that your chosen node has yours <key>=<value> label:
-   
+
    ```
    kubectl get nodes --selector=<key>=<value>
    ```
@@ -307,7 +307,7 @@ spec:
 #### Affinity
 
 1. Set\Create ```.spec.deploy.affinity``` property
-   example:   
+   example:
     ```yaml
     spec:
       affinity:
@@ -323,9 +323,9 @@ spec:
     ```
 ### Toleration
 
-1. add a taint to a node 
+1. add a taint to a node
 2. Set\Create ```.spec.deploy.tolerations``` property
-   
+
    example:
     ```yaml
     spec:
@@ -347,14 +347,14 @@ only notify you there is an update available, and will upgrade the operator vers
 only after a manual approval given.
 
 *If you choose "Manual" approval strategy, we recommend that before approving, make sure you are indeed
-upgrading to the most updated version. you can do that by deleting the suggested InstallPlan, once the 
+upgrading to the most updated version. you can do that by deleting the suggested InstallPlan, once the
 suggested InstallPlan is deleted, the OLM will generate a new InstallPlan to the latest version available
 in this channel*
 
-For community operator, you can upgrade minor version by changing the relevant CRs 
+For community operator, you can upgrade minor version by changing the relevant CRs
 ```.spec.infra.version``` or ```.spec.<<NAME>>.image.tag```
 
-	
+
 ## CR Examples ##
 
 #### Example: Deploying the Aqua Server with an Aqua Enforcer and KubeEnforcer (all in one CR)
@@ -367,53 +367,53 @@ metadata:
   name: aqua
   namespace: aqua
 spec:
-  infra:                                    
-    serviceAccount: "aqua-sa"               
-    namespace: "aqua"                       
-    version: "2022.4"                          
-    requirements: true                      
+  infra:
+    serviceAccount: "aqua-sa"
+    namespace: "aqua"
+    version: "2022.4"
+    requirements: true
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
     dbDiskSize: 10
     databaseSecret:                         # Optional: If already created database secret then mention in here
       key: "db-password"
-      name: "aqua-database-password"      
-  database:                                 
-    replicas: 1                            
+      name: "aqua-database-password"
+  database:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "database"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                    
-  gateway:                                  
-    replicas: 1                             
+      pullPolicy: Always
+  gateway:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "gateway"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                     
-  server:                                   
-    replicas: 1                             
-    service: "LoadBalancer" 
+      pullPolicy: Always
+  server:
+    replicas: 1
+    service: "LoadBalancer"
     image:
       registry: "registry.aquasec.com"
       repository: "console"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always 
-  enforcer:                                 # Optional: If defined, the Operator will create the default Aqua Enforcer 
+      pullPolicy: Always
+  enforcer:                                 # Optional: If defined, the Operator will create the default Aqua Enforcer
     enforcerMode: false                     # Defines whether the default Enforcer will work in "Enforce" (true) or "Audit Only" (false) mode
   kubeEnforcer:                             # Optional: If defined, the Operator will create a KubeEnforcer
-    registry: "registry.aquasec.com"        
-    tag: "<<IMAGE TAG>>" 
+    registry: "registry.aquasec.com"
+    tag: "<<IMAGE TAG>>"
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
   runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
 If you haven't used the "route" option in the Aqua CSP CR, you should define a Route manually to enable external access to the Aqua Server (Console).
 
-#### Example: Simple deployment of the Aqua Server 
+#### Example: Simple deployment of the Aqua Server
 
 ```yaml
 ---
@@ -423,41 +423,41 @@ metadata:
   name: aqua
   namespace: aqua
 spec:
-  infra:                                    
-    serviceAccount: "aqua-sa"               
-    namespace: "aqua"                       
-    version: "2022.4"                          
-    requirements: true                      
+  infra:
+    serviceAccount: "aqua-sa"
+    namespace: "aqua"
+    version: "2022.4"
+    requirements: true
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
     dbDiskSize: 10
     databaseSecret:                         # Optional: If already created database secret then mention in here
       key: "db-password"
-      name: "aqua-database-password"      
-  database:                                 
-    replicas: 1                            
+      name: "aqua-database-password"
+  database:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "database"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                    
-  gateway:                                  
-    replicas: 1                             
+      pullPolicy: Always
+  gateway:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "gateway"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                     
-  server:                                   
-    replicas: 1                             
-    service: "LoadBalancer" 
+      pullPolicy: Always
+  server:
+    replicas: 1
+    service: "LoadBalancer"
     image:
       registry: "registry.aquasec.com"
       repository: "console"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always  
+      pullPolicy: Always
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
   runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
@@ -466,7 +466,7 @@ If you haven't used the "route" option in the Aqua CSP CR, you should define a R
 
 #### Example: Deploying Aqua Enterprise with split database
 
-"Split database" means there is a separate database for audit-related data: 
+"Split database" means there is a separate database for audit-related data:
 ```yaml
 ---
 apiVersion: operator.aquasec.com/v1alpha1
@@ -475,42 +475,42 @@ metadata:
   name: aqua
   namespace: aqua
 spec:
-  infra:                                    
-    serviceAccount: "aqua-sa"               
-    namespace: "aqua"                       
-    version: "2022.4"                          
-    requirements: true                      
+  infra:
+    serviceAccount: "aqua-sa"
+    namespace: "aqua"
+    version: "2022.4"
+    requirements: true
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
     dbDiskSize: 10
     databaseSecret:                         # Optional: If already created database secret then mention in here
       key: "db-password"
       name: "aqua-database-password"
-    splitDB: true      
-  database:                                 
-    replicas: 1                            
+    splitDB: true
+  database:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "database"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                    
-  gateway:                                  
-    replicas: 1                             
+      pullPolicy: Always
+  gateway:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "gateway"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                     
-  server:                                   
-    replicas: 1                             
-    service: "LoadBalancer" 
+      pullPolicy: Always
+  server:
+    replicas: 1
+    service: "LoadBalancer"
     image:
       registry: "registry.aquasec.com"
       repository: "console"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always  
+      pullPolicy: Always
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
   runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
@@ -525,40 +525,40 @@ metadata:
   name: aqua
   namespace: aqua
 spec:
-  infra:                                    
-    serviceAccount: "aqua-sa"               
-    namespace: "aqua"                       
-    version: "2022.4"                          
-    requirements: true                      
+  infra:
+    serviceAccount: "aqua-sa"
+    namespace: "aqua"
+    version: "2022.4"
+    requirements: true
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
-    dbDiskSize: 10      
+    dbDiskSize: 10
   externalDb:
     host: "<<EXTERNAL DATABASE IP>>"
     port: "<<EXTERNAL DATABASE PORT>>"
     username: "<<EXTERNAL DATABASE USER NAME>>"
-    password: "<<EXTERNAL DATABASE PASSWORD>>"    # Optional: you can specify the database password secret in common.databaseSecret                     
-  gateway:                                  
-    replicas: 1                             
+    password: "<<EXTERNAL DATABASE PASSWORD>>"    # Optional: you can specify the database password secret in common.databaseSecret
+  gateway:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "gateway"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                     
-  server:                                   
-    replicas: 1                             
-    service: "LoadBalancer" 
+      pullPolicy: Always
+  server:
+    replicas: 1
+    service: "LoadBalancer"
     image:
       registry: "registry.aquasec.com"
       repository: "console"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always  
+      pullPolicy: Always
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
   runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
 
-### Example: Deploying Aqua Enterprise with a split external database
+#### Example: Deploying Aqua Enterprise with a split external database
 
 ```yaml
 ---
@@ -568,15 +568,15 @@ metadata:
   name: aqua
   namespace: aqua
 spec:
-  infra:                                    
-    serviceAccount: "aqua-sa"               
-    namespace: "aqua"                       
-    version: "2022.4"                          
-    requirements: true                      
+  infra:
+    serviceAccount: "aqua-sa"
+    namespace: "aqua"
+    version: "2022.4"
+    requirements: true
   common:
     imagePullSecret: "aqua-registry"        # Optional: If already created image pull secret then mention in here
     dbDiskSize: 10
-    splitDB: true      
+    splitDB: true
   externalDb:
     host: "<<EXTERNAL DATABASE IP>>"
     port: "<<EXTERNAL DATABASE PORT>>"
@@ -589,24 +589,24 @@ spec:
       username: "<<AUDIT EXTERNAL DB USER NAME>>"
       password: "<<AUDIT EXTERNAL DB PASSWORD>>"  # Optional: you can specify the database password secret in auditDB.secret
     secret:                                       # Optional: the secret that hold the audit database password. will create one if not provided
-      key: 
-      name:                     
-  gateway:                                  
-    replicas: 1                             
+      key:
+      name:
+  gateway:
+    replicas: 1
     service: "ClusterIP"
     image:
       registry: "registry.aquasec.com"
       repository: "gateway"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always                     
-  server:                                   
-    replicas: 1                             
-    service: "LoadBalancer" 
+      pullPolicy: Always
+  server:
+    replicas: 1
+    service: "LoadBalancer"
     image:
       registry: "registry.aquasec.com"
       repository: "console"
       tag: "<<IMAGE TAG>>"
-      pullPolicy: Always  
+      pullPolicy: Always
   route: true                               # Optional: If defined and set to true, the Operator will create a Route to enable access to the console
   runAsNonRoot: false                       # Optional: If defined and set to true, the Operator will create the pods with unprivileged user.
 ```
@@ -669,6 +669,16 @@ spec:
       repository: kube-enforcer
       pullPolicy: Always
   token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)
+  aqua_enforcer_enable: false                     # Optional: Enable to true to install aqua enforcer along with kube-enforcer
+  aqua_enforcer_spec:                             # Optional: Aqua Enforcer specification block
+    aqua_express_mode: false                      # Optional: Enables Express Mode in aqua enforcer
+    deploy:
+      image:
+        pullPolicy: IfNotPresent
+        registry: registry.aquasec.com
+        repository: enforcer
+        tag: <<AQUA_ENFORCER_TAG>>
+    token: <<Aqua_ENFORCER_TAG>>
   starboard:
     infra:
       serviceAccount: starboard-operator

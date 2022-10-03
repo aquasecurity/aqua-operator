@@ -247,7 +247,7 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.AquaExpressMode.AquaExpressMode {
+	if instance.Spec.EnableAquaEnfrocer {
 		_, err = r.addExpressModeEnforcerSecretToken(instance)
 		if err != nil {
 			return reconcile.Result{}, err
