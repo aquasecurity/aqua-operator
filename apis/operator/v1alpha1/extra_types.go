@@ -155,10 +155,6 @@ type AquaStarboardDetails struct {
 	ImageTag                      string              `json:"tag,omitempty"`
 }
 
-type AquaGatewayInformation1 struct {
-	Host string `json:"host"`
-	Port string `json:"port"`
-}
 type AquaExpressModeDetails struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
