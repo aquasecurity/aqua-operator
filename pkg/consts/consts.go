@@ -85,7 +85,7 @@ const (
 	LatestVersion = "2022.4"
 
 	// StarboardVersion Latest starboard version
-	StarboardVersion = "0.15.4"
+	StarboardVersion = "0.15.10"
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter5.aquasec.com"
