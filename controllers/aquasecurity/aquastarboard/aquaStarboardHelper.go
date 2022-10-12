@@ -68,7 +68,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 				"",
 			},
 			Resources: []string{
-				"configmaps", "secrets", "serviceaccounts",
+				"configmaps", "secrets", "serviceaccounts", "resourcequotas", "limitranges",
 			},
 			Verbs: []string{
 				"get", "list", "watch", "create", "update",
@@ -101,7 +101,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 				"apps",
 			},
 			Resources: []string{
-				"replicasets", "statefulsets", "daemonsets",
+				"replicasets", "statefulsets", "daemonsets", "deployments",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -171,6 +171,28 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 			},
 			Verbs: []string{
 				"create", "get", "update",
+			},
+		},
+		{
+			APIGroups: []string{
+				"networking.k8s.io",
+			},
+			Resources: []string{
+				"networkpolicies", "ingresses",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"policy",
+			},
+			Resources: []string{
+				"podsecuritypolicies",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
 			},
 		},
 	}
@@ -275,12 +297,15 @@ func (enf *AquaStarboardHelper) CreateStarboardSecret(cr, namespace, name, app s
 
 func (enf *AquaStarboardHelper) CreateStarboardConftestConfigMap(cr, namespace, name, app, version string) *corev1.ConfigMap {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                        app,
+		"deployedby":                 "aqua-operator",
+		"aquasecoperator_cr":         cr,
+		"app.kubernetes.io/name":     "starboard-operator",
+		"app.kubernetes.io/instance": "starboard-operator",
+		"app.kubernetes.io/version":  consts.StarboardVersion,
 	}
 	annotations := map[string]string{
-		"description": "Deploy Aqua starboard-conftest-config ConfigMap",
+		"description": "Deploy Aqua starboard-policies-config ConfigMap",
 	}
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -292,13 +317,6 @@ func (enf *AquaStarboardHelper) CreateStarboardConftestConfigMap(cr, namespace, 
 			Namespace:   namespace,
 			Labels:      labels,
 			Annotations: annotations,
-		},
-		Data: map[string]string{
-			"conftest.imageRef":                  version,
-			"conftest.resources.limits.cpu":      "15m",
-			"conftest.resources.limits.memory":   "40M",
-			"conftest.resources.requests.cpu":    "1m",
-			"conftest.resources.requests.memory": "10M",
 		},
 	}
 
@@ -396,6 +414,9 @@ func (enf *AquaStarboardHelper) CreateStarboardDeployment(cr *aquasecurityv1alph
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: selectors,
+					Annotations: map[string]string{
+						"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
+					},
 				},
 				Spec: corev1.PodSpec{
 					//SecurityContext: &corev1.PodSecurityContext{
@@ -597,5 +618,18 @@ func (ebf *AquaStarboardHelper) getStarboardEnvVars(cr *aquasecurityv1alpha1.Aqu
 	}
 
 	result = append(result, operatorBatchDeleteDelay)
+
+	operatorClusterComplianceEnabled := corev1.EnvVar{
+		Name:  "OPERATOR_CLUSTER_COMPLIANCE_ENABLED",
+		Value: consts.OperatorClusterComplianceEnabled,
+	}
+
+	if cr.Spec.OperatorClusterComplianceEnabled != "" {
+		operatorClusterComplianceEnabled = corev1.EnvVar{
+			Name:  "OPERATOR_BATCH_DELETE_DELAY",
+			Value: cr.Spec.BatchDeleteDelay}
+	}
+
+	result = append(result, operatorClusterComplianceEnabled)
 	return result
 }

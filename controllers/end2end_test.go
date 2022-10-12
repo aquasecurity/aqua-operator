@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"os"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
 )
@@ -19,14 +20,15 @@ import (
 const (
 	timeout             = time.Minute * 6
 	interval            = time.Second * 30
-	enforcerTimeout     = time.Minute * 3
+	enforcerTimeout     = time.Minute * 5
 	scannerTimeout      = time.Minute * 1
-	KubeEnforcerTimeout = time.Minute * 5
+	KubeEnforcerTimeout = time.Minute * 6
 	StarboardTimeout    = time.Minute * 2
 )
 
 var _ = Describe("Aqua Controller", Serial, func() {
 	localLog := logf.Log.WithName("AquaCspControllerTest")
+	ubi := os.Getenv("RUN_UBI")
 
 	Context("Initial deployment", func() {
 		namespace := "aqua"
@@ -114,6 +116,11 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					RunAsNonRoot: false,
 				},
 			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.GatewayService.ImageData.Tag = testingconsts.UbiImageTag
+				instance.Spec.ServerService.ImageData.Tag = testingconsts.UbiImageTag
+			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
 			cspLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -163,6 +170,10 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					Token: testingconsts.EnforcerToken,
 				},
 			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.EnforcerService.ImageData.Tag = testingconsts.UbiImageTag
+			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
 			enforcerLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -211,6 +222,10 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					},
 				},
 			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.ScannerService.ImageData.Tag = testingconsts.UbiImageTag
+			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
 			scannerLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -256,9 +271,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 					},
 					Token: testingconsts.KubeEnforcerToken,
 					DeployStarboard: &operatorv1alpha1.AquaStarboardDetails{
-						AllowAnyVersion: true,
 						Infrastructure: &operatorv1alpha1.AquaInfrastructure{
-							Version:        testingconsts.StarboardVersion,
 							ServiceAccount: testingconsts.StarboardServiceAccount,
 						},
 						Config: operatorv1alpha1.AquaStarboardConfig{
@@ -266,15 +279,13 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						},
 						StarboardService: &operatorv1alpha1.AquaService{
 							Replicas: 1,
-							ImageData: &operatorv1alpha1.AquaImage{
-								Registry:   testingconsts.StarboardRegistry,
-								Repository: testingconsts.StarboardRepo,
-								PullPolicy: "IfNotPresent",
-							},
 						},
-						LogDevMode: false,
 					},
 				},
+			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.KubeEnforcerService.ImageData.Tag = testingconsts.UbiImageTag
 			}
 			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 

@@ -281,35 +281,10 @@ func (r *AquaCspReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			instance.Status.State = crStatus
 			_ = r.Client.Status().Update(context.Background(), instance)
 		}
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 	}
 
-	/*if instance.Spec.ScannerService != nil {
-		if len(instance.Spec.AdminPassword) > 0 {
-			_, err = r.InstallAquaScanner(instance)
-			if err != nil {
-				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-			}
-
-			if instance.Spec.Scale != nil {
-				_, err = r.ScaleScannerCLI(instance)
-				if err != nil {
-					return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-				}
-			}
-		} else {
-			reqLogger.Info("[Warning] missing admin password can't deploy scanner")
-		}
-	}
-
-	if strings.ToLower(instance.Spec.Infrastructure.Platform) == "openshift" {
-		if instance.Spec.Route {
-			_, err = r.CreateRoute(instance)
-			if err != nil {
-				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
-			}
-		}
-	}*/
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 30}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

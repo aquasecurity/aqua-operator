@@ -4,8 +4,13 @@ const (
 	// ServiceAccount Service Account
 	ServiceAccount = "%s-sa"
 
+	// StarboardServiceAccount Service Account
+	StarboardServiceAccount = "starboard-operator"
 	// Registry URL
 	Registry = "registry.aquasec.com"
+
+	// StarboardRegistry URL
+	StarboardRegistry = "docker.io/aquasec"
 
 	// PullPolicy Image Pull Policy
 	PullPolicy = "IfNotPresent"
@@ -80,6 +85,7 @@ const (
 	LatestVersion = "6.5"
 
 	// StarboardVersion Latest starboard version
+
 	StarboardVersion = "0.15.10"
 
 	// CyberCenterAddress Aqua Cybercenter Address
@@ -146,6 +152,8 @@ const (
 	OperatorBatchDeleteLimit = "10"
 
 	OperatorBatchDeleteDelay = "10s"
+
+	OperatorClusterComplianceEnabled = "false"
 
 	ServerConfigMapName = "aqua-csp-server-config"
 

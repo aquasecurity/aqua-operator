@@ -193,7 +193,7 @@ func (r *AquaServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -336,7 +336,7 @@ func (r *AquaServerReconciler) InstallServerDeployment(cr *operatorv1alpha1.Aqua
 
 	// Deployment already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Server Deployment Already Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaServerReconciler) InstallServerService(cr *operatorv1alpha1.AquaServer) (reconcile.Result, error) {

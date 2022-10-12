@@ -14,6 +14,9 @@ env:
 jobs:
   test:
     if: contains(github.event.pull_request.labels.*.name, 'safe_to_test')
+    strategy:
+      matrix:
+        tags: [ubi,alpine]
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
@@ -45,6 +48,9 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         run: |
+          if [[ ${{ matrix.tags }} == 'ubi' ]]; then
+              echo "RUN_UBI=true" >> "$GITHUB_ENV"
+          fi
           make test
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.39

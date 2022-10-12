@@ -30,21 +30,26 @@ spec:
           type: date
           description: The age of the report
           jsonPath: .metadata.creationTimestamp
-        - name: Danger
+        - name: Critial
           type: integer
           priority: 1
-          description: The number of checks that failed with Danger status
-          jsonPath: .report.summary.dangerCount
-        - name: Warning
+          description: The number of failed checks with critial severity
+          jsonPath: .report.summary.Critial
+        - name: High
           type: integer
           priority: 1
-          description: The number of checks that failed with Warning status
-          jsonPath: .report.summary.warningCount
-        - name: Pass
+          description: The number of failed checks with high severity
+          jsonPath: .report.summary.highCount
+        - name: Medium
           type: integer
           priority: 1
-          description: The number of checks that passed
-          jsonPath: .report.summary.passCount
+          description: The number of failed checks with medium severity
+          jsonPath: .report.summary.mediumCount
+        - name: Low
+          type: integer
+          priority: 1
+          description: The number of failed checks with low severity
+          jsonPath: .report.summary.lowCount
       served: true
       storage: true
       subresources:

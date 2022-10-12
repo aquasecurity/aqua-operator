@@ -220,7 +220,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaCsp) *v1alpha1.Aq
 	AquaStarboardDetails := v1alpha1.AquaStarboardDetails{
 		AllowAnyVersion: true,
 		Infrastructure: &v1alpha1.AquaInfrastructure{
-			Version:        "0.14.1",
+			Version:        consts.StarboardVersion,
 			ServiceAccount: "starboard-operator",
 		},
 		Config: v1alpha1.AquaStarboardConfig{
@@ -249,7 +249,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaCsp) *v1alpha1.Aq
 		Spec: v1alpha1.AquaKubeEnforcerSpec{
 			Config: v1alpha1.AquaKubeEnforcerConfig{
 				GatewayAddress:  fmt.Sprintf("%s.%s:8443", fmt.Sprintf(consts.GatewayServiceName, cr.Name), cr.Namespace),
-				ClusterName:     "aqua-secure",
+				ClusterName:     "Default-cluster-name",
 				ImagePullSecret: cr.Spec.Common.ImagePullSecret,
 			},
 			Token:                  consts.DefaultKubeEnforcerToken,

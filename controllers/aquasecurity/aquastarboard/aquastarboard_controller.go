@@ -142,7 +142,7 @@ func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return reconcile.Result{}, err
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -169,7 +169,7 @@ func (r *AquaStarboardReconciler) addStarboardDeployment(cr *aquasecurityv1alpha
 	reqLogger := log.WithValues("Starboard deployment phase", "Create Deployment")
 	reqLogger.Info("Start creating deployment")
 	reqLogger.Info("Aqua Starboard", "cr.Spec.Infrastructure.Version", cr.Spec.Infrastructure.Version)
-	pullPolicy, registry, repository, tag := extra.GetImageData("starboard", cr.Spec.Infrastructure.Version, cr.Spec.StarboardService.ImageData, cr.Spec.AllowAnyVersion)
+	pullPolicy, registry, repository, tag := extra.GetImageData("starboard-operator", cr.Spec.Infrastructure.Version, cr.Spec.StarboardService.ImageData, true)
 
 	starboardHelper := newAquaStarboardHelper(cr)
 	deployment := starboardHelper.CreateStarboardDeployment(cr,
@@ -255,7 +255,7 @@ func (r *AquaStarboardReconciler) addStarboardDeployment(cr *aquasecurityv1alpha
 
 	// object already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Starboard Deployment Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaStarboardReconciler) updateStarboardServerObject(serviceObject *v1alpha1.AquaService, StarboardImageData *v1alpha1.AquaImage) *v1alpha1.AquaService {
@@ -280,7 +280,7 @@ func (r *AquaStarboardReconciler) updateStarboardServerObject(serviceObject *v1a
 
 func (r *AquaStarboardReconciler) updateStarboardObject(cr *aquasecurityv1alpha1.AquaStarboard) *aquasecurityv1alpha1.AquaStarboard {
 
-	cr.Spec.Infrastructure = common2.UpdateAquaInfrastructure(cr.Spec.Infrastructure, cr.Name, cr.Namespace)
+	cr.Spec.Infrastructure = common2.UpdateAquaInfrastructureFull(cr.Spec.Infrastructure, cr.Name, cr.Namespace, "starboard")
 	return cr
 }
 
@@ -419,8 +419,8 @@ func (r *AquaStarboardReconciler) addStarboardConfigMap(cr *aquasecurityv1alpha1
 	configMaps := []*corev1.ConfigMap{
 		starboardHelper.CreateStarboardConftestConfigMap(cr.Name,
 			cr.Namespace,
-			"starboard-conftest-config",
-			"starboard-conftest-configmap",
+			"starboard-policies-config",
+			"starboard-policies-configmap",
 			cr.Spec.KubeEnforcerVersion,
 		),
 		starboardHelper.CreateStarboardConfigMap(cr.Name,
@@ -442,25 +442,27 @@ func (r *AquaStarboardReconciler) addStarboardConfigMap(cr *aquasecurityv1alpha1
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	cr.Spec.ConfigMapChecksum = hash
+	cr.Spec.ConfigMapChecksum += hash
 
 	// Set AquaStarboard instance as the owner and controller
 	requeue := true
 	for _, configMap := range configMaps {
-		// Check if this ClusterRoleBinding already exists
+		// Set AquaStarboard instance as the owner and controller
 		if err := controllerutil.SetControllerReference(cr, configMap, r.Scheme); err != nil {
 			return reconcile.Result{}, err
 		}
-
-		// Check if this ClusterRoleBinding already exists
+		// Check if ConfigMap already exists
 		foundConfigMap := &corev1.ConfigMap{}
 		err := r.Client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, foundConfigMap)
 		if err != nil && errors.IsNotFound(err) {
 			reqLogger.Info("Aqua Starboard: Creating a New ConfigMap", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 			err = r.Client.Create(context.TODO(), configMap)
-			if err == nil {
-				requeue = false
+
+			if err != nil {
+				reqLogger.Error(err, fmt.Sprintf("Failed to create configmap name: %s", configMap.Name))
+				return reconcile.Result{Requeue: true}, nil
 			}
+			return reconcile.Result{}, nil
 		} else if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -494,6 +496,12 @@ func (r *AquaStarboardReconciler) addStarboardSecret(cr *aquasecurityv1alpha1.Aq
 		"ke-token-secret",
 	)
 
+	hash, err := extra.GenerateMD5ForSpec(starboardSecret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	cr.Spec.ConfigMapChecksum += hash
+
 	// Set AquaStarboard instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, starboardSecret, r.Scheme); err != nil {
 		return reconcile.Result{}, err
@@ -501,7 +509,7 @@ func (r *AquaStarboardReconciler) addStarboardSecret(cr *aquasecurityv1alpha1.Aq
 
 	// Check if this object already exists
 	found := &corev1.Secret{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: starboardSecret.Name, Namespace: starboardSecret.Namespace}, found)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: starboardSecret.Name, Namespace: starboardSecret.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua Starboard: Creating a New token secret", "Secret.Namespace", starboardSecret.Namespace, "Secret.Name", starboardSecret.Name)
 		err = r.Client.Create(context.TODO(), starboardSecret)

@@ -144,7 +144,7 @@ func (r *AquaGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -265,7 +265,7 @@ func (r *AquaGatewayReconciler) InstallGatewayDeployment(cr *operatorv1alpha1.Aq
 
 	// Deployment already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Gateway Deployment Already Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaGatewayReconciler) InstallGatewayService(cr *operatorv1alpha1.AquaGateway) (reconcile.Result, error) {

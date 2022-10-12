@@ -218,7 +218,7 @@ func (r *AquaDatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		_ = r.Client.Status().Update(context.Background(), instance)
 	}
 
-	return ctrl.Result{Requeue: true}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -341,7 +341,7 @@ func (r *AquaDatabaseReconciler) InstallDatabaseDeployment(cr *v1alpha1.AquaData
 
 	// Deployment already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Database Deployment Already Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaDatabaseReconciler) InstallDatabaseService(cr *v1alpha1.AquaDatabase, serviceName, app string, servicePort int32) (reconcile.Result, error) {
