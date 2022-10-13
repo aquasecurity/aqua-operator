@@ -2,13 +2,14 @@ package aquascanner
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 )
 
 type ScannerParameters struct {
@@ -155,16 +156,19 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "AQUA_SCANNER_LOGICAL_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
+							/*
+								// In multi replica scanner deployment this env blocking deployment as all the scanner pods getting same name.
+								Env: []corev1.EnvVar{
+									{
+										Name: "AQUA_SCANNER_LOGICAL_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{
+												FieldPath: "metadata.name",
+											},
 										},
 									},
 								},
-							},
+							*/
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									SecretRef: &corev1.SecretEnvSource{
