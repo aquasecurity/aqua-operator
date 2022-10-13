@@ -167,16 +167,19 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "AQUA_SCANNER_LOGICAL_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
+							/*
+								// In multi replica scanner deployment this env blocking deployment as all the scanner pods getting same name.
+								Env: []corev1.EnvVar{
+									{
+										Name: "AQUA_SCANNER_LOGICAL_NAME",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{
+												FieldPath: "metadata.name",
+											},
 										},
 									},
 								},
-							},
+							*/
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									SecretRef: &corev1.SecretEnvSource{

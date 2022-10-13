@@ -393,9 +393,12 @@ func createKECerts() (*KubeEnforcerCertificates, error) {
 	return certs, nil
 }
 
-/*	----------------------------------------------------------------------------------------------------------------
-							Aqua Kube-Enforcer
-	----------------------------------------------------------------------------------------------------------------
+/*
+----------------------------------------------------------------------------------------------------------------
+
+	Aqua Kube-Enforcer
+
+----------------------------------------------------------------------------------------------------------------
 */
 func (r *AquaKubeEnforcerReconciler) updateKubeEnforcerServerObject(serviceObject *operatorv1alpha1.AquaService, kubeEnforcerImageData *operatorv1alpha1.AquaImage) *operatorv1alpha1.AquaService {
 
