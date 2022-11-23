@@ -460,10 +460,12 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 		"AQUA_GATEWAY_SECURE_ADDRESS":  gwAddress,
 		"AQUA_TLS_PORT":                "8443",
 		"CLUSTER_NAME":                 clusterName,
+		"AQUA_KB_SCAN_TAINTED_NODES":   "true",
 	}
 	if starboard {
 		configMapData["AQUA_KAP_ADD_ALL_CONTROL"] = "true"
 		configMapData["AQUA_WATCH_CONFIG_AUDIT_REPORT"] = "true"
+
 	}
 
 	labels := map[string]string{
