@@ -125,6 +125,17 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"get", "list", "watch",
 			},
 		},
+		{
+			APIGroups: []string{
+				"operator.openshift.io",
+			},
+			Resources: []string{
+				"imagecontentsourcepolicies",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
 	}
 
 	crole := rbac2.CreateClusterRole(name, namespace, "aqua-kube-enforcer", fmt.Sprintf("%s-rbac", "aqua-ke"), "Deploy Aqua Discovery Cluster Role", rules)
