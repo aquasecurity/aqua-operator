@@ -465,7 +465,6 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 	if starboard {
 		configMapData["AQUA_KAP_ADD_ALL_CONTROL"] = "true"
 		configMapData["AQUA_WATCH_CONFIG_AUDIT_REPORT"] = "true"
-
 	}
 
 	labels := map[string]string{
