@@ -389,6 +389,7 @@ func (enf *AquaEnforcerHelper) CreateDaemonSet(cr *v1alpha1.AquaEnforcer) *appsv
 					"SYS_CHROOT",
 					"SYS_RESOURCE",
 					"IPC_LOCK",
+					"LINUX_IMMUTABLE",
 				},
 			},
 		}
