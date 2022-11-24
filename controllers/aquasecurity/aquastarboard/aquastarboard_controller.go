@@ -106,6 +106,11 @@ func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return reconcile.Result{}, err
 	}
 
+	_, err = r.addStarboardRole(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	_, err = r.createAquaStarboardServiceAccount(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -123,6 +128,11 @@ func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	instance.Spec.StarboardService = r.updateStarboardServerObject(instance.Spec.StarboardService, instance.Spec.ImageData)
 
 	_, err = r.addStarboardClusterRoleBinding(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	_, err = r.addStarboardRoleBinding(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -335,6 +345,57 @@ func (r *AquaStarboardReconciler) addStarboardClusterRole(cr *aquasecurityv1alph
 	return reconcile.Result{Requeue: true}, nil
 }
 
+func (r *AquaStarboardReconciler) addStarboardRole(ro *aquasecurityv1alpha1.AquaStarboard) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Starboard Requirements Phase", "Create Aqua Starboard Role")
+	reqLogger.Info("Start creating starboard role")
+
+	starboardHelper := newAquaStarboardHelper(ro)
+	role := starboardHelper.CreateStarboardRole(ro.Name, ro.Namespace)
+
+	// Set AquaStarboard instance as the owner and controller
+	if err := controllerutil.SetControllerReference(ro, role, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this Role already exists
+	found := &rbacv1.Role{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: role.Name}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Aqua Starboard: Creating a New Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
+		err = r.Client.Create(context.TODO(), role)
+		if err != nil {
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if the Role Rules, matches the found Rules
+	equal, err := k8s.CompareByHash(role.Rules, found.Rules)
+
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !equal {
+		found = role
+		log.Info("Aqua Starboard: Updating Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+		err := r.Client.Update(context.TODO(), found)
+		if err != nil {
+			log.Error(err, "Failed to update Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{Requeue: true}, nil
+	}
+
+	// Role already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua Role Exists", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
 func (r *AquaStarboardReconciler) createAquaStarboardServiceAccount(cr *aquasecurityv1alpha1.AquaStarboard) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Starboard Requirements Phase", "Create Aqua Starboard Service Account")
 	reqLogger.Info("Start creating aqua starboard service account")
@@ -406,6 +467,44 @@ func (r *AquaStarboardReconciler) addStarboardClusterRoleBinding(cr *aquasecurit
 
 	// ClusterRoleBinding already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua ClusterRoleBinding Exists", "ClusterRoleBinding.Namespace", found.Namespace, "ClusterRole.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *AquaStarboardReconciler) addStarboardRoleBinding(cr *aquasecurityv1alpha1.AquaStarboard) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Starboard Requirements Phase", "Create RoleBinding")
+	reqLogger.Info("Start creating Role")
+
+	// Define a new RoleBinding object
+	starboardHelper := newAquaStarboardHelper(cr)
+	crb := starboardHelper.CreateRoleBinding(cr.Name,
+		cr.Namespace,
+		"starboard-operator",
+		"ke-crb",
+		cr.Spec.Infrastructure.ServiceAccount,
+		"starboard-operator")
+
+	// Set AquaStarboard instance as the owner and controller
+	if err := controllerutil.SetControllerReference(cr, crb, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this RoleBinding already exists
+	found := &rbacv1.RoleBinding{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: crb.Name, Namespace: crb.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Aqua Starboard: Creating a New RoleBinding", "RoleBinding.Namespace", crb.Namespace, "RoleBinding.Name", crb.Name)
+		err = r.Client.Create(context.TODO(), crb)
+		if err != nil {
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// RoleBinding already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Aqua RoleBinding Exists", "RoleBinding.Namespace", found.Namespace, "Role.Name", found.Name)
 	return reconcile.Result{Requeue: true}, nil
 }
 
