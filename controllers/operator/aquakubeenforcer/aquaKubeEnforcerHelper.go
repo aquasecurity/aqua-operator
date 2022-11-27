@@ -127,7 +127,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 		},
 		{
 			APIGroups: []string{
-				"",
+				"*",
 			},
 			Resources: []string{
 				"secrets",
@@ -254,7 +254,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 		},
 		{
 			APIGroups: []string{
-				"",
+				"*",
 			},
 			Resources: []string{
 				"secrets",
@@ -265,7 +265,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 		},
 		{
 			APIGroups: []string{
-				"",
+				"*",
 			},
 			Resources: []string{
 				"configmaps",
