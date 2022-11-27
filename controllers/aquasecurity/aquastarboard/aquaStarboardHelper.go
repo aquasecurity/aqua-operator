@@ -46,7 +46,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 				"",
 			},
 			Resources: []string{
-				"pods", "pods/log", "replicationcontrollers", "services",
+				"pods", "pods/log", "replicationcontrollers", "services", "resourcequotas", "limitranges", "configmaps", "serviceaccounts",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -61,39 +61,6 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 			},
 			Verbs: []string{
 				"get", "list", "watch",
-			},
-		},
-		{
-			APIGroups: []string{
-				"",
-			},
-			Resources: []string{
-				"configmaps", "secrets", "serviceaccounts", "resourcequotas", "limitranges",
-			},
-			Verbs: []string{
-				"get", "list", "watch", "create", "update",
-			},
-		},
-		{
-			APIGroups: []string{
-				"",
-			},
-			Resources: []string{
-				"secrets",
-			},
-			Verbs: []string{
-				"delete",
-			},
-		},
-		{
-			APIGroups: []string{
-				"",
-			},
-			Resources: []string{
-				"events",
-			},
-			Verbs: []string{
-				"create",
 			},
 		},
 		{
@@ -142,17 +109,6 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
-				"batch",
-			},
-			Resources: []string{
-				"jobs",
-			},
-			Verbs: []string{
-				"create", "delete",
-			},
-		},
-		{
-			APIGroups: []string{
 				"aquasecurity.github.io",
 			},
 			Resources: []string{
@@ -197,9 +153,62 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 	}
 
-	crole := rbac.CreateClusterRole(name, namespace, "starboard-operator", fmt.Sprintf("%s-rbac", "aqua-sb"), "Deploy Aqua Starboard Cluster Role", rules)
+	crole := rbac.CreateClusterRole(name, namespace, "starboard-operator", fmt.Sprintf("%s-rbac", "aqua-sb"), "Deploy Aqua Starboard Role", rules)
 
 	return crole
+}
+
+func (enf *AquaStarboardHelper) CreateStarboardRole(name string, namespace string) *rbacv1.Role {
+	rules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"secrets",
+			},
+			Verbs: []string{
+				"get", "create", "update",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"configmaps", "serviceaccounts",
+			},
+			Verbs: []string{
+				"create", "update",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"events",
+			},
+			Verbs: []string{
+				"create",
+			},
+		},
+		{
+			APIGroups: []string{
+				"batch",
+			},
+			Resources: []string{
+				"jobs",
+			},
+			Verbs: []string{
+				"create", "delete",
+			},
+		},
+	}
+
+	role := rbac.CreateRole(name, namespace, "starboard-operator", fmt.Sprintf("%s-role", "aqua-sb"), "Deploy Aqua Starboard Role", rules)
+
+	return role
 }
 
 // CreateServiceAccount Create new service account
@@ -268,6 +277,43 @@ func (enf *AquaStarboardHelper) CreateClusterRoleBinding(cr, namespace, name, ap
 	}
 
 	return crb
+}
+
+func (enf *AquaStarboardHelper) CreateRoleBinding(r, namespace, name, app, sa, role string) *rbacv1.RoleBinding {
+	labels := map[string]string{
+		"app":               app,
+		"deployedby":        "aqua-operator",
+		"aquasecoperator_r": r,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua starboard Role Binding",
+	}
+	rb := &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      sa,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     role,
+		},
+	}
+
+	return rb
 }
 
 func (enf *AquaStarboardHelper) CreateStarboardSecret(cr, namespace, name, app string) *corev1.Secret {

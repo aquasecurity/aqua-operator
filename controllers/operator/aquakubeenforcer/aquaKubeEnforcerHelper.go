@@ -68,17 +68,6 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 		},
 		{
 			APIGroups: []string{
-				"*",
-			},
-			Resources: []string{
-				"secrets",
-			},
-			Verbs: []string{
-				"get", "list", "watch", "update", "create", "delete",
-			},
-		},
-		{
-			APIGroups: []string{
 				"aquasecurity.github.io",
 			},
 			Resources: []string{
@@ -97,7 +86,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"configmaps",
 			},
 			Verbs: []string{
-				"get", "list", "watch", "update", "create",
+				"get", "list", "watch",
 			},
 		},
 		{
@@ -123,6 +112,28 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 			},
 			Verbs: []string{
 				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"operator.openshift.io",
+			},
+			Resources: []string{
+				"imagecontentsourcepolicies",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"secrets",
+			},
+			Verbs: []string{
+				"get", "list", "watch", "create", "update", "delete",
 			},
 		},
 	}
@@ -239,6 +250,28 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 			},
 			Verbs: []string{
 				"create", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"secrets",
+			},
+			Verbs: []string{
+				"create", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"configmaps",
+			},
+			Verbs: []string{
+				"update", "create",
 			},
 		},
 	}
@@ -460,6 +493,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 		"AQUA_GATEWAY_SECURE_ADDRESS":  gwAddress,
 		"AQUA_TLS_PORT":                "8443",
 		"CLUSTER_NAME":                 clusterName,
+		"AQUA_KB_SCAN_TAINTED_NODES":   "true",
 	}
 	if starboard {
 		configMapData["AQUA_KAP_ADD_ALL_CONTROL"] = "true"
