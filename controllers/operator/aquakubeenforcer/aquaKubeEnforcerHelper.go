@@ -494,6 +494,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 		"AQUA_TLS_PORT":                "8443",
 		"CLUSTER_NAME":                 clusterName,
 		"AQUA_KB_SCAN_TAINTED_NODES":   "true",
+		"AQUA_KB_IMAGE_NAME":           "aquasec/kube-bench:v0.6.10",
 	}
 	if starboard {
 		configMapData["AQUA_KAP_ADD_ALL_CONTROL"] = "true"
