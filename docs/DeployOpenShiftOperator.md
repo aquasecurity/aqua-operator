@@ -242,7 +242,7 @@ The mTLS will be enabled automatically if the following secretes are available i
      --from-file=rootCA.crt --from-file=aqua_kube-enforcer.crt \
      --from-file=aqua_kube-enforcer.key -n aqua
     ``` 
-### Running as unprivileged
+### Running as unprivileged - for all the components except KubeEnforcer
 
 1. Create a new SCC (Security Context Constraint):
    
@@ -264,6 +264,31 @@ spec:
     Example result:
    
    <img src="../images/whoami.png" alt=""/>
+
+### Running as unprivileged - for KubeEnforcer only
+
+1. Create a new SCC (Security Context Constraint):
+
+   The aqua-kube-enforcer-scc yaml defines the cluster’s security context constraints. We strongly recommend not changing anything in this yaml file.
+    * Download [aqua-kube-enforcer-scc](../config/rbac/aqua-kube-enforcer-scc.yaml) yaml.
+    * Apply it by typing:
+  ```shell
+  oc apply -f aqua-kube-enforcer-scc.yaml
+  ```
+
+2. set\create ```.spec.runAsNonRoot``` property with ```true``` value, example:
+```yaml
+spec:
+  runAsNonRoot: true
+```
+3. To verify it, please run the following command in the relevant pod:
+   ```whoami```
+
+   Example result:
+
+   <img src="../images/whoami.png" alt=""/>
+
+
 
 ### Assign Pods to Nodes
 
