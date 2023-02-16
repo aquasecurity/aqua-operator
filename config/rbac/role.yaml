@@ -377,6 +377,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - operator.aquasec.com
+  resources:
+  - cloudconnectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - cloudconnectors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - cloudconnectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - route
   resources:
   - routes

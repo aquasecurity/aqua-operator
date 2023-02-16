@@ -5,14 +5,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: aquastarboards.aquasecurity.github.io
+  name: aquacloudconnectors.operator.aquasec.com
 spec:
-  group: aquasecurity.github.io
+  group: operator.aquasec.com
   names:
-    kind: AquaStarboard
-    listKind: AquaStarboardList
-    plural: aquastarboards
-    singular: aquastarboard
+    kind: AquaCloudConnector
+    listKind: AquaCloudConnectorList
+    plural: aquacloudconnectors
+    singular: aquacloudconnector
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -20,11 +20,11 @@ spec:
       jsonPath: .spec.deploy.replicas
       name: Replicas
       type: integer
-    - description: Aqua Starboard Age
+    - description: Aqua Cloud Connector Age
       jsonPath: ..metadata.creationTimestamp
       name: Age
       type: date
-    - description: Aqua Starboard status
+    - description: Aqua Cloud Connector status
       jsonPath: .status.state
       name: Status
       type: string
@@ -35,7 +35,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AquaStarboard is the Schema for the aquastarboards API
+        description: AquaCloudConnector is the Schema for the aquacloudconnectors
+          API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -50,21 +51,53 @@ spec:
           metadata:
             type: object
           spec:
-            description: AquaStarboardSpec defines the desired state of AquaStarboard
+            description: AquaCloudConnectorSpec defines the desired state of AquaCloudConnector
             properties:
-              allowAnyVersion:
-                type: boolean
-              batchDeleteDelay:
-                type: string
-              batchDeleteLimit:
-                type: string
-              cisKubernetesBenchmarkEnabled:
-                type: string
-              concurrentScanJobsLimit:
-                type: string
-              config:
+              common:
                 properties:
+                  activeActive:
+                    type: boolean
+                  adminPassword:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  allowAnyVersion:
+                    type: boolean
+                  cybercenterAddress:
+                    type: string
+                  databaseSecret:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  dbDiskSize:
+                    type: integer
                   imagePullSecret:
+                    type: string
+                  license:
+                    properties:
+                      key:
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  splitDB:
+                    type: boolean
+                  storageclass:
                     type: string
                 type: object
               config_map_checksum:
@@ -2948,132 +2981,6 @@ spec:
                 required:
                 - replicas
                 type: object
-              env:
-                items:
-                  description: EnvVar represents an environment variable present in
-                    a Container.
-                  properties:
-                    name:
-                      description: Name of the environment variable. Must be a C_IDENTIFIER.
-                      type: string
-                    value:
-                      description: 'Variable references $(VAR_NAME) are expanded using
-                        the previously defined environment variables in the container
-                        and any service environment variables. If a variable cannot
-                        be resolved, the reference in the input string will be unchanged.
-                        Double $$ are reduced to a single $, which allows for escaping
-                        the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will produce the
-                        string literal "$(VAR_NAME)". Escaped references will never
-                        be expanded, regardless of whether the variable exists or
-                        not. Defaults to "".'
-                      type: string
-                    valueFrom:
-                      description: Source for the environment variable's value. Cannot
-                        be used if value is not empty.
-                      properties:
-                        configMapKeyRef:
-                          description: Selects a key of a ConfigMap.
-                          properties:
-                            key:
-                              description: The key to select.
-                              type: string
-                            name:
-                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?'
-                              type: string
-                            optional:
-                              description: Specify whether the ConfigMap or its key
-                                must be defined
-                              type: boolean
-                          required:
-                          - key
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        fieldRef:
-                          description: 'Selects a field of the pod: supports metadata.name,
-                            metadata.namespace, `metadata.labels[''<KEY>'']`, `metadata.annotations[''<KEY>'']`,
-                            spec.nodeName, spec.serviceAccountName, status.hostIP,
-                            status.podIP, status.podIPs.'
-                          properties:
-                            apiVersion:
-                              description: Version of the schema the FieldPath is
-                                written in terms of, defaults to "v1".
-                              type: string
-                            fieldPath:
-                              description: Path of the field to select in the specified
-                                API version.
-                              type: string
-                          required:
-                          - fieldPath
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        resourceFieldRef:
-                          description: 'Selects a resource of the container: only
-                            resources limits and requests (limits.cpu, limits.memory,
-                            limits.ephemeral-storage, requests.cpu, requests.memory
-                            and requests.ephemeral-storage) are currently supported.'
-                          properties:
-                            containerName:
-                              description: 'Container name: required for volumes,
-                                optional for env vars'
-                              type: string
-                            divisor:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              description: Specifies the output format of the exposed
-                                resources, defaults to "1"
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            resource:
-                              description: 'Required: resource to select'
-                              type: string
-                          required:
-                          - resource
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        secretKeyRef:
-                          description: Selects a key of a secret in the pod's namespace
-                          properties:
-                            key:
-                              description: The key of the secret to select from.  Must
-                                be a valid secret key.
-                              type: string
-                            name:
-                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?'
-                              type: string
-                            optional:
-                              description: Specify whether the Secret or its key must
-                                be defined
-                              type: boolean
-                          required:
-                          - key
-                          type: object
-                          x-kubernetes-map-type: atomic
-                      type: object
-                  required:
-                  - name
-                  type: object
-                type: array
-              healthProbeBindAddress:
-                type: string
-              image:
-                properties:
-                  pullPolicy:
-                    type: string
-                  registry:
-                    type: string
-                  repository:
-                    type: string
-                  tag:
-                    type: string
-                required:
-                - pullPolicy
-                - registry
-                - repository
-                - tag
-                type: object
               infra:
                 properties:
                   namespace:
@@ -3089,41 +2996,47 @@ spec:
                 required:
                 - requirements
                 type: object
-              kube_enforcer_version:
-                type: string
-              logDevMode:
-                type: boolean
-              metricsBindAddress:
-                type: string
-              operator_cluster_compliance_enabled:
-                type: string
-              registry:
+              login:
                 properties:
-                  email:
+                  host:
                     type: string
                   password:
                     type: string
-                  url:
+                  tlsNoVerify:
+                    type: boolean
+                  token:
                     type: string
                   username:
                     type: string
                 required:
-                - email
+                - host
                 - password
-                - url
                 - username
                 type: object
-              scanJobRetryAfter:
-                type: string
-              vulnerabilityScannerEnabled:
-                type: string
+              runAsNonRoot:
+                type: boolean
+              tunnels:
+                items:
+                  properties:
+                    host:
+                      type: string
+                    port:
+                      type: string
+                    region:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: array
             required:
-            - config
+            - common
             - deploy
-            - operator_cluster_compliance_enabled
+            - infra
+            - login
+            - tunnels
             type: object
           status:
-            description: AquaStarboardStatus defines the observed state of AquaStarboard
+            description: AquaCloudConnectorStatus defines the observed state of AquaCloudConnector
             properties:
               nodes:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state

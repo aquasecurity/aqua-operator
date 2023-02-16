@@ -3,10 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"os"
 	"time"
 
-	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	testingconsts "github.com/aquasecurity/aqua-operator/test/consts"
 	testutils "github.com/aquasecurity/aqua-operator/test/utils"
@@ -19,12 +19,13 @@ import (
 )
 
 const (
-	timeout             = time.Minute * 6
-	interval            = time.Second * 30
-	enforcerTimeout     = time.Minute * 3
-	scannerTimeout      = time.Minute * 1
-	KubeEnforcerTimeout = time.Minute * 5
-	StarboardTimeout    = time.Minute * 2
+	timeout               = time.Minute * 6
+	interval              = time.Second * 30
+	enforcerTimeout       = time.Minute * 3
+	scannerTimeout        = time.Minute * 1
+	KubeEnforcerTimeout   = time.Minute * 5
+	StarboardTimeout      = time.Minute * 2
+	cloudConnectorTimeout = time.Minute * 1
 )
 
 var _ = Describe("Aqua Controller", Serial, func() {
@@ -323,8 +324,70 @@ var _ = Describe("Aqua Controller", Serial, func() {
 			}, StarboardTimeout, interval).Should(BeTrue())
 		})
 
-		// Delete
+		It("It should create AquaCloudConnector Deployment", func() {
+			// todo: remove the if statement after we create and release ubi image of cc.
+			if ubi == "true" {
+				Skip("Skipping because there is no image of ubi for cloud connector", 1)
+			}
+			instance := &operatorv1alpha1.AquaCloudConnector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+				},
+				Spec: operatorv1alpha1.AquaCloudConnectorSpec{
+					Infrastructure: &operatorv1alpha1.AquaInfrastructure{
+						ServiceAccount: testingconsts.CspServiceAccount,
+						Namespace:      testingconsts.NameSpace,
+						Version:        testingconsts.Version,
+					},
+					Common: &operatorv1alpha1.AquaCommon{
+						ImagePullSecret: testingconsts.ImagePullSecret,
+					},
+					CloudConnectorService: &operatorv1alpha1.AquaService{
+						ServiceType: "ClusterIP",
+						ImageData: &operatorv1alpha1.AquaImage{
+							Registry:   testingconsts.Registry,
+							Repository: testingconsts.CloudConnectorRepo,
+							PullPolicy: "Always",
+						},
+					},
+					Login: &operatorv1alpha1.AquaLogin{
+						Username: testingconsts.ServerAdminUser,
+						Password: testingconsts.ServerAdminPassword,
+						Host:     testingconsts.GatewayHost,
+					},
+					Tunnels: []*operatorv1alpha1.AquaCloudConnectorTunnels{
+						{
+							Host: "1.1.1.1",
+							Port: "443",
+						},
+					},
+				},
+			}
+			// Adding ubi tags:
+			if ubi == "true" {
+				instance.Spec.CloudConnectorService.ImageData.Tag = testingconsts.UbiImageTag
+			}
+			Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
 
+			cloudConnectorLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
+			cc := &operatorv1alpha1.AquaCloudConnector{}
+
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), cloudConnectorLookupKey, cc)
+				if err != nil {
+					fmt.Fprint(GinkgoWriter, err)
+					return false
+				}
+				if cc.Status.State != operatorv1alpha1.AquaDeploymentStateRunning {
+					localLog.Info(fmt.Sprintf("cc state: %s", cc.Status.State))
+					return false
+				}
+				return true
+			}, cloudConnectorTimeout, interval).Should(BeTrue())
+		})
+
+		//Delete
 		It("It should delete AquaKubeEnforcer Deployment", func() {
 
 			keLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -359,6 +422,20 @@ var _ = Describe("Aqua Controller", Serial, func() {
 			}
 		})
 
+		It("It should delete AquaCloudConnector Deployment", func() {
+			// todo: remove the if statement after we create and release ubi image of cc.
+			if ubi == "true" {
+				Skip("Skipping because there is no image of ubi for cloud connector", 1)
+			}
+			cloudConnectorLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
+			cc := &operatorv1alpha1.AquaCloudConnector{}
+
+			err := k8sClient.Get(context.Background(), cloudConnectorLookupKey, cc)
+			if err == nil {
+				Expect(k8sClient.Delete(context.Background(), cc)).Should(Succeed())
+			}
+		})
+
 		It("It should delete AquaCsp Deployment", func() {
 
 			cspLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
@@ -368,7 +445,6 @@ var _ = Describe("Aqua Controller", Serial, func() {
 			if err == nil {
 				Expect(k8sClient.Delete(context.Background(), csp)).Should(Succeed())
 			}
-
 		})
 	})
 })

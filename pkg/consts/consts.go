@@ -112,6 +112,12 @@ const (
 
 	ScannerConfigMapName = "aqua-scanner-config"
 
+	CloudConnectorDeployName = "%s-cloud-connector"
+
+	CloudConnectorConfigMapName = "aqua-cloud-connector-conf"
+
+	CloudConnectorSecretName = "aqua-cloud-connector-user-secret"
+
 	EmptyString = ""
 
 	AquaRunAsUser  = int64(11431)
