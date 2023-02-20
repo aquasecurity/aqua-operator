@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the aquasecurity v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=aquasecurity.github.io
+// +kubebuilder:object:generate=true
+// +groupName=aquasecurity.github.io
 package v1alpha1
 
 import (
