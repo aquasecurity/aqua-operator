@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.17
+          go-version: 1.18
         id: go
       - name: Set up docker
         run: |
@@ -50,6 +50,8 @@ jobs:
         run: |
           if [[ ${{ matrix.tags }} == 'ubi' ]]; then
               echo "RUN_UBI=true" >> "$GITHUB_ENV"
+          else
+              echo "RUN_UBI=false" >> "$GITHUB_ENV"
           fi
           make test
       - name: Publish Test Results
