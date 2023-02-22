@@ -50,6 +50,8 @@ jobs:
         run: |
           if [[ ${{ matrix.tags }} == 'ubi' ]]; then
               echo "RUN_UBI=true" >> "$GITHUB_ENV"
+          else
+              echo "RUN_UBI=false" >> "$GITHUB_ENV"
           fi
           make test
       - name: Publish Test Results
