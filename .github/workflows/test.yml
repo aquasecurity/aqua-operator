@@ -49,7 +49,9 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         run: |
           if [[ ${{ matrix.tags }} == 'ubi' ]]; then
-              echo "RUN_UBI=true" >> "$GITHUB_ENV"
+              export RUN_UBI=true
+          else
+              export RUN_UBI=false
           fi
           make test
       - name: Publish Test Results
