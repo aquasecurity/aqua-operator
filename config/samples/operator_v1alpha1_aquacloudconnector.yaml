@@ -1,0 +1,29 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaCloudConnector
+metadata:
+  name: aqua
+  namespace: aqua
+spec:
+  # TODO(user): Add fields here
+  infra:
+    serviceAccount: "aqua-sa"               # Optional: auto generate if requirment is true
+    version: "2022.4"                       # Optional: auto generate if requirment is true to latest version
+  common:
+    imagePullSecret:                        # Optional: if already created image pull secret then mention in here
+  deploy: # Required: information about aqua server deployment
+    replicas: 1                             # Required: number of replicas
+    service: "LoadBalancer"                 # Required: service type for aqua server
+    image: # Optional: if not given take the default value and version from infra.version
+      repository: "server"                  # Optional: if not given take the default value - server
+      registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
+      tag: "2022.4"                         # Optional: if not given take the default value - 4.6 (latest tested version for this operator version)
+      pullPolicy: "IfNotPresent"            # Optional: if not given take the default value - IfNotPresent
+    runAsNonRoot: # Optional: true/false
+    login: # Required: Information about login to aqua server for scanning
+      username: "<<YOUR AQUA USER NAME>>"
+      password: "<<YOUR AQUA USER PASSWORD>>"
+      host: "<<YOURS AQUA SERVER URL>>"
+      token: # Optional, If it is an empty value username & password considered to authentication with server
+    tunnels:
+      - host: "ARTIFACTORY URL",
+        port: "ARTIFACTORY PORT"

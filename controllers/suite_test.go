@@ -18,13 +18,13 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
 	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/aquasecurity/aquastarboard"
+	"github.com/aquasecurity/aqua-operator/controllers/operator/aquacloudconnector"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquacsp"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquadatabase"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquaenforcer"
@@ -81,7 +81,6 @@ var _ = BeforeSuite(func() {
 	}
 
 	log := logf.Log.WithName("BeforeSuite")
-	fmt.Fprintln(GinkgoWriter, "hello")
 
 	By("bootstrapping test environment")
 	createKind := os.Getenv("CREATE_KIND")
@@ -120,49 +119,56 @@ var _ = BeforeSuite(func() {
 
 	err = (&aquacsp.AquaCspReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&aquadatabase.AquaDatabaseReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&aquaenforcer.AquaEnforcerReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&aquagateway.AquaGatewayReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&aquakubeenforcer.AquaKubeEnforcerReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 		Certs:  aquakubeenforcer.GetKECerts(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&aquascanner.AquaScannerReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
+
 	err = (&aquaserver.AquaServerReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&aquastarboard.AquaStarboardReconciler{
 		Client: mgr.GetClient(),
-		Scheme: scheme.Scheme,
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&aquacloudconnector.AquaCloudConnectorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 

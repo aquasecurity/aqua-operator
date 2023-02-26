@@ -13,7 +13,7 @@ type AquaInfrastructure struct {
 }
 
 type AquaCommon struct {
-	ActiveActive       bool        `json:"activeActive"`
+	ActiveActive       bool        `json:"activeActive,omitempty"`
 	StorageClass       string      `json:"storageclass,omitempty"`
 	CyberCenterAddress string      `json:"cybercenterAddress,omitempty"`
 	ImagePullSecret    string      `json:"imagePullSecret,omitempty"`
@@ -76,7 +76,7 @@ type AquaLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Host     string `json:"host"`
-	Token    string `json:"token"`
+	Token    string `json:"token,omitempty"`
 	Insecure bool   `json:"tlsNoVerify,omitempty"`
 }
 
@@ -158,4 +158,11 @@ type AquaStarboardDetails struct {
 type AuditDBInformation struct {
 	AuditDBSecret *AquaSecret              `json:"secret,omitempty"`
 	Data          *AquaDatabaseInformation `json:"information,omitempty"`
+}
+
+type AquaCloudConnectorTunnels struct {
+	Host   string `json:"host,omitempty"`
+	Port   string `json:"port,omitempty"`
+	Type   string `json:"type,omitempty"`
+	Region string `json:"region,omitempty"`
 }

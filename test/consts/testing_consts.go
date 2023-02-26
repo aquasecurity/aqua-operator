@@ -25,6 +25,7 @@ const (
 	KeEnforcerRepo             = "kube-enforcer"
 	ScannerRepo                = "scanner"
 	StarboardRepo              = "starboard-operator"
+	CloudConnectorRepo         = "aqua-cloud-connector"
 	GatewayPort                = 8443
 	DbPvcStorageClassName      = "aqua-storage"
 	DbPvcStorageSize           = "50Gi"
@@ -37,6 +38,7 @@ const (
 	ServerAdminUser            = "administrator"
 	ServerAdminPassword        = "@Password1"
 	ServerHost                 = "http://aqua-server:8080"
+	GatewayHost                = "https://aqua-gateway:443"
 	ScannerToken               = ""
 	GatewayAddress             = "aqua-gateway:8443"
 	ClusterName                = "Default-cluster-name"

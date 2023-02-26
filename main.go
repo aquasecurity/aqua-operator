@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/aquasecurity/aqua-operator/controllers/aquasecurity/aquastarboard"
 	"github.com/aquasecurity/aqua-operator/controllers/ocp"
+	"github.com/aquasecurity/aqua-operator/controllers/operator/aquacloudconnector"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquacsp"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquadatabase"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquaenforcer"
@@ -160,6 +161,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AquaScanner")
+		os.Exit(1)
+	}
+	if err = (&aquacloudconnector.AquaCloudConnectorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AquaCloudConnector")
 		os.Exit(1)
 	}
 	if err = (&aquaserver.AquaServerReconciler{
