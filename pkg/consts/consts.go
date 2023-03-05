@@ -164,5 +164,5 @@ const (
 
 	EnforcerConfigMapName = "aqua-csp-enforcer"
 
-	KubeBenchImageName = "aquasec/kube-bench:v0.6.10"
+	KubeBenchImageName = "aquasec/kube-bench:v0.6.12"
 )
