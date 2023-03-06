@@ -46,7 +46,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -185,14 +184,14 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, err
 	}
 
-	if strings.ToLower(instance.Spec.Infrastructure.Platform) == consts.OpenShiftPlatform &&
-		rbac.CheckIfClusterRoleExists(r.Client, consts.ClusterReaderRole) &&
-		!rbac.CheckIfClusterRoleBindingExists(r.Client, consts.AquaKubeEnforcerSAClusterReaderRoleBind) {
-		_, err = r.CreateClusterReaderRoleBinding(instance)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
+	//if strings.ToLower(instance.Spec.Infrastructure.Platform) == consts.OpenShiftPlatform &&
+	//	rbac.CheckIfClusterRoleExists(r.Client, consts.ClusterReaderRole) &&
+	//	!rbac.CheckIfClusterRoleBindingExists(r.Client, consts.AquaKubeEnforcerSAClusterReaderRoleBind) {
+	//	_, err = r.CreateClusterReaderRoleBinding(instance)
+	//	if err != nil {
+	//		return reconcile.Result{}, err
+	//	}
+	//}
 
 	instance.Spec.KubeEnforcerService = r.updateKubeEnforcerServerObject(instance.Spec.KubeEnforcerService, instance.Spec.ImageData)
 
