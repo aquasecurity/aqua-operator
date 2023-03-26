@@ -270,6 +270,7 @@ spec:
 
    The aqua-kube-enforcer-scc yaml defines the cluster’s security context constraints. We strongly recommend not changing anything in this yaml file.
     * Download [aqua-kube-enforcer-scc](../config/rbac/aqua-kube-enforcer-scc.yaml) yaml.
+    * In case of custom service account name, rename the value in line 33 from "aqua-kube-enforcer-sa" to your service account.
     * Apply it by typing:
   ```shell
   oc apply -f aqua-kube-enforcer-scc.yaml
