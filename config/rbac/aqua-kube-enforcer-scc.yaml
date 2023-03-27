@@ -30,7 +30,7 @@ seccompProfiles:
   - '*'
 supplementalGroups:
   type: RunAsAny
-users: []
+users: ["aqua-kube-enforcer-sa"]
 volumes:
   - configMap
   - downwardAPI
