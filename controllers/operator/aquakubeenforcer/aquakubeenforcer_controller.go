@@ -1133,97 +1133,105 @@ func (r *AquaKubeEnforcerReconciler) installAquaStarboard(cr *operatorv1alpha1.A
 
 func (r *AquaKubeEnforcerReconciler) KubeEnforcerFinalizer(cr *operatorv1alpha1.AquaKubeEnforcer) error {
 	reqLogger := log.WithValues("KubeEnforcer Finalizer Phase", "Remove KE-Webhooks")
-	reqLogger.Info("Start removing ValidatingWebhookConfiguration")
 
 	// Check if this ValidatingWebhookConfiguration exists
+	reqLogger.Info("Start removing ValidatingWebhookConfiguration")
 	validatingWebhookConfiguration := &admissionv1.ValidatingWebhookConfiguration{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: consts.AquaKubeEnforcerValidatingWebhookConfigurationName, Namespace: cr.Namespace}, validatingWebhookConfiguration)
 
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua KubeEnforcer: ValidatingWebhookConfiguration is not found")
-	} else if err != nil {
+	} else if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Info("Aqua KubeEnforcer: Getting ValidatingWebhookConfiguration status encountered error")
 		return err
-	}
-
-	if validatingWebhookConfiguration != nil {
+	} else {
+		reqLogger.Info("Aqua KubeEnforcer: ValidatingWebhookConfiguration is found, attempting to delete...")
 		err = r.Client.Delete(context.TODO(), validatingWebhookConfiguration)
 		if err != nil {
+			reqLogger.Info("Aqua KubeEnforcer: Failed to delete ValidatingWebhookConfiguration")
 			return err
 		}
 		reqLogger.Info("Successfully removed ValidatingWebhookConfiguration")
 	}
 
-	// Check if this ValidatingWebhookConfiguration exists
+	// Check if this mutatingWebhookConfiguration exists
 	reqLogger.Info("Start removing MutatingWebhookConfiguration")
 	mutatingWebhookConfiguration := &admissionv1.MutatingWebhookConfiguration{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: consts.AquaKubeEnforcerMutantingWebhookConfigurationName, Namespace: cr.Namespace}, mutatingWebhookConfiguration)
 
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua KubeEnforcer: MutatingWebhookConfiguration is not found")
-	} else if err != nil {
+		reqLogger.Info("Aqua KubeEnforcer: mutatingWebhookConfiguration is not found")
+	} else if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Info("Aqua KubeEnforcer: Getting mutatingWebhookConfiguration status encountered error")
 		return err
-	}
-
-	if mutatingWebhookConfiguration != nil {
+	} else {
+		reqLogger.Info("Aqua KubeEnforcer: mutatingWebhookConfiguration is found, attempting to delete...")
 		err = r.Client.Delete(context.TODO(), mutatingWebhookConfiguration)
 		if err != nil {
+			reqLogger.Info("Aqua KubeEnforcer: Failed to delete mutatingWebhookConfiguration")
 			return err
 		}
-		reqLogger.Info("Successfully removed MutatingWebhookConfiguration")
+		reqLogger.Info("Successfully removed mutatingWebhookConfiguration")
 	}
 
 	// Check if this ClusterRoleBinding exists
+	reqLogger.Info("Start removing ClusterRoleBinding")
 	cRoleBinding := &rbacv1.ClusterRoleBinding{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: consts.AquaKubeEnforcerClusterRoleBidingName, Namespace: cr.Namespace}, cRoleBinding)
 
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua KubeEnforcer: ClusterRoleBinding is not found")
-	} else if err != nil {
+		reqLogger.Info("Aqua KubeEnforcer: cRoleBinding is not found")
+	} else if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Info("Aqua KubeEnforcer: Getting cRoleBinding status encountered error")
 		return err
-	}
-
-	if validatingWebhookConfiguration != nil {
+	} else {
+		reqLogger.Info("Aqua KubeEnforcer: cRoleBinding is found, attempting to delete...")
 		err = r.Client.Delete(context.TODO(), cRoleBinding)
 		if err != nil {
+			reqLogger.Info("Aqua KubeEnforcer: Failed to delete cRoleBinding")
 			return err
 		}
-		reqLogger.Info("Successfully removed clusterRoleBinding")
+		reqLogger.Info("Successfully removed cRoleBinding")
 	}
 
 	// Check if this ClusterReaderRoleBinding exists
+	reqLogger.Info("Start removing cRoleReaderRoleBinding")
 	cRoleReaderRoleBinding := &rbacv1.ClusterRoleBinding{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: consts.AquaKubeEnforcerSAClusterReaderRoleBind, Namespace: cr.Namespace}, cRoleReaderRoleBinding)
 
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua KubeEnforcer: ClusterReaderRoleBinding is not found")
-	} else if err != nil {
+		reqLogger.Info("Aqua KubeEnforcer: cRoleReaderRoleBinding is not found")
+	} else if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Info("Aqua KubeEnforcer: Getting cRoleReaderRoleBinding status encountered error")
 		return err
-	}
-
-	if validatingWebhookConfiguration != nil {
-		err = r.Client.Delete(context.TODO(), cRoleReaderRoleBinding)
+	} else {
+		reqLogger.Info("Aqua KubeEnforcer: cRoleReaderRoleBinding is found, attempting to delete...")
+		err = r.Client.Delete(context.TODO(), cRoleBinding)
 		if err != nil {
+			reqLogger.Info("Aqua KubeEnforcer: Failed to delete cRoleReaderRoleBinding")
 			return err
 		}
-		reqLogger.Info("Successfully removed ClusterReaderRoleBinding")
+		reqLogger.Info("Successfully removed cRoleReaderRoleBinding")
 	}
 
 	// Check if this ClusterRole exists
+	reqLogger.Info("Start removing cRole")
 	cRole := &rbacv1.ClusterRole{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: consts.AquaKubeEnforcerClusterRoleName}, cRole)
 
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua KubeEnforcer: ClusterRole is not found")
-	} else if err != nil {
+		reqLogger.Info("Aqua KubeEnforcer: cRole is not found")
+	} else if err != nil && !errors.IsNotFound(err) {
+		reqLogger.Info("Aqua KubeEnforcer: Getting cRole status encountered error")
 		return err
-	}
-
-	if cRole != nil {
+	} else {
+		reqLogger.Info("Aqua KubeEnforcer: cRole is found, attempting to delete...")
 		err = r.Client.Delete(context.TODO(), cRole)
 		if err != nil {
+			reqLogger.Info("Aqua KubeEnforcer: Failed to delete cRole")
 			return err
 		}
-		reqLogger.Info("Successfully removed ClusterRole")
+		reqLogger.Info("Successfully removed cRole")
 	}
 
 	reqLogger.Info("Successfully Finalized")

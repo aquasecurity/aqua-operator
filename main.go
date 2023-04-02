@@ -26,6 +26,7 @@ import (
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquaenforcer"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquagateway"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquakubeenforcer"
+	"github.com/aquasecurity/aqua-operator/controllers/operator/aqualightning"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquascanner"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquaserver"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
@@ -169,6 +170,16 @@ func main() {
 	//	setupLog.Error(err, "unable to create controller", "controller", "AquaCloudConnector")
 	//	os.Exit(1)
 	//}
+
+	if err = (&aqualightning.AquaLightningReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Certs:  aqualightning.GetKECerts(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AquaKubeEnforcer")
+		os.Exit(1)
+	}
+
 	if err = (&aquaserver.AquaServerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
