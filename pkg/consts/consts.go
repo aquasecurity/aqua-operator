@@ -168,7 +168,7 @@ const (
 
 	LightningEnforcerResources = `resources:
         limits:
-          cpu: 1000m
+          cpu: 1500m
           memory: 1500Mi
         requests:
           cpu: 300m
@@ -176,9 +176,17 @@ const (
 
 	LightningKubeEnforcerResources = `resources:
         limits:
-          cpu: 800m
+          cpu: 1000m
           memory: 500Mi
         requests:
-          cpu: 200m
+          cpu: 300m
+          memory: 250Mi`
+
+	LightningStarboardResources = `resources:
+        limits:
+          cpu: 1000m
+          memory: 250Mi
+        requests:
+          cpu: 500m
           memory: 125Mi`
 )
