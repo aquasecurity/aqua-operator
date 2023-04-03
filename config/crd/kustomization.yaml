@@ -9,6 +9,7 @@ resources:
 - bases/operator.aquasec.com_aquakubeenforcers.yaml
 - bases/operator.aquasec.com_aquascanners.yaml
 - bases/operator.aquasec.com_aquaservers.yaml
+- bases/operator.aquasec.com_aqualightnings.yaml
 - bases/aquasecurity.github.io_aquastarboards.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 

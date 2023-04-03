@@ -1,0 +1,53 @@
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaLightning
+metadata:
+  name: aqualightning-sample
+spec:
+  global:
+    gateway_address: aqua-gateway:8443
+    cluster_name: Default-cluster-name
+  common:
+    imagePullSecret: aqua-registry
+  kubeEnforcer:
+    infra:
+      version: '2022.4'
+      serviceAccount: aqua-kube-enforcer-sa
+    token: "<<KUBE_ENFORCER_GROUP_TOKEN>>"
+    allowAnyVersion:                          # Optional: running all types of images
+    deploy:
+      service: ClusterIP
+      image:
+        registry: registry.aquasec.com
+        tag: "2022.4"
+        repository: kube-enforcer
+        pullPolicy: Always
+    starboard:
+      infra:
+        serviceAccount: starboard-operator
+      config:
+        imagePullSecret: starboard-registry
+      deploy:
+        replicas: 1
+    env:
+    - name: "SOME ENV"
+      value: "SOME ENV VALUE"
+  enforcer:
+    infra:                                    # Required: Infrastructure information
+      serviceAccount: aqua-sa                 # Required:
+      version: "2022.4"                       # Optional: auto generate to latest version
+    deploy:                                   # Optional: information about aqua enforcer deployment
+      image:                                  # Optional: if not given take the default value and version from infra.version
+        repository: "enforcer"                # Optional: if not given take the default value - enforcer
+        registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
+        tag: "2022.4"                         # Optional: if not given take the default value - 2022.4 (latest tested version for this operator version)
+        pullPolicy: IfNotPresent              # Optional: if not given take the default value - IfNotPresent
+    token: "<<ENFORCER_GROUP_TOKEN>>"
+    env:                                      # Optional: environment variables to add to the enforcer
+      - name: "SOME ENV"
+        value: "SOME ENV VALUE"
+    secret:                                   # Optional: secret for the enforcer token
+      name:
+      key:
+    runAsNonRoot:                             # Optional: true/false
+    aqua_express_mode: false                  # Optional: Change to true, to enable express mode deployment of enforcer
+    rhcosVersion:                             # Optional: Set the RHCOS_VERSION with the exact OCP version to allow accurate vulnerability scanning.

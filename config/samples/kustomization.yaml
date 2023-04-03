@@ -5,6 +5,7 @@ resources:
 - operator_v1alpha1_aquaenforcer.yaml
 - operator_v1alpha1_aquagateway.yaml
 - operator_v1alpha1_aquakubeenforcer.yaml
+- operator_v1alpha1_aqualightning.yaml
 - operator_v1alpha1_aquascanner.yaml
 - operator_v1alpha1_aquaserver.yaml
 - aquasecurity_v1alpha1_aquastarboard.yaml

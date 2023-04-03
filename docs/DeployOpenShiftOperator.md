@@ -7,6 +7,7 @@ This guide explains how to deploy and use the Aqua Security Operator to manage A
 * Enforcer
 * Scanner
 * KubeEnforcer
+* LightningEnforcer
 
 Use the Aqua Operator to: 
 * Easily deploy Aqua Enterprise on OpenShift
@@ -731,4 +732,74 @@ spec:
     password: "<<YOUR AQUA USER PASSWORD>>"
     token: "<<YOUR AQUA SCANNER TOKEN>>" # Optional: provide scanner token generated in AQUA UI, If empty username and password considered for authentication
     host: 'http://aqua-server:8080'    #Required: provide <<(http:// or https://)Aqua Server IP or DNS: Aqua Server port>>
+```
+
+#### Example: Deploy the Aqua Lightning Enforcer
+
+You can deploy Aqua Lightning Enforcer; here is an example:
+```yaml
+apiVersion: operator.aquasec.com/v1alpha1
+kind: AquaLightning
+metadata:
+  name: aqua
+spec:
+  global:
+    gateway_address: aqua-gateway:8443
+    cluster_name: Default-cluster-name
+  common:
+    imagePullSecret: aqua-registry
+  kubeEnforcer:
+    infra:
+      version: '2022.4'
+      serviceAccount: aqua-kube-enforcer-sa
+    token: "<<KUBE_ENFORCER_GROUP_TOKEN>>"    # Recommended: Provide Kube-Enforcer token
+    allowAnyVersion:                          # Optional: running all types of images
+    deploy:
+      service: ClusterIP
+      image:
+        registry: registry.aquasec.com
+        tag: "2022.4"
+        repository: kube-enforcer
+        pullPolicy: Always
+      resources:
+        limits:
+          cpu: 800m
+          memory: 500Mi
+        requests:
+          cpu: 200m
+          memory: 125Mi
+    starboard:
+      infra:
+        serviceAccount: starboard-operator
+      config:
+        imagePullSecret: starboard-registry
+      deploy:
+        replicas: 1
+    env:
+    - name: "SOME ENV"
+      value: "SOME ENV VALUE"
+  enforcer:
+    infra:                                    # Required: Infrastructure information
+      serviceAccount: aqua-sa                 # Required:
+      version: "2022.4"                       # Optional: auto generate to latest version
+    deploy:                                   # Optional: information about aqua enforcer deployment
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1500Mi
+        requests:
+          cpu: 300m
+          memory: 500Mi
+      image:                                  # Optional: if not given take the default value and version from infra.version
+        repository: "enforcer"                # Optional: if not given take the default value - enforcer
+        registry: "registry.aquasec.com"      # Optional: if not given take the default value - registry.aquasec.com
+        tag: "2022.4"                         # Optional: if not given take the default value - 4.5 (latest tested version for this operator version)
+        pullPolicy: IfNotPresent              # Optional: if not given take the default value - IfNotPresent
+    secret:                                  # Optional: secret for the enforcer token
+      name:
+      key:
+    token: "<<ENFORCER_GROUP_TOKEN>>"         # Recommended: Provide Enforcer token
+    runAsNonRoot:                             # Optional: true/false
+    aqua_express_mode: false                  # Optional: Change to true, to enable express mode deployment of enforcer
+    rhcosVersion:                             # Optional: Set the RHCOS_VERSION with the exact OCP version to allow accurate vulnerability scanning.
 ```

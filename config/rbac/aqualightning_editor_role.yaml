@@ -1,0 +1,24 @@
+# permissions for end users to edit aqualightnings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aqualightning-editor-role
+rules:
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aqualightnings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.aquasec.com
+  resources:
+  - aqualightnings/status
+  verbs:
+  - get
