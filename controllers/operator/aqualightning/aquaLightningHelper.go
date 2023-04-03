@@ -56,6 +56,14 @@ func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLight
 		resources = cr.Spec.KubeEnforcer.KubeEnforcerService.Resources
 	}
 
+	sbResources, err := yamlToResourceRequirements(consts.LightningStarboardResources)
+	if err != nil {
+		panic(err)
+	}
+	if cr.Spec.KubeEnforcer.DeployStarboard.Resources != nil {
+		sbResources = cr.Spec.KubeEnforcer.DeployStarboard.Resources
+	}
+
 	labels := map[string]string{
 		"app":                cr.Name + "-lightning",
 		"deployedby":         "aqua-operator",
@@ -82,7 +90,7 @@ func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLight
 				Repository: "starboard-operator",
 				PullPolicy: "IfNotPresent",
 			},
-			Resources: resources,
+			Resources: sbResources,
 		},
 	}
 	aquaKubeEnf := &v1alpha1.AquaKubeEnforcer{
