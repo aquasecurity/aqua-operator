@@ -2,12 +2,12 @@ package aquakubeenforcer
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
-	"github.com/aquasecurity/aqua-operator/pkg/consts"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	rbac2 "github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
-	"os"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -485,7 +485,7 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 	return mutateWebhook
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, gwAddress, clusterName string, starboard bool) *corev1.ConfigMap {
+func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, gwAddress, kubebenchImage, clusterName string, starboard bool) *corev1.ConfigMap {
 	configMapData := map[string]string{
 		"AQUA_ENABLE_CACHE":            "yes",
 		"AQUA_CACHE_EXPIRATION_PERIOD": "60",
@@ -495,7 +495,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 		"AQUA_TLS_PORT":                "8443",
 		"CLUSTER_NAME":                 clusterName,
 		"AQUA_KB_SCAN_TAINTED_NODES":   "true",
-		"AQUA_KB_IMAGE_NAME":           consts.KubeBenchImageName,
+		"AQUA_KB_IMAGE_NAME":           kubebenchImage,
 	}
 	if starboard {
 		configMapData["AQUA_KAP_ADD_ALL_CONTROL"] = "true"

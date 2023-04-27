@@ -3,9 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"os"
 	"time"
+
+	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	testingconsts "github.com/aquasecurity/aqua-operator/test/consts"
@@ -263,6 +264,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						GatewayAddress:  testingconsts.GatewayAddress,
 						ClusterName:     testingconsts.ClusterName,
 						ImagePullSecret: testingconsts.ImagePullSecret,
+						KubeBenchImage:  testingconsts.KubeBenchName,
 					},
 					KubeEnforcerService: &operatorv1alpha1.AquaService{
 						ServiceType: "ClusterIP",

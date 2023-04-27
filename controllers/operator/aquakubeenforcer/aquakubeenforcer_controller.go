@@ -26,6 +26,10 @@ import (
 	"encoding/pem"
 	syserrors "errors"
 	"fmt"
+	"math/big"
+	"reflect"
+	"time"
+
 	"github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/common"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -41,12 +45,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"math/big"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -855,6 +856,7 @@ func (r *AquaKubeEnforcerReconciler) addKEConfigMap(cr *operatorv1alpha1.AquaKub
 		"aqua-csp-kube-enforcer",
 		"ke-configmap",
 		cr.Spec.Config.GatewayAddress,
+		cr.Spec.Config.KubeBenchImage,
 		cr.Spec.Config.ClusterName,
 		deployStarboard)
 	// Adding configmap to the hashed data, for restart pods if token is changed
