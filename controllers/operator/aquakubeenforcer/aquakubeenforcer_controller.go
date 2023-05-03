@@ -843,7 +843,7 @@ func (r *AquaKubeEnforcerReconciler) addKEConfigMap(cr *operatorv1alpha1.AquaKub
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create ConfigMap")
 	reqLogger.Info("Start creating ConfigMap")
 	//reqLogger.Info(fmt.Sprintf("cr object : %v", cr.ObjectMeta))
-
+	println("kb image name:", cr.Spec.Config.KubeBenchImage)
 	// Define a new ClusterRoleBinding object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	deployStarboard := false
