@@ -855,6 +855,7 @@ func (r *AquaKubeEnforcerReconciler) addKEConfigMap(cr *operatorv1alpha1.AquaKub
 		"aqua-csp-kube-enforcer",
 		"ke-configmap",
 		cr.Spec.Config.GatewayAddress,
+		cr.Spec.Config.KubeBenchImage,
 		cr.Spec.Config.ClusterName,
 		deployStarboard)
 	// Adding configmap to the hashed data, for restart pods if token is changed
