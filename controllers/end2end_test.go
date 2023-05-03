@@ -263,6 +263,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						GatewayAddress:  testingconsts.GatewayAddress,
 						ClusterName:     testingconsts.ClusterName,
 						ImagePullSecret: testingconsts.ImagePullSecret,
+						KubeBenchImage:  testingconsts.KubeBenchName,
 					},
 					KubeEnforcerService: &operatorv1alpha1.AquaService{
 						ServiceType: "ClusterIP",

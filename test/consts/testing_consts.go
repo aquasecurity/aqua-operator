@@ -42,4 +42,5 @@ const (
 	ScannerToken               = ""
 	GatewayAddress             = "aqua-gateway:8443"
 	ClusterName                = "Default-cluster-name"
+	KubeBenchName              = "docker.io/aquasec/kube-bench:v0.6.12"
 )
