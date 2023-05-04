@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	timeout               = time.Minute * 6
+	timeout               = time.Minute * 8
 	interval              = time.Second * 30
-	enforcerTimeout       = time.Minute * 3
+	enforcerTimeout       = time.Minute * 4
 	scannerTimeout        = time.Minute * 2
 	KubeEnforcerTimeout   = time.Minute * 6
 	StarboardTimeout      = time.Minute * 2
