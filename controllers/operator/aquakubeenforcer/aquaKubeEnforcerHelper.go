@@ -487,10 +487,16 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 }
 
 func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, gwAddress, kubebenchImage, clusterName string, starboard bool) *corev1.ConfigMap {
-	kbImage := consts.KubeBenchImageName
-	if kubebenchImage != "" {
-		kbImage = kubebenchImage
+
+	kbImage := os.Getenv("RELATED_IMAGE_KUBE_BENCH")
+	if kbImage == "" {
+		if kubebenchImage != "" {
+			kbImage = fmt.Sprintf("%s", kubebenchImage)
+		} else {
+			kbImage = consts.KubeBenchImageName
+		}
 	}
+
 	configMapData := map[string]string{
 		"AQUA_ENABLE_CACHE":            "yes",
 		"AQUA_CACHE_EXPIRATION_PERIOD": "60",
