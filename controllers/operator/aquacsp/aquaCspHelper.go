@@ -2,6 +2,7 @@ package aquacsp
 
 import (
 	"fmt"
+
 	"github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
 

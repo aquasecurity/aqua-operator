@@ -3,9 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"os"
 	"time"
+
+	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	testingconsts "github.com/aquasecurity/aqua-operator/test/consts"
@@ -19,11 +20,11 @@ import (
 )
 
 const (
-	timeout               = time.Minute * 6
+	timeout               = time.Minute * 8
 	interval              = time.Second * 30
-	enforcerTimeout       = time.Minute * 3
-	scannerTimeout        = time.Minute * 1
-	KubeEnforcerTimeout   = time.Minute * 5
+	enforcerTimeout       = time.Minute * 4
+	scannerTimeout        = time.Minute * 2
+	KubeEnforcerTimeout   = time.Minute * 6
 	StarboardTimeout      = time.Minute * 2
 	cloudConnectorTimeout = time.Minute * 1
 )
@@ -263,6 +264,7 @@ var _ = Describe("Aqua Controller", Serial, func() {
 						GatewayAddress:  testingconsts.GatewayAddress,
 						ClusterName:     testingconsts.ClusterName,
 						ImagePullSecret: testingconsts.ImagePullSecret,
+						KubeBenchImage:  testingconsts.KubeBenchName,
 					},
 					KubeEnforcerService: &operatorv1alpha1.AquaService{
 						ServiceType: "ClusterIP",

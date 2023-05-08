@@ -1591,6 +1591,11 @@ func (in *AquaStarboardDetails) DeepCopyInto(out *AquaStarboardDetails) {
 		*out = new(AquaDockerRegistry)
 		**out = **in
 	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ImageData != nil {
 		in, out := &in.ImageData, &out.ImageData
 		*out = new(AquaImage)

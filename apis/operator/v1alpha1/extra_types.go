@@ -124,6 +124,7 @@ type AquaKubeEnforcerConfig struct {
 	GatewayAddress  string `json:"gateway_address,omitempty"`
 	ClusterName     string `json:"cluster_name,omitempty"`
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
+	KubeBenchImage  string `json:"kubebench_image,omitempty"`
 }
 
 type AquaKubeEnforcerDetails struct {

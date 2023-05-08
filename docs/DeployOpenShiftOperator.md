@@ -685,9 +685,10 @@ spec:
     version: '2022.4'
     serviceAccount: aqua-kube-enforcer-sa
   config:
-    gateway_address: 'aqua-gateway:8443'          # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
-    cluster_name: Default-cluster-name                     # Required: provide your cluster name
-    imagePullSecret: aqua-registry                # Required: provide the imagePullSecret name
+    gateway_address: 'aqua-gateway:8443'                      # Required: provide <<AQUA GW IP OR DNS: AQUA GW PORT>>
+    cluster_name: Default-cluster-name                        # Required: provide your cluster name
+    imagePullSecret: aqua-registry                            # Required: provide the imagePullSecret name
+    kubebench_image: 'docker.io/aquasec/kube-bench:v0.6.12'   # Optional: KubeBench image name can be replace with custom registry
   deploy:
     service: ClusterIP
     image:
