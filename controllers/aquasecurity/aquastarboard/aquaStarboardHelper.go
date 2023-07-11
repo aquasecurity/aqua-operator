@@ -76,6 +76,17 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
+				"apps.openshift.io",
+			},
+			Resources: []string{
+				"deploymentconfigs",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
 				"batch",
 			},
 			Resources: []string{
@@ -131,7 +142,7 @@ func (enf *AquaStarboardHelper) CreateStarboardClusterRole(name string, namespac
 		},
 		{
 			APIGroups: []string{
-				"networking.k8s.io",
+				"networking.k8s.io", "extensions",
 			},
 			Resources: []string{
 				"networkpolicies", "ingresses",
@@ -572,6 +583,10 @@ func (ebf *AquaStarboardHelper) getStarboardEnvVars(cr *aquasecurityv1alpha1.Aqu
 		{
 			Name:  "OPERATOR_HEALTH_PROBE_BIND_ADDRESS",
 			Value: consts.OperatorHealthProbeBindAddress,
+		},
+		{
+			Name:  "OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS",
+			Value: "true",
 		},
 	}
 	operatorLogDevMode := corev1.EnvVar{

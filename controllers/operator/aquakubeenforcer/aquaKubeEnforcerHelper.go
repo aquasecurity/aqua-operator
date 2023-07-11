@@ -82,6 +82,17 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 		},
 		{
 			APIGroups: []string{
+				"apps.openshift.io",
+			},
+			Resources: []string{
+				"deploymentconfigs",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
 				"*",
 			},
 			Resources: []string{
@@ -365,6 +376,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 				Resources: []string{
 					"pods",
 					"deployments",
+					"deploymentconfigs",
 					"replicasets",
 					"replicationcontrollers",
 					"statefulsets",
