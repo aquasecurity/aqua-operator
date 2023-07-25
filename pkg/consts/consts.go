@@ -164,7 +164,7 @@ const (
 
 	EnforcerConfigMapName = "aqua-csp-enforcer"
 
-	KubeBenchImageName = "docker.io/aquasec/kube-bench:v0.6.16"
+	KubeBenchImageName = "docker.io/aquasec/kube-bench:v0.6.17"
 
 	LightningEnforcerResources = `resources:
         limits:
