@@ -85,7 +85,7 @@ const (
 	LatestVersion = "2022.4"
 
 	// StarboardVersion Latest starboard version
-	StarboardVersion = "0.15.13"
+	StarboardVersion = "0.15.19"
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter5.aquasec.com"
@@ -164,7 +164,7 @@ const (
 
 	EnforcerConfigMapName = "aqua-csp-enforcer"
 
-	KubeBenchImageName = "docker.io/aquasec/kube-bench:v0.6.17"
+	KubeBenchImageName = "docker.io/aquasec/kube-bench:v0.7.0"
 
 	LightningEnforcerResources = `resources:
         limits:
