@@ -160,6 +160,8 @@ const (
 
 	OperatorClusterComplianceEnabled = "false"
 
+	OperatorConfigAuditScannerScanOnlyCurrentRevisions = "true"
+
 	ServerConfigMapName = "aqua-csp-server-config"
 
 	EnforcerConfigMapName = "aqua-csp-enforcer"

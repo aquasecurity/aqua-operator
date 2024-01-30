@@ -132,7 +132,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"operator.openshift.io",
 			},
 			Resources: []string{
-				"imagecontentsourcepolicies",
+				"imagecontentsourcepolicies", "openshiftapiservers", "kubeapiservers",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -147,6 +147,72 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 			},
 			Verbs: []string{
 				"get", "list", "watch", "create", "update", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"pods", "namespaces",
+			},
+			Verbs: []string{
+				"create", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"pods/exec",
+			},
+			Verbs: []string{
+				"create",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"serviceaccounts", "endpoints",
+			},
+			Verbs: []string{
+				"list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"config.openshift.io",
+			},
+			Resources: []string{
+				"clusteroperators",
+			},
+			Verbs: []string{
+				"get", "list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"security.openshift.io",
+			},
+			Resources: []string{
+				"securitycontextconstraints",
+			},
+			Verbs: []string{
+				"get", "list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"machineconfiguration.openshift.io",
+			},
+			Resources: []string{
+				"machineconfigs", "machineconfigpools",
+			},
+			Verbs: []string{
+				"get", "list",
 			},
 		},
 	}

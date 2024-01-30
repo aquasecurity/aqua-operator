@@ -30,25 +30,26 @@ type AquaStarboardSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Infrastructure                   *v1alpha1.AquaInfrastructure `json:"infra,omitempty"`
-	AllowAnyVersion                  bool                         `json:"allowAnyVersion,omitempty"`
-	StarboardService                 *v1alpha1.AquaService        `json:"deploy,required"`
-	Config                           v1alpha1.AquaStarboardConfig `json:"config"`
-	RegistryData                     *v1alpha1.AquaDockerRegistry `json:"registry,omitempty"`
-	ImageData                        *v1alpha1.AquaImage          `json:"image,omitempty"`
-	Envs                             []corev1.EnvVar              `json:"env,omitempty"`
-	KubeEnforcerVersion              string                       `json:"kube_enforcer_version,omitempty"`
-	LogDevMode                       bool                         `json:"logDevMode,omitempty"`
-	ConcurrentScanJobsLimit          string                       `json:"concurrentScanJobsLimit,omitempty"`
-	ScanJobRetryAfter                string                       `json:"scanJobRetryAfter,omitempty"`
-	MetricsBindAddress               string                       `json:"metricsBindAddress,omitempty"`
-	HealthProbeBindAddress           string                       `json:"healthProbeBindAddress,omitempty"`
-	CisKubernetesBenchmarkEnabled    string                       `json:"cisKubernetesBenchmarkEnabled,omitempty"`
-	VulnerabilityScannerEnabled      string                       `json:"vulnerabilityScannerEnabled,omitempty"`
-	BatchDeleteLimit                 string                       `json:"batchDeleteLimit,omitempty"`
-	BatchDeleteDelay                 string                       `json:"batchDeleteDelay,omitempty"`
-	OperatorClusterComplianceEnabled string                       `json:"operator_cluster_compliance_enabled"`
-	ConfigMapChecksum                string                       `json:"config_map_checksum,omitempty"`
+	Infrastructure                                     *v1alpha1.AquaInfrastructure `json:"infra,omitempty"`
+	AllowAnyVersion                                    bool                         `json:"allowAnyVersion,omitempty"`
+	StarboardService                                   *v1alpha1.AquaService        `json:"deploy,required"`
+	Config                                             v1alpha1.AquaStarboardConfig `json:"config"`
+	RegistryData                                       *v1alpha1.AquaDockerRegistry `json:"registry,omitempty"`
+	ImageData                                          *v1alpha1.AquaImage          `json:"image,omitempty"`
+	Envs                                               []corev1.EnvVar              `json:"env,omitempty"`
+	KubeEnforcerVersion                                string                       `json:"kube_enforcer_version,omitempty"`
+	LogDevMode                                         bool                         `json:"logDevMode,omitempty"`
+	ConcurrentScanJobsLimit                            string                       `json:"concurrentScanJobsLimit,omitempty"`
+	ScanJobRetryAfter                                  string                       `json:"scanJobRetryAfter,omitempty"`
+	MetricsBindAddress                                 string                       `json:"metricsBindAddress,omitempty"`
+	HealthProbeBindAddress                             string                       `json:"healthProbeBindAddress,omitempty"`
+	CisKubernetesBenchmarkEnabled                      string                       `json:"cisKubernetesBenchmarkEnabled,omitempty"`
+	VulnerabilityScannerEnabled                        string                       `json:"vulnerabilityScannerEnabled,omitempty"`
+	BatchDeleteLimit                                   string                       `json:"batchDeleteLimit,omitempty"`
+	BatchDeleteDelay                                   string                       `json:"batchDeleteDelay,omitempty"`
+	OperatorClusterComplianceEnabled                   string                       `json:"operator_cluster_compliance_enabled"`
+	OperatorConfigAuditScannerScanOnlyCurrentRevisions string                       `json:"operator_config_audit_scanner_scan_only_current_revisions"`
+	ConfigMapChecksum                                  string                       `json:"config_map_checksum,omitempty"`
 }
 
 // AquaStarboardStatus defines the observed state of AquaStarboard

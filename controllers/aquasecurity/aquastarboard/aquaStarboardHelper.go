@@ -687,10 +687,24 @@ func (ebf *AquaStarboardHelper) getStarboardEnvVars(cr *aquasecurityv1alpha1.Aqu
 
 	if cr.Spec.OperatorClusterComplianceEnabled != "" {
 		operatorClusterComplianceEnabled = corev1.EnvVar{
-			Name:  "OPERATOR_BATCH_DELETE_DELAY",
-			Value: cr.Spec.BatchDeleteDelay}
+			Name:  "OPERATOR_CLUSTER_COMPLIANCE_ENABLED",
+			Value: cr.Spec.OperatorClusterComplianceEnabled}
 	}
 
 	result = append(result, operatorClusterComplianceEnabled)
+
+	operatorConfigAuditScannerScanOnlyCurrentRevisions := corev1.EnvVar{
+		Name:  "OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS",
+		Value: consts.OperatorConfigAuditScannerScanOnlyCurrentRevisions,
+	}
+
+	if cr.Spec.OperatorConfigAuditScannerScanOnlyCurrentRevisions != "" {
+		operatorConfigAuditScannerScanOnlyCurrentRevisions = corev1.EnvVar{
+			Name:  "OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS",
+			Value: cr.Spec.OperatorConfigAuditScannerScanOnlyCurrentRevisions}
+	}
+
+	result = append(result, operatorConfigAuditScannerScanOnlyCurrentRevisions)
+
 	return result
 }
