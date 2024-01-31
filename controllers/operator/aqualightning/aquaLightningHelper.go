@@ -132,14 +132,20 @@ func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLight
 }
 
 func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning) *v1alpha1.AquaEnforcer {
+	if cr == nil || cr.Spec.Enforcer == nil {
+		// Handle nil AquaLightning or Enforcer
+		return nil
+	}
+
 	registry := consts.Registry
-	if cr.Spec.Enforcer.EnforcerService.ImageData != nil {
+	if cr.Spec.Enforcer.EnforcerService != nil && cr.Spec.Enforcer.EnforcerService.ImageData != nil {
 		if len(cr.Spec.Enforcer.EnforcerService.ImageData.Registry) > 0 {
 			registry = cr.Spec.Enforcer.EnforcerService.ImageData.Registry
 		}
 	}
+
 	tag := consts.LatestVersion
-	if cr.Spec.Enforcer.Infrastructure.Version != "" {
+	if cr.Spec.Enforcer.Infrastructure != nil && cr.Spec.Enforcer.Infrastructure.Version != "" {
 		tag = cr.Spec.Enforcer.Infrastructure.Version
 	}
 
@@ -147,13 +153,27 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 	if err != nil {
 		panic(err)
 	}
-	if cr.Spec.Enforcer.EnforcerService.Resources != nil {
+	if cr.Spec.Enforcer.EnforcerService != nil && cr.Spec.Enforcer.EnforcerService.Resources != nil {
 		resources = cr.Spec.Enforcer.EnforcerService.Resources
 	}
 
+	if cr.Spec.Global == nil || cr.Spec.Global.GatewayAddress == "" {
+		// Handle missing or empty GatewayAddress
+		return nil
+	}
+
 	gwParts := strings.Split(cr.Spec.Global.GatewayAddress, ":")
+	if len(gwParts) < 2 {
+		// Handle invalid GatewayAddress format
+		return nil
+	}
+
 	gatewayHost := gwParts[0]
-	gatewayPort, _ := strconv.ParseInt(gwParts[1], 10, 64)
+	gatewayPort, err := strconv.ParseInt(gwParts[1], 10, 64)
+	if err != nil {
+		// Handle the error while parsing port
+		panic(err)
+	}
 
 	labels := map[string]string{
 		"app":                cr.Name + "-enforcer",
@@ -164,6 +184,7 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 	annotations := map[string]string{
 		"description": "Deploy Aqua Enforcer",
 	}
+
 	aquaenf := &v1alpha1.AquaEnforcer{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operator.aquasec.com/v1alpha1",
@@ -200,6 +221,7 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 			EnforcerUpdateApproved: cr.Spec.Enforcer.EnforcerUpdateApproved,
 		},
 	}
+
 	return aquaenf
 }
 
