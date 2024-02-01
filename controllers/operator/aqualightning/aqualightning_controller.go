@@ -33,8 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"math/big"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
 	//"github.com/aquasecurity/aqua-operator/controllers/common"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -427,16 +425,11 @@ func (r *AquaLightningReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.AquaLightning{}).
 		Named("aquacsp-controller").
-		WithOptions(controller.Options{Reconciler: r}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&v1alpha1.AquaDatabase{}).
 		Owns(&v1alpha1.AquaEnforcer{}).
 		Owns(&v1alpha1.AquaKubeEnforcer{})
 
-	//isOpenshift, _ := ocp.VerifyRouteAPI()
-	//if isOpenshift {
-	//	builder.Owns(&routev1.Route{})
-	//}
 	return builder.Complete(r)
 }

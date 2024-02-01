@@ -33,10 +33,11 @@ import (
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	version2 "github.com/aquasecurity/aqua-operator/pkg/version"
 	routev1 "github.com/openshift/api/route/v1"
-	"os"
-
 	uzap "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"os"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -50,6 +51,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	aquasecurityv1alpha1 "github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
@@ -59,6 +61,8 @@ var (
 	scheme   = k8sRuntime.NewScheme()
 	setupLog = logf.Log.WithName("setup")
 )
+
+const controllerMessage = "Unable to create controller"
 
 func printVersion() {
 	setupLog.Info(fmt.Sprintf("Operator Version: %s", version2.Version))
@@ -105,19 +109,26 @@ func main() {
 	)
 	printVersion()
 
+	ws := webhook.NewServer(webhook.Options{
+		Port: 9443,
+	})
+
 	watchNamespace := extra.GetCurrentNameSpace()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr},
+		WebhookServer:          ws,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "aqua-operator-lock",
-		Namespace:              watchNamespace,
+		Cache: cache.Options{DefaultNamespaces: map[string]cache.Config{
+			watchNamespace: {},
+		}},
 	})
 
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "Unable to start manager")
 		os.Exit(1)
 	}
 
@@ -125,28 +136,29 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaCsp")
+		setupLog.Error(err, controllerMessage, "controller", "AquaCsp")
 		os.Exit(1)
 	}
+
 	if err = (&aquadatabase.AquaDatabaseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaDatabase")
+		setupLog.Error(err, controllerMessage, "controller", "AquaDatabase")
 		os.Exit(1)
 	}
 	if err = (&aquaenforcer.AquaEnforcerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaEnforcer")
+		setupLog.Error(err, controllerMessage, "controller", "AquaEnforcer")
 		os.Exit(1)
 	}
 	if err = (&aquagateway.AquaGatewayReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaGateway")
+		setupLog.Error(err, controllerMessage, "controller", "AquaGateway")
 		os.Exit(1)
 	}
 	if err = (&aquakubeenforcer.AquaKubeEnforcerReconciler{
@@ -154,21 +166,21 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Certs:  aquakubeenforcer.GetKECerts(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaKubeEnforcer")
+		setupLog.Error(err, controllerMessage, "controller", "AquaKubeEnforcer")
 		os.Exit(1)
 	}
 	if err = (&aquascanner.AquaScannerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaScanner")
+		setupLog.Error(err, controllerMessage, "controller", "AquaScanner")
 		os.Exit(1)
 	}
 	if err = (&aquacloudconnector.AquaCloudConnectorReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaCloudConnector")
+		setupLog.Error(err, controllerMessage, "controller", "AquaCloudConnector")
 		os.Exit(1)
 	}
 
@@ -177,7 +189,7 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Certs:  aqualightning.GetKECerts(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaKubeEnforcer")
+		setupLog.Error(err, controllerMessage, "controller", "AquaKubeEnforcer")
 		os.Exit(1)
 	}
 
@@ -185,24 +197,24 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaServer")
+		setupLog.Error(err, controllerMessage, "controller", "AquaServer")
 		os.Exit(1)
 	}
 	if err = (&aquastarboard.AquaStarboardReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AquaStarboard")
+		setupLog.Error(err, controllerMessage, "controller", "AquaStarboard")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		setupLog.Error(err, "Unable to set up health check")
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		setupLog.Error(err, "Unable to set up ready check")
 		os.Exit(1)
 	}
 
@@ -212,10 +224,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-//func printVersion() {
-//	setupLog.Info(fmt.Sprintf("Operator Version: %s", version.Version))
-//	setupLog.Info(fmt.Sprintf("Go Version: %s", k8sRuntime.Version()))
-//	setupLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", k8sRuntime.GOOS, k8sRuntime.GOARCH))
-//	setupLog.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
-//}

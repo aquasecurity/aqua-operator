@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -225,7 +224,6 @@ func (r *AquaDatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request
 func (r *AquaDatabaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("aquadatabase-controller").
-		WithOptions(controller.Options{Reconciler: r}).
 		For(&operatorv1alpha1.AquaDatabase{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ServiceAccount{}).

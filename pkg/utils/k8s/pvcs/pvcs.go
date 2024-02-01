@@ -32,7 +32,7 @@ func CreatePersistentVolumeClaim(cr, namespace, app, description, name, storagec
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOnce,
 			},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					"storage": resource.MustParse(fmt.Sprintf("%dGi", size)),
 				},
