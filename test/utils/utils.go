@@ -426,7 +426,7 @@ func AddUserToCluster(testEnv envtest.Environment) {
 
 	kubeconfigFile, err := os.CreateTemp("", "scratch-env-kubeconfig-")
 	if err != nil {
-		logf.Log.Error(err, "Unable to create kubeconfig file, continuing on without it")
+		logf.Log.Error(err, "unable to create kubeconfig file, continuing on without it")
 	}
 	defer os.Remove(kubeconfigFile.Name())
 
@@ -436,11 +436,11 @@ func AddUserToCluster(testEnv envtest.Environment) {
 
 		kubeConfig, err := user.KubeConfig()
 		if err != nil {
-			log.Error(err, "Unable to create kubeconfig")
+			log.Error(err, "unable to create kubeconfig")
 		}
 
 		if _, err := kubeconfigFile.Write(kubeConfig); err != nil {
-			log.Error(err, "Unable to save kubeconfig")
+			log.Error(err, "unable to save kubeconfig")
 		}
 
 		log.Info("Wrote kubeconfig")

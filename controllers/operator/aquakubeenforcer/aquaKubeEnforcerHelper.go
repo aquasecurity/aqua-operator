@@ -978,18 +978,15 @@ func (ebf *AquaKubeEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaKubeEnfor
 
 func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnforcer) *v1alpha1.AquaStarboard {
 	if cr == nil {
-		fmt.Println("Received a nil AquaKubeEnforcer object")
+		log.Error(fmt.Errorf("AquaKubeEnforcer object is nil"), "AquaKubeEnforcer object is nil")
 		return nil
 	}
 
-	if cr.Spec.DeployStarboard == nil {
-		fmt.Println("AquaKubeEnforcer or DeployStarboard is nil")
-		return nil
-	}
-
-	fmt.Printf("Entering newStarboard function with cr: %+v\n", cr)
+	log.Info("Creating new AquaStarboard instance")
 
 	_, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
+
+	log.Info("Retrieved image data")
 
 	labels := map[string]string{
 		"app":                cr.Name + "-kube-enforcer",
@@ -1000,7 +997,11 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 		"description": "Deploy Aqua Starboard",
 	}
 
+	log.Info("Created labels and annotations")
+
 	kubeEnforcerVersion := fmt.Sprintf("%s/%s:%s", registry, repository, tag)
+
+	log.Info("Constructed kubeEnforcerVersion")
 
 	aquasb := &v1alpha1.AquaStarboard{
 		TypeMeta: metav1.TypeMeta{
@@ -1033,6 +1034,8 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 			BatchDeleteDelay:              cr.Spec.DeployStarboard.BatchDeleteDelay,
 		},
 	}
+
+	log.Info("AquaStarboard instance created successfully")
 
 	return aquasb
 }

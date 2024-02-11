@@ -147,6 +147,7 @@ func main() {
 		setupLog.Error(err, controllerMessage, "controller", "AquaDatabase")
 		os.Exit(1)
 	}
+
 	if err = (&aquaenforcer.AquaEnforcerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -154,6 +155,7 @@ func main() {
 		setupLog.Error(err, controllerMessage, "controller", "AquaEnforcer")
 		os.Exit(1)
 	}
+
 	if err = (&aquagateway.AquaGatewayReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -161,6 +163,7 @@ func main() {
 		setupLog.Error(err, controllerMessage, "controller", "AquaGateway")
 		os.Exit(1)
 	}
+
 	if err = (&aquakubeenforcer.AquaKubeEnforcerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -169,6 +172,7 @@ func main() {
 		setupLog.Error(err, controllerMessage, "controller", "AquaKubeEnforcer")
 		os.Exit(1)
 	}
+
 	if err = (&aquascanner.AquaScannerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -176,6 +180,7 @@ func main() {
 		setupLog.Error(err, controllerMessage, "controller", "AquaScanner")
 		os.Exit(1)
 	}
+
 	if err = (&aquacloudconnector.AquaCloudConnectorReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -200,6 +205,7 @@ func main() {
 		setupLog.Error(err, controllerMessage, "controller", "AquaServer")
 		os.Exit(1)
 	}
+
 	if err = (&aquastarboard.AquaStarboardReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -210,11 +216,12 @@ func main() {
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "Unable to set up health check")
+		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
+
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "Unable to set up ready check")
+		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 

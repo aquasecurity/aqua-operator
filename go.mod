@@ -7,7 +7,7 @@ require (
 	github.com/banzaicloud/k8s-objectmatcher v1.8.0
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
-	github.com/openshift/api v0.0.0-20240202140003-8b34b9854c7f
+	github.com/openshift/api v0.0.0-20240206115603-413e7e5d324e
 	go.uber.org/zap v1.26.0
 	k8s.io/api v0.29.1
 	k8s.io/apimachinery v0.29.1

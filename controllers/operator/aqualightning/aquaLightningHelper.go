@@ -12,16 +12,12 @@ import (
 	"strings"
 )
 
-const (
-	WebhookTimeout int32 = 5
-)
-
-// EnforcerParameters :
+// EnforcerParameters
 type LightningParameters struct {
 	Lightning *v1alpha1.AquaLightning
 }
 
-// AquaEnforcerHelper :
+// AquaEnforcerHelper
 type AquaLightningHelper struct {
 	Parameters LightningParameters
 }
@@ -37,6 +33,16 @@ func newAquaLightningHelper(cr *v1alpha1.AquaLightning) *AquaLightningHelper {
 }
 
 func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLightning) *v1alpha1.AquaKubeEnforcer {
+	// Step 1: Check if cr or cr.Spec is nil
+	if cr == nil {
+		return nil
+	}
+
+	// Step 2: Check if cr.Spec.KubeEnforcer is nil
+	if cr.Spec.KubeEnforcer == nil {
+		return nil
+	}
+
 	registry := consts.Registry
 	if cr.Spec.KubeEnforcer.RegistryData != nil {
 		if len(cr.Spec.KubeEnforcer.RegistryData.URL) > 0 {
@@ -132,9 +138,19 @@ func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLight
 }
 
 func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning) *v1alpha1.AquaEnforcer {
-	if cr == nil || cr.Spec.Enforcer == nil {
-		// Handle nil AquaLightning or Enforcer
+	if cr == nil || cr.Spec.Enforcer == nil || cr.Spec.Global == nil || cr.Spec.Global.GatewayAddress == "" {
 		return nil
+	}
+
+	gwParts := strings.Split(cr.Spec.Global.GatewayAddress, ":")
+	if len(gwParts) < 2 {
+		return nil
+	}
+
+	gatewayHost := gwParts[0]
+	gatewayPort, err := strconv.ParseInt(gwParts[1], 10, 64)
+	if err != nil {
+		panic(err)
 	}
 
 	registry := consts.Registry
@@ -143,7 +159,6 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 			registry = cr.Spec.Enforcer.EnforcerService.ImageData.Registry
 		}
 	}
-
 	tag := consts.LatestVersion
 	if cr.Spec.Enforcer.Infrastructure != nil && cr.Spec.Enforcer.Infrastructure.Version != "" {
 		tag = cr.Spec.Enforcer.Infrastructure.Version
@@ -155,24 +170,6 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 	}
 	if cr.Spec.Enforcer.EnforcerService != nil && cr.Spec.Enforcer.EnforcerService.Resources != nil {
 		resources = cr.Spec.Enforcer.EnforcerService.Resources
-	}
-
-	if cr.Spec.Global == nil || cr.Spec.Global.GatewayAddress == "" {
-		// Handle missing or empty GatewayAddress
-		return nil
-	}
-
-	gwParts := strings.Split(cr.Spec.Global.GatewayAddress, ":")
-	if len(gwParts) < 2 {
-		// Handle invalid GatewayAddress format
-		return nil
-	}
-
-	gatewayHost := gwParts[0]
-	gatewayPort, err := strconv.ParseInt(gwParts[1], 10, 64)
-	if err != nil {
-		// Handle the error while parsing port
-		panic(err)
 	}
 
 	labels := map[string]string{

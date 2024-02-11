@@ -97,6 +97,7 @@ type KubeEnforcerCertificates struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	req.NamespacedName.Namespace = extra.GetCurrentNameSpace()
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling AquaKubeEnforcer")
 
