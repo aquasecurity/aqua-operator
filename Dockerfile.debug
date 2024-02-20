@@ -15,13 +15,18 @@ COPY apis/ apis/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
 
-# Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
+# Install dlv
+RUN go install -mod=readonly github.com/go-delve/delve/cmd/dlv@latest
+ENV GCFLAGS "all=-N -l"
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-#FROM gcr.io/distroless/static:nonroot
+# Build the Go binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags "all=-N -l" -a -o manager main.go
+
+# Use a separate stage for the final image
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+RUN microdnf install -y  wget tar yum findutils gzip && microdnf clean all
+RUN yum install -y glibc golang \
+                     && yum update -y glibc golang
 
 ENV OPERATOR=/usr/local/bin/aqua-operator \
     USER_UID=1001 \
@@ -38,8 +43,10 @@ WORKDIR /
 
 COPY licenses /licenses
 COPY --from=builder /workspace/manager .
+COPY --from=builder /go/bin/dlv /usr/bin/
 
 USER ${USER_UID}
 ENTRYPOINT ["/manager"]
 
-
+## Set the entrypoint for the container
+ENTRYPOINT ["/usr/bin/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager"]

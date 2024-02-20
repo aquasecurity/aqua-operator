@@ -12,16 +12,12 @@ import (
 	"strings"
 )
 
-const (
-	WebhookTimeout int32 = 5
-)
-
-// EnforcerParameters :
+// EnforcerParameters
 type LightningParameters struct {
 	Lightning *v1alpha1.AquaLightning
 }
 
-// AquaEnforcerHelper :
+// AquaEnforcerHelper
 type AquaLightningHelper struct {
 	Parameters LightningParameters
 }
@@ -37,6 +33,16 @@ func newAquaLightningHelper(cr *v1alpha1.AquaLightning) *AquaLightningHelper {
 }
 
 func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLightning) *v1alpha1.AquaKubeEnforcer {
+	// Step 1: Check if cr or cr.Spec is nil
+	if cr == nil {
+		return nil
+	}
+
+	// Step 2: Check if cr.Spec.KubeEnforcer is nil
+	if cr.Spec.KubeEnforcer == nil {
+		return nil
+	}
+
 	registry := consts.Registry
 	if cr.Spec.KubeEnforcer.RegistryData != nil {
 		if len(cr.Spec.KubeEnforcer.RegistryData.URL) > 0 {
@@ -132,14 +138,29 @@ func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLight
 }
 
 func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning) *v1alpha1.AquaEnforcer {
+	if cr == nil || cr.Spec.Enforcer == nil || cr.Spec.Global == nil || cr.Spec.Global.GatewayAddress == "" {
+		return nil
+	}
+
+	gwParts := strings.Split(cr.Spec.Global.GatewayAddress, ":")
+	if len(gwParts) < 2 {
+		return nil
+	}
+
+	gatewayHost := gwParts[0]
+	gatewayPort, err := strconv.ParseInt(gwParts[1], 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
 	registry := consts.Registry
-	if cr.Spec.Enforcer.EnforcerService.ImageData != nil {
+	if cr.Spec.Enforcer.EnforcerService != nil && cr.Spec.Enforcer.EnforcerService.ImageData != nil {
 		if len(cr.Spec.Enforcer.EnforcerService.ImageData.Registry) > 0 {
 			registry = cr.Spec.Enforcer.EnforcerService.ImageData.Registry
 		}
 	}
 	tag := consts.LatestVersion
-	if cr.Spec.Enforcer.Infrastructure.Version != "" {
+	if cr.Spec.Enforcer.Infrastructure != nil && cr.Spec.Enforcer.Infrastructure.Version != "" {
 		tag = cr.Spec.Enforcer.Infrastructure.Version
 	}
 
@@ -147,13 +168,9 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 	if err != nil {
 		panic(err)
 	}
-	if cr.Spec.Enforcer.EnforcerService.Resources != nil {
+	if cr.Spec.Enforcer.EnforcerService != nil && cr.Spec.Enforcer.EnforcerService.Resources != nil {
 		resources = cr.Spec.Enforcer.EnforcerService.Resources
 	}
-
-	gwParts := strings.Split(cr.Spec.Global.GatewayAddress, ":")
-	gatewayHost := gwParts[0]
-	gatewayPort, _ := strconv.ParseInt(gwParts[1], 10, 64)
 
 	labels := map[string]string{
 		"app":                cr.Name + "-enforcer",
@@ -164,6 +181,7 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 	annotations := map[string]string{
 		"description": "Deploy Aqua Enforcer",
 	}
+
 	aquaenf := &v1alpha1.AquaEnforcer{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operator.aquasec.com/v1alpha1",
@@ -200,6 +218,7 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 			EnforcerUpdateApproved: cr.Spec.Enforcer.EnforcerUpdateApproved,
 		},
 	}
+
 	return aquaenf
 }
 

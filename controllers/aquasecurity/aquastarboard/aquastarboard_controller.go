@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"strings"
@@ -56,17 +55,6 @@ type AquaStarboardReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=aquasecurity.aquasec.com,resources=aquastarboards,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=aquasecurity.aquasec.com,resources=aquastarboards/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=aquasecurity.aquasec.com,resources=aquastarboards/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;
-//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
-
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // the AquaStarboard object against the actual cluster state, and then
@@ -76,6 +64,7 @@ type AquaStarboardReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	req.NamespacedName.Namespace = extra.GetCurrentNameSpace()
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "req.Name", req.Name)
 	reqLogger.Info("Reconciling AquaStarboard")
 
@@ -159,7 +148,6 @@ func (r *AquaStarboardReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 func (r *AquaStarboardReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("AquaStarboard-controller").
-		WithOptions(controller.Options{Reconciler: r}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&appsv1.Deployment{}).
@@ -359,14 +347,13 @@ func (r *AquaStarboardReconciler) addStarboardRole(ro *aquasecurityv1alpha1.Aqua
 
 	// Check if this Role already exists
 	found := &rbacv1.Role{}
-	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: role.Name}, found)
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: ro.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Aqua Starboard: Creating a New Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
 		err = r.Client.Create(context.TODO(), role)
 		if err != nil {
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{Requeue: true}, err
 		}
-
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -380,20 +367,19 @@ func (r *AquaStarboardReconciler) addStarboardRole(ro *aquasecurityv1alpha1.Aqua
 	}
 
 	if !equal {
-		found = role
-		log.Info("Aqua Starboard: Updating Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+		found.Rules = role.Rules // Update the existing Role's rules
+		reqLogger.Info("Aqua Starboard: Updating Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
 		err := r.Client.Update(context.TODO(), found)
 		if err != nil {
-			log.Error(err, "Failed to update Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+			reqLogger.Error(err, "Failed to update Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
 			return reconcile.Result{}, err
 		}
-
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	// Role already exists - don't requeue
+	// Role already exists and is up-to-date - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Role Exists", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
 func (r *AquaStarboardReconciler) createAquaStarboardServiceAccount(cr *aquasecurityv1alpha1.AquaStarboard) (reconcile.Result, error) {
