@@ -3097,8 +3097,6 @@ spec:
                 type: string
               operator_cluster_compliance_enabled:
                 type: string
-              operator_config_audit_scanner_scan_only_current_revisions:
-                type: string
               registry:
                 properties:
                   email:

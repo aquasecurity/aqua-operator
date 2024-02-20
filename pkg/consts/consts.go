@@ -85,7 +85,7 @@ const (
 	LatestVersion = "2022.4"
 
 	// StarboardVersion Latest starboard version
-	StarboardVersion = "0.15.20"
+	StarboardVersion = "0.15.13"
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter5.aquasec.com"
@@ -160,13 +160,11 @@ const (
 
 	OperatorClusterComplianceEnabled = "false"
 
-	OperatorConfigAuditScannerScanOnlyCurrentRevisions = "true"
-
 	ServerConfigMapName = "aqua-csp-server-config"
 
 	EnforcerConfigMapName = "aqua-csp-enforcer"
 
-	KubeBenchImageName = "docker.io/aquasec/kube-bench:v0.7.1"
+	KubeBenchImageName = "docker.io/aquasec/kube-bench:v0.6.17"
 
 	LightningEnforcerResources = `resources:
         limits:
@@ -179,7 +177,7 @@ const (
 	LightningKubeEnforcerResources = `resources:
         limits:
           cpu: 1000m
-          memory: 750Mi
+          memory: 500Mi
         requests:
           cpu: 300m
           memory: 250Mi`
@@ -187,7 +185,7 @@ const (
 	LightningStarboardResources = `resources:
         limits:
           cpu: 1000m
-          memory: 500Mi
+          memory: 250Mi
         requests:
           cpu: 500m
           memory: 125Mi`

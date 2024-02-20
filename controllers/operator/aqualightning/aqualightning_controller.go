@@ -24,7 +24,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	stderrors "errors"
 	"fmt"
 	"github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/common"
@@ -34,6 +33,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"math/big"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	//"github.com/aquasecurity/aqua-operator/controllers/common"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -48,9 +49,6 @@ import (
 	//ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const maxRetries = 3
-const retryDelay = 1 * time.Second
 
 var log = logf.Log.WithName("controller_aqualightning")
 
@@ -69,25 +67,6 @@ type KubeEnforcerCertificates struct {
 }
 
 func (r *AquaLightningReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		result, err := r.reconcileOnce(ctx, req)
-		if err == nil {
-			return result, nil
-		}
-
-		if errors.IsConflict(err) {
-			// Conflict error encountered, retry after delay
-			time.Sleep(retryDelay)
-			continue
-		}
-
-		return result, err
-	}
-
-	return reconcile.Result{}, stderrors.New("exhausted max retries")
-}
-
-func (r *AquaLightningReconciler) reconcileOnce(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling AquaLightning")
 
@@ -447,12 +426,17 @@ func createKECerts() (*KubeEnforcerCertificates, error) {
 func (r *AquaLightningReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.AquaLightning{}).
-		Named("aqualightning-controller").
+		Named("aquacsp-controller").
+		WithOptions(controller.Options{Reconciler: r}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&v1alpha1.AquaDatabase{}).
 		Owns(&v1alpha1.AquaEnforcer{}).
 		Owns(&v1alpha1.AquaKubeEnforcer{})
 
+	//isOpenshift, _ := ocp.VerifyRouteAPI()
+	//if isOpenshift {
+	//	builder.Owns(&routev1.Route{})
+	//}
 	return builder.Complete(r)
 }

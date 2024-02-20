@@ -32,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -292,6 +293,7 @@ func (r *AquaCspReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1alpha1.AquaCsp{}).
 		Named("aquacsp-controller").
+		WithOptions(controller.Options{Reconciler: r}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&operatorv1alpha1.AquaDatabase{}).
@@ -300,6 +302,10 @@ func (r *AquaCspReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&operatorv1alpha1.AquaEnforcer{}).
 		Owns(&operatorv1alpha1.AquaKubeEnforcer{})
 
+	//isOpenshift, _ := ocp.VerifyRouteAPI()
+	//if isOpenshift {
+	//	builder.Owns(&routev1.Route{})
+	//}
 	return builder.Complete(r)
 }
 
@@ -672,36 +678,16 @@ func (r *AquaCspReconciler) InstallAquaKubeEnforcer(cr *v1alpha1.AquaCsp) (recon
 
 		reqLogger.Info("Checking for AquaKubeEnforcer Upgrade", "kube-enforcer", enforcer.Spec, "found", found.Spec, "update bool", update)
 		if update {
-			// Retry loop with backoff
-			retryCount := 0
-			maxRetries := 3
-			retryDelay := time.Second * 5
-
-			for {
-				// Increment retry count
-				retryCount++
-
-				// Attempt to update AquaKubeEnforcer
-				err = r.Client.Update(context.Background(), found)
-				if err == nil {
-					// Update successful, break out of the loop
-					break
-				}
-
-				// Check if maximum retries reached
-				if retryCount >= maxRetries {
-					reqLogger.Error(err, "Max retries reached. Failed to update AquaKubeEnforcer.")
-					return reconcile.Result{}, err
-				}
-
-				// Log the error and retry after delay
-				reqLogger.Info("Error updating AquaKubeEnforcer. Retrying...", "RetryCount", retryCount, "MaxRetries", maxRetries)
-				time.Sleep(retryDelay)
+			found.Spec = *(enforcer.Spec.DeepCopy())
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaKubeEnforcer.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
 			}
-
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true}, nil
 		}
+
 	}
 
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Exists", "AquaKubeEnforcer.Namespace", found.Namespace, "AquaKubeEnforcer.Name", found.Name)

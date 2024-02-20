@@ -421,7 +421,7 @@ func AddUserToCluster(testEnv envtest.Environment) {
 		},
 		nil)
 	if err != nil {
-		logf.Log.Error(err, "Unable to provision admin user, continuing on without it")
+		logf.Log.Error(err, "unable to provision admin user, continuing on without it")
 	}
 
 	kubeconfigFile, err := os.CreateTemp("", "scratch-env-kubeconfig-")
