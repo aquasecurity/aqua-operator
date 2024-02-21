@@ -105,6 +105,7 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		reqLogger.Error(syserrors.New("Unable to create KubeEnforcer Certificates"), "Unable to create KubeEnforcer Certificates")
 		return reconcile.Result{}, nil
 	}
+
 	// Fetch the AquaKubeEnforcer instance
 	instance := &operatorv1alpha1.AquaKubeEnforcer{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
@@ -196,6 +197,7 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	instance.Spec.KubeEnforcerService = r.updateKubeEnforcerServerObject(instance.Spec.KubeEnforcerService, instance.Spec.ImageData)
 
+	sbSpec := instance.DeepCopy()
 	_, err = r.addKEClusterRoleBinding(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -247,7 +249,7 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	if instance.Spec.DeployStarboard != nil {
-		r.installAquaStarboard(instance)
+		r.installAquaStarboard(sbSpec)
 	}
 
 	return ctrl.Result{}, nil
@@ -430,17 +432,10 @@ func (r *AquaKubeEnforcerReconciler) updateKubeEnforcerObject(cr *operatorv1alph
 func (r *AquaKubeEnforcerReconciler) addKEDeployment(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
 	reqLogger := log.WithValues("KubeEnforcer Deployment Phase", "Create Deployment")
 	reqLogger.Info("Start creating deployment")
-
 	pullPolicy, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
 
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
-	deployment := enforcerHelper.CreateKEDeployment(cr,
-		consts.AquaKubeEnforcerClusterRoleBidingName,
-		"ke-deployment",
-		registry,
-		tag,
-		pullPolicy,
-		repository)
+	deployment := enforcerHelper.CreateKEDeployment(cr, consts.AquaKubeEnforcerClusterRoleBidingName, "ke-deployment", registry, tag, pullPolicy, repository)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, deployment, r.Scheme); err != nil {
@@ -486,10 +481,12 @@ func (r *AquaKubeEnforcerReconciler) addKEDeployment(cr *operatorv1alpha1.AquaKu
 				return reconcile.Result{}, err
 			}
 			// Spec updated - return and requeue
+
 			return reconcile.Result{Requeue: true}, nil
 		} else if update && !updateEnforcerApproved {
 			cr.Status.State = operatorv1alpha1.AquaEnforcerUpdatePendingApproval
 			_ = r.Client.Status().Update(context.Background(), cr)
+
 		} else {
 			currentState := cr.Status.State
 			if !k8s.IsDeploymentReady(found, 1) {
@@ -506,6 +503,7 @@ func (r *AquaKubeEnforcerReconciler) addKEDeployment(cr *operatorv1alpha1.AquaKu
 	}
 
 	// object already exists - don't requeue
+
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Deployment Exists", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 	return reconcile.Result{}, nil
 }
@@ -999,10 +997,7 @@ func (r *AquaKubeEnforcerReconciler) addKEService(cr *operatorv1alpha1.AquaKubeE
 	reqLogger.Info("Start creating service")
 
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
-	service := enforcerHelper.CreateKEService(cr.Name,
-		cr.Namespace,
-		consts.AquaKubeEnforcerClusterRoleBidingName,
-		"ke-service")
+	service := enforcerHelper.CreateKEService(cr.Name, cr.Namespace, consts.AquaKubeEnforcerClusterRoleBidingName, "ke-service")
 
 	// Set AquaKubeEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, service, r.Scheme); err != nil {
