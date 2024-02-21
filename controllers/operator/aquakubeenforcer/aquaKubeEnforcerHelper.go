@@ -986,8 +986,6 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 
 	_, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
 
-	log.Info("Retrieved image data")
-
 	labels := map[string]string{
 		"app":                cr.Name + "-kube-enforcer",
 		"deployedby":         aquaOperatorLabel,
@@ -997,11 +995,7 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 		"description": "Deploy Aqua Starboard",
 	}
 
-	log.Info("Created labels and annotations")
-
 	kubeEnforcerVersion := fmt.Sprintf("%s/%s:%s", registry, repository, tag)
-
-	log.Info("Constructed kubeEnforcerVersion")
 
 	aquasb := &v1alpha1.AquaStarboard{
 		TypeMeta: metav1.TypeMeta{
@@ -1034,8 +1028,5 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 			BatchDeleteDelay:              cr.Spec.DeployStarboard.BatchDeleteDelay,
 		},
 	}
-
-	log.Info("AquaStarboard instance created successfully")
-
 	return aquasb
 }

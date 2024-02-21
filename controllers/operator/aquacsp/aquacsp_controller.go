@@ -672,36 +672,16 @@ func (r *AquaCspReconciler) InstallAquaKubeEnforcer(cr *v1alpha1.AquaCsp) (recon
 
 		reqLogger.Info("Checking for AquaKubeEnforcer Upgrade", "kube-enforcer", enforcer.Spec, "found", found.Spec, "update bool", update)
 		if update {
-			// Retry loop with backoff
-			retryCount := 0
-			maxRetries := 3
-			retryDelay := time.Second * 5
-
-			for {
-				// Increment retry count
-				retryCount++
-
-				// Attempt to update AquaKubeEnforcer
-				err = r.Client.Update(context.Background(), found)
-				if err == nil {
-					// Update successful, break out of the loop
-					break
-				}
-
-				// Check if maximum retries reached
-				if retryCount >= maxRetries {
-					reqLogger.Error(err, "Max retries reached. Failed to update AquaKubeEnforcer.")
-					return reconcile.Result{}, err
-				}
-
-				// Log the error and retry after delay
-				reqLogger.Info("Error updating AquaKubeEnforcer. Retrying...", "RetryCount", retryCount, "MaxRetries", maxRetries)
-				time.Sleep(retryDelay)
+			found.Spec = *(enforcer.Spec.DeepCopy())
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua CSP: Failed to update AquaKubeEnforcer.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
 			}
-
 			// Spec updated - return and requeue
 			return reconcile.Result{Requeue: true}, nil
 		}
+
 	}
 
 	reqLogger.Info("Skip reconcile: Aqua KubeEnforcer Exists", "AquaKubeEnforcer.Namespace", found.Namespace, "AquaKubeEnforcer.Name", found.Name)

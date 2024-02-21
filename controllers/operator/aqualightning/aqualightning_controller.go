@@ -24,7 +24,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	stderrors "errors"
 	"fmt"
 	"github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/common"
@@ -49,9 +48,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const maxRetries = 3
-const retryDelay = 1 * time.Second
-
 var log = logf.Log.WithName("controller_aqualightning")
 
 // AquaLightningReconciler reconciles a AquaKubeEnforcer object
@@ -69,25 +65,6 @@ type KubeEnforcerCertificates struct {
 }
 
 func (r *AquaLightningReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		result, err := r.reconcileOnce(ctx, req)
-		if err == nil {
-			return result, nil
-		}
-
-		if errors.IsConflict(err) {
-			// Conflict error encountered, retry after delay
-			time.Sleep(retryDelay)
-			continue
-		}
-
-		return result, err
-	}
-
-	return reconcile.Result{}, stderrors.New("exhausted max retries")
-}
-
-func (r *AquaLightningReconciler) reconcileOnce(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name)
 	reqLogger.Info("Reconciling AquaLightning")
 
