@@ -33,16 +33,6 @@ func newAquaLightningHelper(cr *v1alpha1.AquaLightning) *AquaLightningHelper {
 }
 
 func (lightning *AquaLightningHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaLightning) *v1alpha1.AquaKubeEnforcer {
-	// Step 1: Check if cr or cr.Spec is nil
-	if cr == nil {
-		return nil
-	}
-
-	// Step 2: Check if cr.Spec.KubeEnforcer is nil
-	if cr.Spec.KubeEnforcer == nil {
-		return nil
-	}
-
 	registry := consts.Registry
 	if cr.Spec.KubeEnforcer.RegistryData != nil {
 		if len(cr.Spec.KubeEnforcer.RegistryData.URL) > 0 {
@@ -201,10 +191,6 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 				Port: gatewayPort,
 			},
 			Token: cr.Spec.Enforcer.Token,
-			Secret: &v1alpha1.AquaSecret{
-				Name: cr.Spec.Enforcer.Secret.Name,
-				Key:  cr.Spec.Enforcer.Secret.Key,
-			},
 			EnforcerService: &v1alpha1.AquaService{
 				ImageData: &v1alpha1.AquaImage{
 					Registry:   registry,
@@ -217,6 +203,14 @@ func (lightning *AquaLightningHelper) newAquaEnforcer(cr *v1alpha1.AquaLightning
 			RunAsNonRoot:           cr.Spec.Enforcer.RunAsNonRoot,
 			EnforcerUpdateApproved: cr.Spec.Enforcer.EnforcerUpdateApproved,
 		},
+	}
+
+	// Check if Mtls is enabled for enforcer
+	if cr.Spec.Enforcer.Mtls {
+		aquaenf.Spec.Secret = &v1alpha1.AquaSecret{
+			Name: cr.Spec.Enforcer.Secret.Name,
+			Key:  cr.Spec.Enforcer.Secret.Key,
+		}
 	}
 
 	return aquaenf

@@ -977,12 +977,6 @@ func (ebf *AquaKubeEnforcerHelper) getEnvVars(cr *operatorv1alpha1.AquaKubeEnfor
 // Starboard functions
 
 func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnforcer) *v1alpha1.AquaStarboard {
-	if cr == nil {
-		log.Error(fmt.Errorf("AquaKubeEnforcer object is nil"), "AquaKubeEnforcer object is nil")
-		return nil
-	}
-
-	log.Info("Creating new AquaStarboard instance")
 
 	_, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
 

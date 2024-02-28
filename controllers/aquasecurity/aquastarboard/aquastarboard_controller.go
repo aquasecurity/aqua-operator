@@ -352,8 +352,9 @@ func (r *AquaStarboardReconciler) addStarboardRole(ro *aquasecurityv1alpha1.Aqua
 		reqLogger.Info("Aqua Starboard: Creating a New Role", "Role.Namespace", role.Namespace, "Role.Name", role.Name)
 		err = r.Client.Create(context.TODO(), role)
 		if err != nil {
-			return reconcile.Result{Requeue: true}, err
+			return reconcile.Result{Requeue: true}, nil
 		}
+
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -367,19 +368,20 @@ func (r *AquaStarboardReconciler) addStarboardRole(ro *aquasecurityv1alpha1.Aqua
 	}
 
 	if !equal {
-		found.Rules = role.Rules // Update the existing Role's rules
-		reqLogger.Info("Aqua Starboard: Updating Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+		found = role
+		log.Info("Aqua Starboard: Updating Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
 		err := r.Client.Update(context.TODO(), found)
 		if err != nil {
-			reqLogger.Error(err, "Failed to update Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
+			log.Error(err, "Failed to update Role", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
 			return reconcile.Result{}, err
 		}
+
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	// Role already exists and is up-to-date - don't requeue
+	// Role already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Role Exists", "Role.Namespace", found.Namespace, "Role.Name", found.Name)
-	return reconcile.Result{}, nil
+	return reconcile.Result{Requeue: true}, nil
 }
 
 func (r *AquaStarboardReconciler) createAquaStarboardServiceAccount(cr *aquasecurityv1alpha1.AquaStarboard) (reconcile.Result, error) {
