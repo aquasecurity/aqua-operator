@@ -468,6 +468,16 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 	servicePort := int32(443)
 	sideEffect := admissionv1.SideEffectClassNone
 	failurePolicy := admissionv1.Ignore
+	namespaceSelector := &metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      "kubernetes.io/metadata.name",
+				Operator: metav1.LabelSelectorOpNotIn,
+				Values:   []string{"kube-system", "kube-node-lease"},
+			},
+		},
+	}
+
 	validWebhook := &admissionv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "admissionregistration.k8s.io/v1",
@@ -495,6 +505,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 				SideEffects:             &sideEffect,
 				AdmissionReviewVersions: []string{"v1beta1"},
 				FailurePolicy:           &failurePolicy,
+				NamespaceSelector:       namespaceSelector,
 			},
 		},
 	}
@@ -534,6 +545,15 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 	servicePort := int32(443)
 	sideEffect := admissionv1.SideEffectClassNone
 	failurePolicy := admissionv1.Ignore
+	namespaceSelector := &metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      "kubernetes.io/metadata.name",
+				Operator: metav1.LabelSelectorOpNotIn,
+				Values:   []string{"kube-system", "kube-node-lease"},
+			},
+		},
+	}
 	mutateWebhook := &admissionv1.MutatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "admissionregistration.k8s.io/v1",
@@ -562,6 +582,7 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 				SideEffects:             &sideEffect,
 				AdmissionReviewVersions: []string{"v1beta1"},
 				FailurePolicy:           &failurePolicy,
+				NamespaceSelector:       namespaceSelector,
 			},
 		},
 	}
