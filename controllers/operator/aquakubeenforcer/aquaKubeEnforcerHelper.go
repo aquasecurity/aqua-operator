@@ -220,6 +220,17 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"get", "list",
 			},
 		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"pods/log",
+			},
+			Verbs: []string{
+				"get",
+			},
+		},
 	}
 
 	crole := rbac2.CreateClusterRole(name, namespace, kubeEnforcerLabel, fmt.Sprintf("%s-rbac", "aqua-ke"), "Deploy Aqua Discovery Cluster Role", rules)
