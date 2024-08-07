@@ -493,7 +493,7 @@ func (r *AquaKubeEnforcerReconciler) addKEDeployment(cr *operatorv1alpha1.AquaKu
 			_ = r.Client.Status().Update(context.Background(), cr)
 		} else {
 			currentState := cr.Status.State
-			if !k8s.IsDeploymentReady(found, 1) {
+			if !k8s.IsDeploymentReady(found, int(cr.Spec.KubeEnforcerService.Replicas)) {
 				if !reflect.DeepEqual(operatorv1alpha1.AquaEnforcerUpdateInProgress, currentState) &&
 					!reflect.DeepEqual(operatorv1alpha1.AquaDeploymentStatePending, currentState) {
 					cr.Status.State = operatorv1alpha1.AquaEnforcerUpdateInProgress
