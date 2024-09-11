@@ -26,6 +26,11 @@ import (
 	"encoding/pem"
 	syserrors "errors"
 	"fmt"
+	"math/big"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/controllers/common"
 	"github.com/aquasecurity/aqua-operator/pkg/consts"
@@ -41,13 +46,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"math/big"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -768,14 +769,22 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create ValidatingWebhookConfiguration")
 	reqLogger.Info("Start creating ValidatingWebhookConfiguration")
 
-	// Define a new ClusterRoleBinding object
+	// Access the timeout value from cr.Spec
+	timeout := cr.Spec.ValidatingWebhookTimeout
+	if timeout == 0 {
+		timeout = 5 // Set default value to 5 seconds if not provided
+	}
+
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
-	validWebhook := enforcerHelper.CreateValidatingWebhook(cr.Name,
+	validWebhook := enforcerHelper.CreateValidatingWebhook(
+		cr.Name,
 		cr.Namespace,
 		consts.AquaKubeEnforcerValidatingWebhookConfigurationName,
 		"ke-validatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
-		r.Certs.CACert)
+		r.Certs.CACert,
+		timeout,
+	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, validWebhook, r.Scheme); err != nil {
@@ -791,7 +800,6 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
 		}
-
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -806,30 +814,38 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create MutatingWebhookConfiguration")
 	reqLogger.Info("Start creating MutatingWebhookConfiguration")
 
-	// Define a new ClusterRoleBinding object
+	// Access the timeout value from cr.Spec
+	timeout := cr.Spec.MutatingWebhookTimeout
+	if timeout == 0 {
+		timeout = 5
+	}
+
+	// Define a new MutatingWebhookConfiguration object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
-	mutateWebhook := enforcerHelper.CreateMutatingWebhook(cr.Name,
+	mutateWebhook := enforcerHelper.CreateMutatingWebhook(
+		cr.Name,
 		cr.Namespace,
 		consts.AquaKubeEnforcerMutantingWebhookConfigurationName,
 		"ke-mutatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
-		r.Certs.CACert)
+		r.Certs.CACert,
+		timeout, // Pass the timeout here
+	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(cr, mutateWebhook, r.Scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Check if this ClusterRoleBinding already exists
+	// Check if this MutatingWebhookConfiguration already exists
 	found := &admissionv1.MutatingWebhookConfiguration{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: mutateWebhook.Name, Namespace: mutateWebhook.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua KubeEnforcer: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "ClusterRoleBinding.Name", mutateWebhook.Name)
+		reqLogger.Info("Aqua KubeEnforcer: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name)
 		err = r.Client.Create(context.TODO(), mutateWebhook)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
 		}
-
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err

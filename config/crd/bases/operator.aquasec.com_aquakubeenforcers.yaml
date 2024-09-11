@@ -57,6 +57,14 @@ spec:
                 type: object
               config_map_checksum:
                 type: string
+              validatingWebhookTimeout:
+                description: Timeout for the validating webhook in seconds
+                type: integer
+                default: 5
+              mutatingWebhookTimeout:
+                description: Timeout for the mutating webhook in seconds
+                type: integer
+                default: 5
               deploy:
                 description: AquaService Struct for deployment spec
                 properties:

@@ -2,11 +2,12 @@ package aquakubeenforcer
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1"
 	operatorv1alpha1 "github.com/aquasecurity/aqua-operator/apis/operator/v1alpha1"
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	rbac2 "github.com/aquasecurity/aqua-operator/pkg/utils/k8s/rbac"
-	"os"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -305,7 +306,7 @@ func (enf *AquaKubeEnforcerHelper) CreateRoleBinding(cr, namespace, name, app, s
 	return rb
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, app, keService string, caBundle []byte) *admissionv1.ValidatingWebhookConfiguration {
+func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, app, keService string, caBundle []byte, validatingWebhookTimeout int) *admissionv1.ValidatingWebhookConfiguration {
 	labels := map[string]string{
 		"app":                app,
 		"deployedby":         "aqua-operator",
@@ -373,7 +374,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 						Port:      &servicePort,
 					},
 				},
-				TimeoutSeconds:          extra.Int32Ptr(WebhookTimeout),
+				TimeoutSeconds:          extra.Int32Ptr(int32(validatingWebhookTimeout)),
 				SideEffects:             &sideEffect,
 				AdmissionReviewVersions: []string{"v1beta1"},
 				FailurePolicy:           &failurePolicy,
@@ -384,7 +385,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 	return validWebhook
 }
 
-func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, app, keService string, caBundle []byte) *admissionv1.MutatingWebhookConfiguration {
+func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, app, keService string, caBundle []byte, mutatingWebhookTimeout int) *admissionv1.MutatingWebhookConfiguration {
 	labels := map[string]string{
 		"app":                app,
 		"deployedby":         "aqua-operator",
@@ -440,7 +441,7 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 						Port:      &servicePort,
 					},
 				},
-				TimeoutSeconds:          extra.Int32Ptr(WebhookTimeout),
+				TimeoutSeconds:          extra.Int32Ptr(int32(mutatingWebhookTimeout)),
 				SideEffects:             &sideEffect,
 				AdmissionReviewVersions: []string{"v1beta1"},
 				FailurePolicy:           &failurePolicy,
