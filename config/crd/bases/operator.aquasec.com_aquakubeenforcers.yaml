@@ -1250,7 +1250,6 @@ spec:
                       deployment.
                     format: int64
                     type: integer
-                    default: 1
                   resources:
                     description: ResourceRequirements describes the compute resource
                       requirements.
