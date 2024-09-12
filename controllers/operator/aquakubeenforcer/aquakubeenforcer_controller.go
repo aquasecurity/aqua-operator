@@ -769,6 +769,9 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create ValidatingWebhookConfiguration")
 	reqLogger.Info("Start creating ValidatingWebhookConfiguration")
 
+	// Log the validatingWebhookTimeout value from the CRD before passing it to the helper function
+	reqLogger.Info("ValidatingWebhookTimeout from CRD", "validatingWebhookTimeout", cr.Spec.ValidatingWebhookTimeout)
+
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	validWebhook := enforcerHelper.CreateValidatingWebhook(
 		cr.Name,
@@ -808,6 +811,9 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create MutatingWebhookConfiguration")
 	reqLogger.Info("Start creating MutatingWebhookConfiguration")
 
+	// Log the MutatingWebhookTimeout value from the CRD before passing it to the helper function
+	reqLogger.Info("MutatingWebhookTimeout from CRD", "mutatingWebhookTimeout", cr.Spec.MutatingWebhookTimeout)
+
 	// Define a new MutatingWebhookConfiguration object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	mutateWebhook := enforcerHelper.CreateMutatingWebhook(
@@ -829,7 +835,7 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 	found := &admissionv1.MutatingWebhookConfiguration{}
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: mutateWebhook.Name, Namespace: mutateWebhook.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Aqua KubeEnforcer: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name)
+		reqLogger.Info("Aqua KubeEnforcer: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name, "MutatingWebhook.Timeout")
 		err = r.Client.Create(context.TODO(), mutateWebhook)
 		if err != nil {
 			return reconcile.Result{Requeue: true}, nil
