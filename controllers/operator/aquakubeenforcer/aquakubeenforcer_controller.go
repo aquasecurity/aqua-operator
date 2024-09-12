@@ -769,12 +769,6 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create ValidatingWebhookConfiguration")
 	reqLogger.Info("Start creating ValidatingWebhookConfiguration")
 
-	// Access the timeout value from cr.Spec
-	timeout := cr.Spec.ValidatingWebhookTimeout
-	if timeout == 0 {
-		timeout = 5 // Set default value to 5 seconds if not provided
-	}
-
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	validWebhook := enforcerHelper.CreateValidatingWebhook(
 		cr.Name,
@@ -783,7 +777,7 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 		"ke-validatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
 		r.Certs.CACert,
-		timeout,
+		cr.Spec.MutatingWebhookTimeout,
 	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
@@ -814,12 +808,6 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create MutatingWebhookConfiguration")
 	reqLogger.Info("Start creating MutatingWebhookConfiguration")
 
-	// Access the timeout value from cr.Spec
-	timeout := cr.Spec.MutatingWebhookTimeout
-	if timeout == 0 {
-		timeout = 5
-	}
-
 	// Define a new MutatingWebhookConfiguration object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	mutateWebhook := enforcerHelper.CreateMutatingWebhook(
@@ -829,7 +817,7 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 		"ke-mutatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
 		r.Certs.CACert,
-		timeout, // Pass the timeout here
+		cr.Spec.MutatingWebhookTimeout,
 	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
