@@ -693,6 +693,10 @@ spec:
       tag: <<KUBE_ENFORCER_TAG>>
       repository: kube-enforcer
       pullPolicy: Always
+    replicas: <<DESIRED_REPLICA_NUMBER>>
+
+  mutatingWebhookTimeout: <<TIMEOUT_INTEGER_IN_SECONDS>>
+  validatingWebhookTimeout: <<TIMEOUT_INTEGER_IN_SECONDS>>
   token: <<KUBE_ENFORCER_GROUP_TOKEN>>            # Optional: The KubeEnforcer group token (if not provided manual approval will be required)
   starboard:
     infra:
