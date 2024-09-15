@@ -26,7 +26,7 @@ The Operator is designed for OpenShift clusters.
 
 ## Documentation
 
-The following documentation is available:
+The following documentation is available, please refer to it before using the Aqua-Opeartor:
 
 - [OpenShift installation and examples](docs/DeployOpenShiftOperator.md)
 - [Aqua Enterprise documentation portal](https://docs.aquasec.com/)

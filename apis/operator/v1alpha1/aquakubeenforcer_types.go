@@ -25,10 +25,9 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // AquaKubeEnforcerSpec defines the desired state of AquaKubeEnforcer
+// AquaKubeEnforcerSpec defines the desired state of AquaKubeEnforcer
 type AquaKubeEnforcerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
+	// Other fields
 	Infrastructure         *AquaInfrastructure    `json:"infra,omitempty"`
 	Config                 AquaKubeEnforcerConfig `json:"config"`
 	Token                  string                 `json:"token,omitempty"`
@@ -41,6 +40,10 @@ type AquaKubeEnforcerSpec struct {
 	Mtls                   bool                   `json:"mtls,omitempty"`
 	DeployStarboard        *AquaStarboardDetails  `json:"starboard,omitempty"`
 	ConfigMapChecksum      string                 `json:"config_map_checksum,omitempty"`
+
+	// Add the new fields here
+	ValidatingWebhookTimeout int `json:"validatingWebhookTimeout,omitempty"`
+	MutatingWebhookTimeout   int `json:"mutatingWebhookTimeout,omitempty"`
 }
 
 // AquaKubeEnforcerStatus defines the observed state of AquaKubeEnforcer
