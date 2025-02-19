@@ -519,6 +519,9 @@ func (ebf *AquaStarboardHelper) getStarboardEnvVars(cr *aquasecurityv1alpha1.Aqu
 			Name:  "OPERATOR_TARGET_NAMESPACES",
 			Value: "",
 		},
+			Name:  "OPERATOR_EXCLUDE_NAMESPACES",
+			Value: consts.OperatorExcludeNamespaces,
+		},
 		{
 			Name:  "OPERATOR_METRICS_BIND_ADDRESS",
 			Value: consts.OperatorMetricsBindAddress,

@@ -142,6 +142,8 @@ const (
 
 	OperatorMetricsBindAddress = ":8080"
 
+	OperatorExcludeNamespaces = "kube-system"
+
 	OperatorHealthProbeBindAddress = ":9090"
 
 	OperatorCisKubernetesBenchmarkEnabled = "false"
