@@ -247,8 +247,34 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.DeployStarboard != nil {
+	if instance.Spec.DeployTrivy != nil {
+		r.installAquaTrivy(instance)
+	} else if instance.Spec.DeployStarboard != nil {
 		r.installAquaStarboard(instance)
+	} else {
+		// default to Trivy if no scanner specified
+		defaultService := &operatorv1alpha1.AquaService{
+			Replicas: 1,
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry:   "docker.io/aquasec",
+				Repository: "trivy-operator",
+				PullPolicy: "IfNotPresent",
+				Tag:        consts.TrivyVersion,
+			},
+		}
+		instance.Spec.DeployTrivy = &operatorv1alpha1.AquaTrivyDetails{
+			AllowAnyVersion: true,
+			Infrastructure: &operatorv1alpha1.AquaInfrastructure{
+				Version:        consts.TrivyVersion,
+				ServiceAccount: consts.TrivyServiceAccount,
+			},
+			Config: operatorv1alpha1.AquaStarboardConfig{
+				ImagePullSecret: "trivy-registry",
+			},
+			TrivyService: defaultService,
+			ImageData:    defaultService.ImageData,
+		}
+		r.installAquaTrivy(instance)
 	}
 
 	return ctrl.Result{}, nil
@@ -1137,6 +1163,60 @@ func (r *AquaKubeEnforcerReconciler) installAquaStarboard(cr *operatorv1alpha1.A
 
 	// AquaStarboard already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Starboard Exists", "AquaStarboard.Namespace", found.Namespace, "AquaStarboard.Name", found.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+}
+
+// Trivy functions
+func (r *AquaKubeEnforcerReconciler) installAquaTrivy(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("KubeEnforcer AquaTrivy Phase", "Install Aqua Trivy")
+	reqLogger.Info("Start installing AquaTrivy")
+
+	aquaTrivyHelper := newAquaKubeEnforcerHelper(cr)
+	aquatrivy := aquaTrivyHelper.newTrivy(cr)
+
+	if err := controllerutil.SetControllerReference(cr, aquatrivy, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	found := &v1alpha1.AquaTrivy{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: aquatrivy.Name, Namespace: aquatrivy.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua AquaTrivy", "AquaTrivy.Namespace", aquatrivy.Namespace, "AquaTrivy.Name", aquatrivy.Name)
+		err = r.Client.Create(context.TODO(), aquatrivy)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	} else if err != nil {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+	}
+
+	if found != nil {
+		size := aquatrivy.Spec.TrivyService.Replicas
+		if found.Spec.TrivyService.Replicas != size {
+			found.Spec.TrivyService.Replicas = size
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update aqua trivy replicas.", "AquaTrivy.Namespace", found.Namespace, "AquaTrivy.Name", found.Name)
+				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+			}
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+		}
+
+		update := !reflect.DeepEqual(aquatrivy.Spec, found.Spec)
+		reqLogger.Info("Checking for AquaTrivy Upgrade", "aquatrivy", aquatrivy.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(aquatrivy.Spec.DeepCopy())
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update AquaTrivy.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
+	reqLogger.Info("Skip reconcile: Aqua Trivy Exists", "AquaTrivy.Namespace", found.Namespace, "AquaTrivy.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
 

@@ -9,8 +9,14 @@ const (
 	// Registry URL
 	Registry = "registry.aquasec.com"
 
+	// TrivyServiceAccount Service Account
+	TrivyServiceAccount = "trivy-operator"
+
 	// StarboardRegistry URL
 	StarboardRegistry = "docker.io/aquasec"
+
+	// TrivyRegistry URL
+	TrivyRegistry = "docker.io/aquasec"
 
 	// PullPolicy Image Pull Policy
 	PullPolicy = "IfNotPresent"
@@ -86,6 +92,9 @@ const (
 
 	// StarboardVersion Latest starboard version
 	StarboardVersion = "0.15.10"
+
+	// TrivyVersion Latest trivy-operator version default
+	TrivyVersion = "0.28.0"
 
 	// CyberCenterAddress Aqua Cybercenter Address
 	CyberCenterAddress = "https://cybercenter5.aquasec.com"

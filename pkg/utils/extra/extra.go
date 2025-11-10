@@ -52,6 +52,9 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 	repository := repo
 	tag := version
 	registry := consts.Registry
+	if repo == "trivy-operator" {
+		registry = consts.TrivyRegistry
+	}
 
 	if repo == "starboard-operator" {
 		registry = consts.StarboardRegistry
@@ -60,6 +63,9 @@ func GetImageData(repo string, version string, imageData *operatorv1alpha1.AquaI
 		if repo == "starboard-operator" {
 			log.Info(fmt.Sprintf("Setting latest tag version %s", consts.StarboardVersion))
 			tag = consts.StarboardVersion
+		} else if repo == "trivy-operator" {
+			log.Info(fmt.Sprintf("Setting latest tag version %s", consts.TrivyVersion))
+			tag = consts.TrivyVersion
 		} else {
 			log.Info(fmt.Sprintf("Setting latest tag version %s", consts.LatestVersion))
 			tag = consts.LatestVersion

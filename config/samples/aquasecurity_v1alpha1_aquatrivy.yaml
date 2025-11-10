@@ -1,0 +1,19 @@
+apiVersion: aquasecurity.github.io/v1alpha1
+kind: AquaTrivy
+metadata:
+  name: aqua
+  namespace: aqua
+spec:
+  infra:
+    serviceAccount: trivy-operator
+    version: "0.28.0"
+  config:
+    imagePullSecret: trivy-registry
+  image:
+    registry: docker.io/aquasec
+    repository: trivy-operator
+    tag: "0.28.0"
+    pullPolicy: IfNotPresent
+  deploy:
+    replicas: 1
+

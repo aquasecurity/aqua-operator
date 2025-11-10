@@ -893,3 +893,51 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 	}
 	return aquasb
 }
+
+// Trivy functions
+
+func (ebf *AquaKubeEnforcerHelper) newTrivy(cr *operatorv1alpha1.AquaKubeEnforcer) *v1alpha1.AquaTrivy {
+	_, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
+
+	labels := map[string]string{
+		"app":                cr.Name + "-kube-enforcer",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua Trivy",
+	}
+
+	aquatrivy := &v1alpha1.AquaTrivy{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "aquasecurity.github.io/v1alpha1",
+			Kind:       "AquaTrivy",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: v1alpha1.AquaTrivySpec{
+			Infrastructure:                cr.Spec.DeployTrivy.Infrastructure,
+			AllowAnyVersion:               cr.Spec.DeployTrivy.AllowAnyVersion,
+			TrivyService:                  cr.Spec.DeployTrivy.TrivyService,
+			Config:                        cr.Spec.DeployTrivy.Config,
+			RegistryData:                  cr.Spec.DeployTrivy.RegistryData,
+			ImageData:                     cr.Spec.DeployTrivy.ImageData,
+			Envs:                          cr.Spec.DeployTrivy.Envs,
+			KubeEnforcerVersion:           fmt.Sprintf("%s/%s:%s", registry, repository, tag),
+			LogDevMode:                    cr.Spec.DeployTrivy.LogDevMode,
+			ConcurrentScanJobsLimit:       cr.Spec.DeployTrivy.ConcurrentScanJobsLimit,
+			ScanJobRetryAfter:             cr.Spec.DeployTrivy.ScanJobRetryAfter,
+			MetricsBindAddress:            cr.Spec.DeployTrivy.MetricsBindAddress,
+			HealthProbeBindAddress:        cr.Spec.DeployTrivy.HealthProbeBindAddress,
+			CisKubernetesBenchmarkEnabled: cr.Spec.DeployTrivy.CisKubernetesBenchmarkEnabled,
+			VulnerabilityScannerEnabled:   cr.Spec.DeployTrivy.VulnerabilityScannerEnabled,
+			BatchDeleteLimit:              cr.Spec.DeployTrivy.BatchDeleteLimit,
+			BatchDeleteDelay:              cr.Spec.DeployTrivy.BatchDeleteLimit,
+		},
+	}
+	return aquatrivy
+}
