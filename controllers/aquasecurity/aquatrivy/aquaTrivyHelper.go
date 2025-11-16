@@ -42,21 +42,37 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"",
 			},
 			Resources: []string{
-				"pods", "pods/log", "replicationcontrollers", "services",
-			},
-			Verbs: []string{
-				"get", "list", "watch",
-			},
-		},
-		{
-			APIGroups: []string{
-				"",
-			},
-			Resources: []string{
+				"configmaps",
+				"limitranges",
 				"nodes",
+				"pods",
+				"replicationcontrollers",
+				"resourcequotas",
+				"services",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods/log"},
+			Verbs:     []string{"get", "list"},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"secrets",
+			},
+			Verbs: []string{
+				"create", "get", "update",
 			},
 		},
 		{
@@ -64,11 +80,16 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"",
 			},
 			Resources: []string{
-				"configmaps", "secrets", "serviceaccounts", "resourcequotas", "limitranges",
+				"serviceaccounts",
 			},
 			Verbs: []string{
-				"get", "list", "watch", "create", "update",
+				"get",
 			},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"nodes/proxy"},
+			Verbs:     []string{"get"},
 		},
 		{
 			APIGroups: []string{
@@ -86,7 +107,18 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"apps",
 			},
 			Resources: []string{
-				"replicasets", "statefulsets", "daemonsets", "deployments",
+				"daemonsets", "deployments", "replicasets", "statefulsets",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"apps.openshift.io",
+			},
+			Resources: []string{
+				"deploymentconfigs",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -97,7 +129,7 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"batch",
 			},
 			Resources: []string{
-				"jobs", "cronjobs",
+				"cronjobs",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -108,7 +140,7 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"rbac.authorization.k8s.io",
 			},
 			Resources: []string{
-				"roles", "rolebindings", "clusterroles", "clusterrolebindings",
+				"clusterrolebindings", "clusterroles", "rolebindings", "roles",
 			},
 			Verbs: []string{
 				"get", "list", "watch",
@@ -133,7 +165,18 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"jobs",
 			},
 			Verbs: []string{
-				"create", "delete",
+				"create", "delete", "get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"networking.k8s.io",
+			},
+			Resources: []string{
+				"ingresses", "networkpolicies",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
 			},
 		},
 		{
@@ -141,10 +184,33 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"aquasecurity.github.io",
 			},
 			Resources: []string{
-				"vulnerabilityreports", "configauditreports", "clusterconfigauditreports", "ciskubebenchreports",
+				"clustercompliancedetailreports",
+				"clustercompliancereports",
+				"clusterconfigauditreports",
+				"clusterinfraassessmentreports",
+				"clusterrbacassessmentreports",
+				"clustersbomreports",
+				"clustervulnerabilityreports",
+				"configauditreports",
+				"exposedsecretreports",
+				"infraassessmentreports",
+				"rbacassessmentreports",
+				"sbomreports",
+				"vulnerabilityreports",
 			},
 			Verbs: []string{
-				"get", "list", "watch", "create", "update", "delete",
+				"create", "delete", "get", "list", "patch", "update", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"aquasecurity.github.io",
+			},
+			Resources: []string{
+				"clustercompliancereports/status",
+			},
+			Verbs: []string{
+				"get", "patch", "update",
 			},
 		},
 		{
@@ -156,17 +222,6 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 			},
 			Verbs: []string{
 				"create", "get", "update",
-			},
-		},
-		{
-			APIGroups: []string{
-				"networking.k8s.io",
-			},
-			Resources: []string{
-				"networkpolicies", "ingresses",
-			},
-			Verbs: []string{
-				"get", "list", "watch",
 			},
 		},
 	}
@@ -267,6 +322,336 @@ func (enf *AquaTrivyHelper) CreateTrivyConfigMap(cr, namespace, name, app string
 	return configMap
 }
 
+func (enf *AquaTrivyHelper) CreateTrivyOperatorConfigMap(namespace string) *corev1.ConfigMap {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Data: map[string]string{
+			"nodeCollector.volumes":                        "[{\"hostPath\":{\"path\":\"/var/lib/etcd\"},\"name\":\"var-lib-etcd\"},{\"hostPath\":{\"path\":\"/var/lib/kubelet\"},\"name\":\"var-lib-kubelet\"},{\"hostPath\":{\"path\":\"/var/lib/kube-scheduler\"},\"name\":\"var-lib-kube-scheduler\"},{\"hostPath\":{\"path\":\"/var/lib/kube-controller-manager\"},\"name\":\"var-lib-kube-controller-manager\"},{\"hostPath\":{\"path\":\"/etc/systemd\"},\"name\":\"etc-systemd\"},{\"hostPath\":{\"path\":\"/lib/systemd\"},\"name\":\"lib-systemd\"},{\"hostPath\":{\"path\":\"/etc/kubernetes\"},\"name\":\"etc-kubernetes\"},{\"hostPath\":{\"path\":\"/etc/cni/net.d/\"},\"name\":\"etc-cni-netd\"}]",
+			"nodeCollector.volumeMounts":                   "[{\"mountPath\":\"/var/lib/etcd\",\"name\":\"var-lib-etcd\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kubelet\",\"name\":\"var-lib-kubelet\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kube-scheduler\",\"name\":\"var-lib-kube-scheduler\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kube-controller-manager\",\"name\":\"var-lib-kube-controller-manager\",\"readOnly\":true},{\"mountPath\":\"/etc/systemd\",\"name\":\"etc-systemd\",\"readOnly\":true},{\"mountPath\":\"/lib/systemd/\",\"name\":\"lib-systemd\",\"readOnly\":true},{\"mountPath\":\"/etc/kubernetes\",\"name\":\"etc-kubernetes\",\"readOnly\":true},{\"mountPath\":\"/etc/cni/net.d/\",\"name\":\"etc-cni-netd\",\"readOnly\":true}]",
+			"scanJob.useGCRServiceAccount":                 "true",
+			"scanJob.podTemplateContainerSecurityContext": "{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"privileged\":false,\"readOnlyRootFilesystem\":true}",
+			"scanJob.compressLogs":                         "true",
+			"vulnerabilityReports.scanner":                 "Trivy",
+			"vulnerabilityReports.scanJobsInSameNamespace": "false",
+			"configAuditReports.scanner":                   "Trivy",
+			"compliance.failEntriesLimit":                  "10",
+			"report.recordFailedChecksOnly":                "true",
+			"node.collector.imageRef":                      "ghcr.io/aquasecurity/node-collector:0.3.1",
+			"policies.bundle.oci.ref":                      "mirror.gcr.io/aquasec/trivy-checks:1",
+			"policies.bundle.insecure":                     "false",
+			"node.collector.nodeSelector":                  "true",
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyOperatorSettingsConfigMap(namespace string) *corev1.ConfigMap {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator-config",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Data: map[string]string{
+			"OPERATOR_LOG_DEV_MODE":                               "false",
+			"OPERATOR_SCAN_JOB_TTL":                               "",
+			"OPERATOR_SCAN_JOB_TIMEOUT":                           "5m",
+			"OPERATOR_CONCURRENT_SCAN_JOBS_LIMIT":                 "10",
+			"OPERATOR_CONCURRENT_NODE_COLLECTOR_LIMIT":            "1",
+			"OPERATOR_SCAN_JOB_RETRY_AFTER":                       "30s",
+			"OPERATOR_BATCH_DELETE_LIMIT":                         "10",
+			"OPERATOR_BATCH_DELETE_DELAY":                         "10s",
+			"OPERATOR_METRICS_BIND_ADDRESS":                       ":8080",
+			"OPERATOR_METRICS_FINDINGS_ENABLED":                   "true",
+			"OPERATOR_METRICS_VULN_ID_ENABLED":                    "false",
+			"OPERATOR_HEALTH_PROBE_BIND_ADDRESS":                  ":9090",
+			"OPERATOR_PPROF_BIND_ADDRESS":                         "",
+			"OPERATOR_VULNERABILITY_SCANNER_ENABLED":              "true",
+			"OPERATOR_SBOM_GENERATION_ENABLED":                    "true",
+			"OPERATOR_CLUSTER_SBOM_CACHE_ENABLED":                 "false",
+			"OPERATOR_VULNERABILITY_SCANNER_SCAN_ONLY_CURRENT_REVISIONS": "true",
+			"OPERATOR_SCANNER_REPORT_TTL":                         "24h",
+			"OPERATOR_CACHE_REPORT_TTL":                           "120h",
+			"CONTROLLER_CACHE_SYNC_TIMEOUT":                       "5m",
+			"OPERATOR_CONFIG_AUDIT_SCANNER_ENABLED":               "true",
+			"OPERATOR_RBAC_ASSESSMENT_SCANNER_ENABLED":            "true",
+			"OPERATOR_INFRA_ASSESSMENT_SCANNER_ENABLED":           "true",
+			"OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS": "true",
+			"OPERATOR_EXPOSED_SECRET_SCANNER_ENABLED":             "true",
+			"OPERATOR_METRICS_EXPOSED_SECRET_INFO_ENABLED":        "false",
+			"OPERATOR_METRICS_CONFIG_AUDIT_INFO_ENABLED":          "false",
+			"OPERATOR_METRICS_RBAC_ASSESSMENT_INFO_ENABLED":       "false",
+			"OPERATOR_METRICS_INFRA_ASSESSMENT_INFO_ENABLED":      "false",
+			"OPERATOR_METRICS_IMAGE_INFO_ENABLED":                 "false",
+			"OPERATOR_METRICS_CLUSTER_COMPLIANCE_INFO_ENABLED":    "false",
+			"OPERATOR_WEBHOOK_BROADCAST_URL":                      "",
+			"OPERATOR_WEBHOOK_BROADCAST_TIMEOUT":                  "30s",
+			"OPERATOR_WEBHOOK_BROADCAST_CUSTOM_HEADERS":           "",
+			"OPERATOR_SEND_DELETED_REPORTS":                       "false",
+			"OPERATOR_PRIVATE_REGISTRY_SCAN_SECRETS_NAMES":        "{}",
+			"OPERATOR_ACCESS_GLOBAL_SECRETS_SERVICE_ACCOUNTS":     "true",
+			"OPERATOR_BUILT_IN_TRIVY_SERVER":                      "false",
+			"TRIVY_SERVER_HEALTH_CHECK_CACHE_EXPIRATION":          "10h",
+			"OPERATOR_MERGE_RBAC_FINDING_WITH_CONFIG_AUDIT":       "false",
+			"OPERATOR_CLUSTER_COMPLIANCE_ENABLED":                 "true",
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyConfigConfigMap(namespace string) *corev1.ConfigMap {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator-trivy-config",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Data: map[string]string{
+			"trivy.repository":                    "mirror.gcr.io/aquasec/trivy",
+			"trivy.tag":                           "0.67.0",
+			"trivy.imagePullPolicy":               "IfNotPresent",
+			"trivy.additionalVulnerabilityReportFields": "",
+			"trivy.severity":                      "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
+			"trivy.slow":                          "true",
+			"trivy.skipJavaDBUpdate":              "false",
+			"trivy.includeDevDeps":                "false",
+			"trivy.imageScanCacheDir":             "/tmp/trivy/.cache",
+			"trivy.filesystemScanCacheDir":        "/var/trivyoperator/trivy-db",
+			"trivy.dbRepository":                  "mirror.gcr.io/aquasec/trivy-db",
+			"trivy.javaDbRepository":              "mirror.gcr.io/aquasec/trivy-java-db",
+			"trivy.command":                       "image",
+			"trivy.sbomSources":                   "",
+			"trivy.dbRepositoryInsecure":          "false",
+			"trivy.useBuiltinRegoPolicies":        "false",
+			"trivy.useEmbeddedRegoPolicies":       "true",
+			"trivy.supportedConfigAuditKinds":     "Workload,Service,Role,ClusterRole,NetworkPolicy,Ingress,LimitRange,ResourceQuota",
+			"trivy.timeout":                       "5m0s",
+			"trivy.mode":                          "Standalone",
+			"trivy.resources.requests.cpu":        "100m",
+			"trivy.resources.requests.memory":     "100M",
+			"trivy.resources.limits.cpu":          "500m",
+			"trivy.resources.limits.memory":       "500M",
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivySecret(namespace, name string) *corev1.Secret {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyService(namespace string) *corev1.Service {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+	}
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator",
+			Namespace: namespace,
+			Labels:    map[string]string{
+				"app.kubernetes.io/name":     "trivy-operator",
+				"app.kubernetes.io/instance": "trivy-operator",
+				"app.kubernetes.io/version":  "0.29.0",
+				"app.kubernetes.io/managed-by": "trivy-operator",
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: "None",
+			Selector:  labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "metrics",
+					Port:       80,
+					TargetPort: intstr.FromString("metrics"),
+					Protocol:   corev1.ProtocolTCP,
+					AppProtocol: func() *string { s := "TCP"; return &s }(),
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyRole(namespace string) *rbacv1.Role {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "Role",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator",
+			Namespace: enf.Parameters.Trivy.Namespace,
+			Labels:    labels,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"create", "get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"create", "get", "delete", "update"},
+			},
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyRoleBinding(namespace string) *rbacv1.RoleBinding {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "trivy-operator",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      enf.Parameters.Trivy.Spec.Infrastructure.ServiceAccount,
+				Namespace: namespace,
+			},
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyLeaderElectionRole(namespace string) *rbacv1.Role {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "Role",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator-leader-election",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"coordination.k8s.io"},
+				Resources: []string{"leases"},
+				Verbs:     []string{"create", "get", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"events"},
+				Verbs:     []string{"create"},
+			},
+		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyLeaderElectionRoleBinding(namespace string) *rbacv1.RoleBinding {
+	labels := map[string]string{
+		"app.kubernetes.io/name":     "trivy-operator",
+		"app.kubernetes.io/instance": "trivy-operator",
+		"app.kubernetes.io/version":  "0.29.0",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator-leader-election",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "trivy-operator-leader-election",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      enf.Parameters.Trivy.Spec.Infrastructure.ServiceAccount,
+				Namespace: namespace,
+			},
+		},
+	}
+}
 func (enf *AquaTrivyHelper) CreateTrivyDeployment(cr *aquasecurityv1alpha1.AquaTrivy, name, app, registry, tag, pullPolicy, repository string) *appsv1.Deployment {
 	image := os.Getenv("RELATED_IMAGE_TRIVY")
 	if image == "" {

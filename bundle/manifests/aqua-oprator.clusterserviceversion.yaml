@@ -2,7 +2,7 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: aqua-operator.v2022.4.19
+  name: aqua-operator.v2022.4.20
   namespace: placeholder
   annotations:
     capabilities: Seamless Upgrades
@@ -159,7 +159,8 @@ metadata:
             "token": "<<KUBE_ENFORCER_GROUP_TOKEN>>",
             "trivy": {
               "infra": {
-                "serviceAccount": "trivy-operator"
+                "serviceAccount": "trivy-operator",
+                "version": "0.28.0"
               },
               "config": {
                 "imagePullSecret": "trivy-registry"
@@ -407,7 +408,7 @@ metadata:
     operators.operatorframework.io/internal-objects: '["aquatrivies.aquasecurity.github.io", "aquastarboards.aquasecurity.github.io","configauditreports.aquasecurity.github.io", "clusterconfigauditreports.aquasecurity.github.io"]'
 spec:
   displayName: Aqua Security Operator
-  version: 2022.4.19
+  version: 2022.4.20
   
   skips:
     - aqua-operator.v2022.4.14

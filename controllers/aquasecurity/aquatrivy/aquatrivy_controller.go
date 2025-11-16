@@ -96,6 +96,20 @@ func (r *AquaTrivyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
+	// Ensure namespaced RBAC for operator and leader election
+	if _, err = r.addTrivyNamespacedRole(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	if _, err = r.addTrivyNamespacedRoleBinding(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	if _, err = r.addTrivyLeaderElectionRole(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	if _, err = r.addTrivyLeaderElectionRoleBinding(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	instance.Spec.TrivyService = r.updateTrivyServerObject(instance.Spec.TrivyService, instance.Spec.ImageData)
 
 	_, err = r.addTrivyClusterRoleBinding(instance)
@@ -103,8 +117,26 @@ func (r *AquaTrivyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
+	// ConfigMaps and Secrets as defined by Trivy charts
+	if _, err = r.addTrivyOperatorConfigMap(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	if _, err = r.addTrivyOperatorSettingsConfigMap(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	if _, err = r.addTrivyTrivyConfigMap(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+	if _, err = r.addTrivySecrets(instance); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	_, err = r.addTrivyConfigMap(instance)
 	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if _, err = r.addTrivyService(instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -123,9 +155,12 @@ func (r *AquaTrivyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{Reconciler: r}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ServiceAccount{}).
+		Owns(&rbacv1.Role{}).
+		Owns(&rbacv1.RoleBinding{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&rbacv1.ClusterRole{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
+		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
 		For(&aquasecurityv1alpha1.AquaTrivy{}).
 		Complete(r)
@@ -404,4 +439,241 @@ func (r *AquaTrivyReconciler) addTrivyConfigMap(cr *aquasecurityv1alpha1.AquaTri
 
 	reqLogger.Info("Skip reconcile: Aqua Trivy ConfigMap Exists", "ConfigMap.Namespace", foundConfigMap.Namespace, "ConfigMap.Name", foundConfigMap.Name)
 	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyNamespacedRole(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	role := trivyHelper.CreateTrivyRole(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, role, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &rbacv1.Role{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: role.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), role); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Rules, role.Rules) {
+		found.Rules = role.Rules
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyNamespacedRoleBinding(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	rb := trivyHelper.CreateTrivyRoleBinding(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, rb, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &rbacv1.RoleBinding{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: rb.Name, Namespace: rb.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), rb); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Subjects, rb.Subjects) || !equality.Semantic.DeepEqual(found.RoleRef, rb.RoleRef) {
+		found.RoleRef = rb.RoleRef
+		found.Subjects = rb.Subjects
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyLeaderElectionRole(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	role := trivyHelper.CreateTrivyLeaderElectionRole(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, role, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &rbacv1.Role{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: role.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), role); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Rules, role.Rules) {
+		found.Rules = role.Rules
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyLeaderElectionRoleBinding(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	rb := trivyHelper.CreateTrivyLeaderElectionRoleBinding(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, rb, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &rbacv1.RoleBinding{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: rb.Name, Namespace: rb.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), rb); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Subjects, rb.Subjects) || !equality.Semantic.DeepEqual(found.RoleRef, rb.RoleRef) {
+		found.RoleRef = rb.RoleRef
+		found.Subjects = rb.Subjects
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyOperatorConfigMap(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	cm := trivyHelper.CreateTrivyOperatorConfigMap(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, cm, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &corev1.ConfigMap{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), cm); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Data, cm.Data) {
+		found.Data = cm.Data
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyOperatorSettingsConfigMap(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	cm := trivyHelper.CreateTrivyOperatorSettingsConfigMap(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, cm, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &corev1.ConfigMap{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), cm); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Data, cm.Data) {
+		found.Data = cm.Data
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyTrivyConfigMap(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	cm := trivyHelper.CreateTrivyConfigConfigMap(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, cm, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &corev1.ConfigMap{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), cm); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if !equality.Semantic.DeepEqual(found.Data, cm.Data) {
+		found.Data = cm.Data
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivySecrets(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	secretNames := []string{"trivy-operator", "trivy-operator-trivy-config"}
+	for _, name := range secretNames {
+		sec := trivyHelper.CreateTrivySecret(cr.Namespace, name)
+		if err := controllerutil.SetControllerReference(cr, sec, r.Scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+		found := &corev1.Secret{}
+		if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: sec.Name, Namespace: sec.Namespace}, found); err != nil {
+			if errors.IsNotFound(err) {
+				if err := r.Client.Create(context.TODO(), sec); err != nil {
+					return reconcile.Result{}, err
+				}
+				continue
+			}
+			return reconcile.Result{}, err
+		}
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyService(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	svc := trivyHelper.CreateTrivyService(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, svc, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &corev1.Service{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), svc); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	needsUpdate := !equality.Semantic.DeepEqual(found.Labels, svc.Labels) ||
+		!equality.Semantic.DeepEqual(found.Spec.Ports, svc.Spec.Ports) ||
+		!equality.Semantic.DeepEqual(found.Spec.Selector, svc.Spec.Selector)
+	if needsUpdate {
+		found.Labels = svc.Labels
+		found.Spec.Ports = svc.Spec.Ports
+		found.Spec.Selector = svc.Spec.Selector
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
 }
