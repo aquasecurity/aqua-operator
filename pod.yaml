@@ -1,0 +1,582 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  generateName: scan-vulnerabilityreport-57c6f5788b-
+  annotations:
+    k8s.ovn.org/pod-networks: '{"default":{"ip_addresses":["10.129.1.19/23"],"mac_address":"0a:58:0a:81:01:13","gateway_ips":["10.129.0.1"],"routes":[{"dest":"10.128.0.0/14","nextHop":"10.129.0.1"},{"dest":"172.30.0.0/16","nextHop":"10.129.0.1"},{"dest":"169.254.0.5/32","nextHop":"10.129.0.1"},{"dest":"100.64.0.0/16","nextHop":"10.129.0.1"}],"ip_address":"10.129.1.19/23","gateway_ip":"10.129.0.1","role":"primary"}}'
+    k8s.v1.cni.cncf.io/network-status: |-
+      [{
+          "name": "ovn-kubernetes",
+          "interface": "eth0",
+          "ips": [
+              "10.129.1.19"
+          ],
+          "mac": "0a:58:0a:81:01:13",
+          "default": true,
+          "dns": {}
+      }]
+    openshift.io/scc: restricted-v2
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  resourceVersion: '2917539'
+  name: scan-vulnerabilityreport-57c6f5788b-bdkx7
+  uid: 174431a3-6654-4af0-b9d7-b93be3d9625e
+  creationTimestamp: '2025-11-18T07:43:07Z'
+  managedFields:
+    - manager: ip-10-0-0-94
+      operation: Update
+      apiVersion: v1
+      time: '2025-11-18T07:43:07Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:k8s.ovn.org/pod-networks': {}
+      subresource: status
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2025-11-18T07:43:07Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:generateName': {}
+          'f:labels':
+            'f:batch.kubernetes.io/job-name': {}
+            'f:app.kubernetes.io/managed-by': {}
+            'f:batch.kubernetes.io/controller-uid': {}
+            'f:vulnerabilityReport.scanner': {}
+            .: {}
+            'f:job-name': {}
+            'f:trivy-operator.resource.namespace': {}
+            'f:controller-uid': {}
+            'f:trivy-operator.resource.name': {}
+            'f:resource-spec-hash': {}
+            'f:trivy-operator.resource.kind': {}
+          'f:ownerReferences':
+            .: {}
+            'k:{"uid":"55113c37-2d55-474c-8a35-618715093eb0"}': {}
+        'f:spec':
+          'f:volumes':
+            .: {}
+            'k:{"name":"scanresult"}':
+              .: {}
+              'f:emptyDir': {}
+              'f:name': {}
+            'k:{"name":"tmp"}':
+              .: {}
+              'f:emptyDir': {}
+              'f:name': {}
+          'f:containers':
+            'k:{"name":"image-pruner"}':
+              'f:image': {}
+              'f:volumeMounts':
+                .: {}
+                'k:{"mountPath":"/tmp"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/tmp/scan"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+              'f:terminationMessagePolicy': {}
+              .: {}
+              'f:resources':
+                .: {}
+                'f:limits':
+                  .: {}
+                  'f:cpu': {}
+                  'f:memory': {}
+                'f:requests':
+                  .: {}
+                  'f:cpu': {}
+                  'f:memory': {}
+              'f:args': {}
+              'f:command': {}
+              'f:env':
+                'k:{"name":"TRIVY_TIMEOUT"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"TRIVY_IGNORE_UNFIXED"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"TRIVY_JAVA_DB_REPOSITORY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"TRIVY_SKIP_DIRS"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"TRIVY_SKIP_FILES"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"HTTPS_PROXY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                .: {}
+                'k:{"name":"TRIVY_OFFLINE_SCAN"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"TRIVY_SEVERITY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"NO_PROXY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"HTTP_PROXY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+              'f:securityContext':
+                .: {}
+                'f:allowPrivilegeEscalation': {}
+                'f:capabilities':
+                  .: {}
+                  'f:drop': {}
+                'f:privileged': {}
+                'f:readOnlyRootFilesystem': {}
+              'f:terminationMessagePath': {}
+              'f:imagePullPolicy': {}
+              'f:name': {}
+          'f:dnsPolicy': {}
+          'f:automountServiceAccountToken': {}
+          'f:serviceAccount': {}
+          'f:restartPolicy': {}
+          'f:schedulerName': {}
+          'f:terminationGracePeriodSeconds': {}
+          'f:initContainers':
+            .: {}
+            'k:{"name":"3f1987c8-7236-40fa-a27f-8d86d0ba5e17"}':
+              'f:image': {}
+              'f:volumeMounts':
+                .: {}
+                'k:{"mountPath":"/tmp"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+              'f:terminationMessagePolicy': {}
+              .: {}
+              'f:resources':
+                .: {}
+                'f:limits':
+                  .: {}
+                  'f:cpu': {}
+                  'f:memory': {}
+                'f:requests':
+                  .: {}
+                  'f:cpu': {}
+                  'f:memory': {}
+              'f:args': {}
+              'f:command': {}
+              'f:env':
+                .: {}
+                'k:{"name":"GITHUB_TOKEN"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:secretKeyRef': {}
+                'k:{"name":"HTTPS_PROXY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"HTTP_PROXY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+                'k:{"name":"NO_PROXY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:configMapKeyRef': {}
+              'f:securityContext':
+                .: {}
+                'f:allowPrivilegeEscalation': {}
+                'f:capabilities':
+                  .: {}
+                  'f:drop': {}
+                'f:privileged': {}
+                'f:readOnlyRootFilesystem': {}
+              'f:terminationMessagePath': {}
+              'f:imagePullPolicy': {}
+              'f:name': {}
+          'f:serviceAccountName': {}
+          'f:enableServiceLinks': {}
+          'f:securityContext': {}
+          'f:affinity':
+            .: {}
+            'f:nodeAffinity':
+              .: {}
+              'f:requiredDuringSchedulingIgnoredDuringExecution': {}
+    - manager: multus-daemon
+      operation: Update
+      apiVersion: v1
+      time: '2025-11-18T07:43:08Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:k8s.v1.cni.cncf.io/network-status': {}
+      subresource: status
+    - manager: kubelet
+      operation: Update
+      apiVersion: v1
+      time: '2025-11-18T07:44:26Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:status':
+          'f:hostIP': {}
+          'f:phase': {}
+          'f:conditions':
+            'k:{"type":"ContainersReady"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Initialized"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"PodReadyToStartContainers"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Ready"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+          'f:containerStatuses': {}
+          'f:hostIPs': {}
+          'f:podIP': {}
+          'f:startTime': {}
+          'f:podIPs':
+            .: {}
+            'k:{"ip":"10.129.1.19"}':
+              .: {}
+              'f:ip': {}
+          'f:initContainerStatuses': {}
+      subresource: status
+  namespace: aqua
+  ownerReferences:
+    - apiVersion: batch/v1
+      kind: Job
+      name: scan-vulnerabilityreport-57c6f5788b
+      uid: 55113c37-2d55-474c-8a35-618715093eb0
+      controller: true
+      blockOwnerDeletion: true
+  labels:
+    vulnerabilityReport.scanner: Trivy
+    trivy-operator.resource.name: image-pruner
+    resource-spec-hash: 6555d6f9dc
+    trivy-operator.resource.namespace: openshift-image-registry
+    trivy-operator.resource.kind: CronJob
+    batch.kubernetes.io/job-name: scan-vulnerabilityreport-57c6f5788b
+    app.kubernetes.io/managed-by: trivy-operator
+    batch.kubernetes.io/controller-uid: 55113c37-2d55-474c-8a35-618715093eb0
+    job-name: scan-vulnerabilityreport-57c6f5788b
+    controller-uid: 55113c37-2d55-474c-8a35-618715093eb0
+spec:
+  restartPolicy: Never
+  initContainers:
+    - resources:
+        limits:
+          cpu: 500m
+          memory: 500M
+        requests:
+          cpu: 100m
+          memory: 100M
+      terminationMessagePath: /dev/termination-log
+      name: 3f1987c8-7236-40fa-a27f-8d86d0ba5e17
+      command:
+        - trivy
+      env:
+        - name: HTTP_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpProxy
+              optional: true
+        - name: HTTPS_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpsProxy
+              optional: true
+        - name: NO_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.noProxy
+              optional: true
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.githubToken
+              optional: true
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 1000720000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      terminationMessagePolicy: FallbackToLogsOnError
+      image: 'mirror.gcr.io/aquasec/trivy:0.67.0'
+      args:
+        - '--cache-dir'
+        - /tmp/trivy/.cache
+        - image
+        - '--download-db-only'
+        - '--db-repository'
+        - mirror.gcr.io/aquasec/trivy-db
+  serviceAccountName: trivy-operator
+  imagePullSecrets:
+    - name: trivy-operator-dockercfg-4428j
+  priority: 0
+  schedulerName: default-scheduler
+  enableServiceLinks: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                  - linux
+  terminationGracePeriodSeconds: 30
+  preemptionPolicy: PreemptLowerPriority
+  nodeName: ip-10-0-0-94.us-west-1.compute.internal
+  securityContext:
+    seLinuxOptions:
+      level: 's0:c27,c9'
+    fsGroup: 1000720000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - resources:
+        limits:
+          cpu: 500m
+          memory: 500M
+        requests:
+          cpu: 100m
+          memory: 100M
+      terminationMessagePath: /dev/termination-log
+      name: image-pruner
+      command:
+        - /bin/sh
+      env:
+        - name: TRIVY_SEVERITY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.severity
+              optional: true
+        - name: TRIVY_IGNORE_UNFIXED
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.ignoreUnfixed
+              optional: true
+        - name: TRIVY_OFFLINE_SCAN
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.offlineScan
+              optional: true
+        - name: TRIVY_JAVA_DB_REPOSITORY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.javaDbRepository
+              optional: true
+        - name: TRIVY_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.timeout
+              optional: true
+        - name: TRIVY_SKIP_FILES
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.skipFiles
+              optional: true
+        - name: TRIVY_SKIP_DIRS
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.skipDirs
+              optional: true
+        - name: HTTP_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpProxy
+              optional: true
+        - name: HTTPS_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpsProxy
+              optional: true
+        - name: NO_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.noProxy
+              optional: true
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 1000720000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: scanresult
+          mountPath: /tmp/scan
+      terminationMessagePolicy: FallbackToLogsOnError
+      image: 'mirror.gcr.io/aquasec/trivy:0.67.0'
+      args:
+        - '-c'
+        - 'trivy image quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:65d09a0cb625c88a174cba54a016fa32698af579163e222f1392fcf038991485 --cache-dir /tmp/trivy/.cache --format json --image-config-scanners secret --scanners secret --skip-db-update --slow --list-all-pkgs --output /tmp/scan/result_image-pruner.json 2>/tmp/scan/result_image-pruner.json.log && bzip2 -c /tmp/scan/result_image-pruner.json | base64'
+  automountServiceAccountToken: false
+  serviceAccount: trivy-operator
+  volumes:
+    - name: tmp
+      emptyDir: {}
+    - name: scanresult
+      emptyDir: {}
+  dnsPolicy: ClusterFirst
+  tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/memory-pressure
+      operator: Exists
+      effect: NoSchedule
+status:
+  containerStatuses:
+    - restartCount: 0
+      started: false
+      ready: false
+      name: image-pruner
+      state:
+        terminated:
+          exitCode: 1
+          reason: Error
+          startedAt: '2025-11-18T07:44:23Z'
+          finishedAt: '2025-11-18T07:44:24Z'
+          containerID: 'cri-o://49a14f8b94c23277d9055be2a7fc253593dd71dbdf4e17582de54f1a251545f1'
+      imageID: 'mirror.gcr.io/aquasec/trivy@sha256:94711c60051c6cab848a292e3a67f62623fcee361b2bb661f43b17184f4afdac'
+      image: 'mirror.gcr.io/aquasec/trivy:0.67.0'
+      lastState: {}
+      containerID: 'cri-o://49a14f8b94c23277d9055be2a7fc253593dd71dbdf4e17582de54f1a251545f1'
+  qosClass: Burstable
+  hostIPs:
+    - ip: 10.0.0.94
+  podIPs:
+    - ip: 10.129.1.19
+  podIP: 10.129.1.19
+  hostIP: 10.0.0.94
+  startTime: '2025-11-18T07:43:07Z'
+  initContainerStatuses:
+    - restartCount: 0
+      started: false
+      ready: true
+      name: 3f1987c8-7236-40fa-a27f-8d86d0ba5e17
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+          startedAt: '2025-11-18T07:43:09Z'
+          finishedAt: '2025-11-18T07:44:22Z'
+          containerID: 'cri-o://4776956044b5ce8072d5ca116b62be6a4069fd7d93f714293e6c95808d1c15e0'
+      imageID: 'mirror.gcr.io/aquasec/trivy@sha256:94711c60051c6cab848a292e3a67f62623fcee361b2bb661f43b17184f4afdac'
+      image: 'mirror.gcr.io/aquasec/trivy:0.67.0'
+      lastState: {}
+      containerID: 'cri-o://4776956044b5ce8072d5ca116b62be6a4069fd7d93f714293e6c95808d1c15e0'
+  conditions:
+    - type: PodReadyToStartContainers
+      status: 'False'
+      lastProbeTime: null
+      lastTransitionTime: '2025-11-18T07:44:26Z'
+    - type: Initialized
+      status: 'True'
+      lastProbeTime: null
+      lastTransitionTime: '2025-11-18T07:44:23Z'
+    - type: Ready
+      status: 'False'
+      lastProbeTime: null
+      lastTransitionTime: '2025-11-18T07:44:25Z'
+      reason: PodFailed
+    - type: ContainersReady
+      status: 'False'
+      lastProbeTime: null
+      lastTransitionTime: '2025-11-18T07:44:25Z'
+      reason: PodFailed
+    - type: PodScheduled
+      status: 'True'
+      lastProbeTime: null
+      lastTransitionTime: '2025-11-18T07:43:07Z'
+  phase: Failed

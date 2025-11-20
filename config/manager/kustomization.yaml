@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: aquadev.azurecr.io/aqua-operator
-  newTag: 2022.4.18-trivy-1
+  newTag: add-trivy-2022.4.18.5

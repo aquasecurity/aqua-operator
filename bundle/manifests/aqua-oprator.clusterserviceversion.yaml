@@ -2,14 +2,14 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: aqua-operator.v2022.4.20
+  name: aqua-operator.v2022.4.19
   namespace: placeholder
   annotations:
     capabilities: Seamless Upgrades
     categories: Security
     description: The Aqua Security Operator runs within a Openshift cluster and provides a means to deploy and manage Aqua Security cluster and components.
     certified: 'false'
-    containerImage: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18
+    containerImage: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18.5
     createdAt: 2020-03-25T08:00:00Z
     support: Aqua Security, Inc.
     repository: https://github.com/aquasecurity/aqua-operator
@@ -160,7 +160,7 @@ metadata:
             "trivy": {
               "infra": {
                 "serviceAccount": "trivy-operator",
-                "version": "0.28.0"
+                "version": "0.29.0"
               },
               "config": {
                 "imagePullSecret": "trivy-registry"
@@ -405,10 +405,10 @@ metadata:
             }
         }
       ]
-    operators.operatorframework.io/internal-objects: '["aquatrivies.aquasecurity.github.io", "aquastarboards.aquasecurity.github.io","configauditreports.aquasecurity.github.io", "clusterconfigauditreports.aquasecurity.github.io"]'
+    operators.operatorframework.io/internal-objects: '["aquatrivies.aquasecurity.github.io","aquastarboards.aquasecurity.github.io","configauditreports.aquasecurity.github.io","clusterconfigauditreports.aquasecurity.github.io","vulnerabilityreports.aquasecurity.github.io","exposedsecretreports.aquasecurity.github.io","rbacassessmentreports.aquasecurity.github.io","infraassessmentreports.aquasecurity.github.io","sbomreports.aquasecurity.github.io","clustersbomreports.aquasecurity.github.io","clustervulnerabilityreports.aquasecurity.github.io","clusterinfraassessmentreports.aquasecurity.github.io","clustercompliancereports.aquasecurity.github.io","clusterrbacassessmentreports.aquasecurity.github.io"]'
 spec:
   displayName: Aqua Security Operator
-  version: 2022.4.20
+  version: 2022.4.19
   
   skips:
     - aqua-operator.v2022.4.14
@@ -500,6 +500,17 @@ spec:
                 - use
               resourceNames:
                 - aqua-kube-enforcer-scc
+                - privileged
+                - hostaccess
+        - serviceAccountName: trivy-operator
+          rules:
+            - apiGroups:
+                - security.openshift.io
+              resources:
+                - securitycontextconstraints
+              verbs:
+                - use
+              resourceNames:
                 - privileged
                 - hostaccess
         - serviceAccountName: aqua-operator
@@ -619,7 +630,7 @@ spec:
                 serviceAccountName: aqua-operator
                 containers:
                   - name: aqua-operator
-                    image: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18
+                    image: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18.5
                     imagePullPolicy: Always
                     command:
                       - /manager
@@ -736,6 +747,66 @@ spec:
         kind: ConfigAuditReport
         displayName: ConfigAuditReport
         description: For Aqua Starboard.
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: clustercompliancereports.aquasecurity.github.io
+        version: v1alpha1
+        kind: ClusterComplianceReport
+        displayName: ClusterComplianceReport
+        description: Trivy Cluster Compliance Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: clusterinfraassessmentreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: ClusterInfraAssessmentReport
+        displayName: ClusterInfraAssessmentReport
+        description: Trivy Cluster Infra Assessment Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: clusterrbacassessmentreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: ClusterRbacAssessmentReport
+        displayName: ClusterRbacAssessmentReport
+        description: Trivy Cluster RBAC Assessment Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: clustersbomreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: ClusterSbomReport
+        displayName: ClusterSbomReport
+        description: Trivy Cluster SBOM Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: clustervulnerabilityreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: ClusterVulnerabilityReport
+        displayName: ClusterVulnerabilityReport
+        description: Trivy Cluster Vulnerability Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: exposedsecretreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: ExposedSecretReport
+        displayName: ExposedSecretReport
+        description: Trivy Exposed Secret Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: infraassessmentreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: InfraAssessmentReport
+        displayName: InfraAssessmentReport
+        description: Trivy Infra Assessment Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: rbacassessmentreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: RbacAssessmentReport
+        displayName: RbacAssessmentReport
+        description: Trivy RBAC Assessment Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: sbomreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: SbomReport
+        displayName: SbomReport
+        description: Trivy SBOM Report
+        group: aquakubeenforcers.operator.aquasec.com
+      - name: vulnerabilityreports.aquasecurity.github.io
+        version: v1alpha1
+        kind: VulnerabilityReport
+        displayName: VulnerabilityReport
+        description: Trivy Vulnerability Report
         group: aquakubeenforcers.operator.aquasec.com
       - description: Aqua Security Cloud Connector Deployment with Aqua Operator
         displayName: AquaCloudConnector

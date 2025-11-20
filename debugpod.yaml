@@ -1,0 +1,230 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  annotations:
+    k8s.ovn.org/pod-networks: '{"default":{"ip_addresses":["10.129.1.19/23"],"mac_address":"0a:58:0a:81:01:13","gateway_ips":["10.129.0.1"],"routes":[{"dest":"10.128.0.0/14","nextHop":"10.129.0.1"},{"dest":"172.30.0.0/16","nextHop":"10.129.0.1"},{"dest":"169.254.0.5/32","nextHop":"10.129.0.1"},{"dest":"100.64.0.0/16","nextHop":"10.129.0.1"}],"ip_address":"10.129.1.19/23","gateway_ip":"10.129.0.1","role":"primary"}}'
+    k8s.v1.cni.cncf.io/network-status: |-
+      [{
+          "name": "ovn-kubernetes",
+          "interface": "eth0",
+          "ips": [
+              "10.129.1.19"
+          ],
+          "mac": "0a:58:0a:81:01:13",
+          "default": true,
+          "dns": {}
+      }]
+    openshift.io/scc: restricted-v2
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  resourceVersion: '2917539'
+  name: scan-vulnerabilityreport-debug-pod
+  namespace: aqua
+  labels:
+    vulnerabilityReport.scanner: Trivy
+    trivy-operator.resource.name: image-pruner
+    resource-spec-hash: 6555d6f9dc
+    trivy-operator.resource.namespace: openshift-image-registry
+    trivy-operator.resource.kind: CronJob
+    batch.kubernetes.io/job-name: scan-vulnerabilityreport-57c6f5788b
+    app.kubernetes.io/managed-by: trivy-operator
+    batch.kubernetes.io/controller-uid: 55113c37-2d55-474c-8a35-618715093eb0
+    job-name: scan-vulnerabilityreport-57c6f5788b
+    controller-uid: 55113c37-2d55-474c-8a35-618715093eb0
+spec:
+  restartPolicy: Never
+  initContainers:
+    - resources:
+        limits:
+          cpu: 500m
+          memory: 500M
+        requests:
+          cpu: 100m
+          memory: 100M
+      terminationMessagePath: /dev/termination-log
+      name: 3f1987c8-7236-40fa-a27f-8d86d0ba5e17
+      command:
+        - trivy
+      env:
+        - name: HTTP_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpProxy
+              optional: true
+        - name: HTTPS_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpsProxy
+              optional: true
+        - name: NO_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.noProxy
+              optional: true
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.githubToken
+              optional: true
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 1000720000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      terminationMessagePolicy: FallbackToLogsOnError
+      image: 'mirror.gcr.io/aquasec/trivy:0.67.0'
+      args:
+        - '--cache-dir'
+        - /tmp/trivy/.cache
+        - image
+        - '--download-db-only'
+        - '--db-repository'
+        - mirror.gcr.io/aquasec/trivy-db
+  serviceAccountName: trivy-operator
+  imagePullSecrets:
+    - name: trivy-operator-dockercfg-4428j
+  priority: 0
+  schedulerName: default-scheduler
+  enableServiceLinks: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                  - linux
+  terminationGracePeriodSeconds: 30
+  preemptionPolicy: PreemptLowerPriority
+  nodeName: ip-10-0-0-94.us-west-1.compute.internal
+  securityContext:
+    seLinuxOptions:
+      level: 's0:c27,c9'
+    fsGroup: 1000720000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - resources:
+        limits:
+          cpu: 500m
+          memory: 500M
+        requests:
+          cpu: 100m
+          memory: 100M
+      terminationMessagePath: /dev/termination-log
+      name: image-pruner
+      command:
+        - /bin/sh
+      env:
+        - name: TRIVY_SEVERITY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.severity
+              optional: true
+        - name: TRIVY_IGNORE_UNFIXED
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.ignoreUnfixed
+              optional: true
+        - name: TRIVY_OFFLINE_SCAN
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.offlineScan
+              optional: true
+        - name: TRIVY_JAVA_DB_REPOSITORY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.javaDbRepository
+              optional: true
+        - name: TRIVY_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.timeout
+              optional: true
+        - name: TRIVY_SKIP_FILES
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.skipFiles
+              optional: true
+        - name: TRIVY_SKIP_DIRS
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.skipDirs
+              optional: true
+        - name: HTTP_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpProxy
+              optional: true
+        - name: HTTPS_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.httpsProxy
+              optional: true
+        - name: NO_PROXY
+          valueFrom:
+            configMapKeyRef:
+              name: trivy-operator-trivy-config
+              key: trivy.noProxy
+              optional: true
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 1000720000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: scanresult
+          mountPath: /tmp/scan
+      terminationMessagePolicy: FallbackToLogsOnError
+      image: 'mirror.gcr.io/aquasec/trivy:0.67.0'
+      args:
+        - '-c'
+        - 'trivy image quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:65d09a0cb625c88a174cba54a016fa32698af579163e222f1392fcf038991485 --cache-dir /tmp/trivy/.cache --format json --image-config-scanners secret --scanners secret --skip-db-update --slow --list-all-pkgs --output /tmp/scan/result.json 2>/tmp/scan/result.json.log || (echo "---- SCAN STDERR ----"; cat /tmp/scan/result.json.log; sleep 300)'
+  automountServiceAccountToken: false
+  serviceAccount: trivy-operator
+  volumes:
+    - name: tmp
+      emptyDir: {}
+    - name: scanresult
+      emptyDir: {}
+  dnsPolicy: ClusterFirst
+  tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/memory-pressure
+      operator: Exists
+      effect: NoSchedule
