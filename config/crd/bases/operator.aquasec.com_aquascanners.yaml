@@ -103,6 +103,12 @@ spec:
                 type: object
               config_map_checksum:
                 type: string
+              env:
+                description: Additional environment variables for aqua-scanner pod
+                type: array
+                items:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
               deploy:
                 description: AquaService Struct for deployment spec
                 properties:
