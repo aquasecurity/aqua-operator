@@ -124,6 +124,9 @@ func (r *AquaTrivyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if _, err = r.addTrivyOperatorSettingsConfigMap(instance); err != nil {
 		return reconcile.Result{}, err
 	}
+	if _, err = r.addTrivyPoliciesConfigMap(instance); err != nil {
+		return reconcile.Result{}, err
+	}
 	if _, err = r.addTrivyTrivyConfigMap(instance); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -591,6 +594,33 @@ func (r *AquaTrivyReconciler) addTrivyOperatorSettingsConfigMap(cr *aquasecurity
 	}
 	if !equality.Semantic.DeepEqual(found.Data, cm.Data) {
 		found.Data = cm.Data
+		if err := r.Client.Update(context.TODO(), found); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *AquaTrivyReconciler) addTrivyPoliciesConfigMap(cr *aquasecurityv1alpha1.AquaTrivy) (reconcile.Result, error) {
+	trivyHelper := newAquaTrivyHelper(cr)
+	cm := trivyHelper.CreateTrivyPoliciesConfigMap(cr.Namespace)
+	if err := controllerutil.SetControllerReference(cr, cm, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+	found := &corev1.ConfigMap{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(context.TODO(), cm); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	// Keep it empty; only ensure labels stay in sync.
+	if !equality.Semantic.DeepEqual(found.Labels, cm.Labels) {
+		found.Labels = cm.Labels
 		if err := r.Client.Update(context.TODO(), found); err != nil {
 			return reconcile.Result{}, err
 		}

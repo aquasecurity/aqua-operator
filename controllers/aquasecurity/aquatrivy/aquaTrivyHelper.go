@@ -285,39 +285,11 @@ func (enf *AquaTrivyHelper) CreateClusterRoleBinding(cr, namespace, name, app, s
 	return crb
 }
 
-func (enf *AquaTrivyHelper) CreateTrivyConfigMap(cr, namespace, name, app string) *corev1.ConfigMap {
-	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
-	}
-	annotations := map[string]string{
-		"description": "Deploy Aqua trivy ConfigMap",
-	}
-	configMap := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Data: map[string]string{
-			"configAuditReports.scanner": "Trivy",
-		},
-	}
-
-	return configMap
-}
-
 func (enf *AquaTrivyHelper) CreateTrivyOperatorConfigMap(namespace string) *corev1.ConfigMap {
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &corev1.ConfigMap{
@@ -333,10 +305,10 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorConfigMap(namespace string) *core
 		Data: map[string]string{
 			"nodeCollector.volumes":                        "[{\"hostPath\":{\"path\":\"/var/lib/etcd\"},\"name\":\"var-lib-etcd\"},{\"hostPath\":{\"path\":\"/var/lib/kubelet\"},\"name\":\"var-lib-kubelet\"},{\"hostPath\":{\"path\":\"/var/lib/kube-scheduler\"},\"name\":\"var-lib-kube-scheduler\"},{\"hostPath\":{\"path\":\"/var/lib/kube-controller-manager\"},\"name\":\"var-lib-kube-controller-manager\"},{\"hostPath\":{\"path\":\"/etc/systemd\"},\"name\":\"etc-systemd\"},{\"hostPath\":{\"path\":\"/lib/systemd\"},\"name\":\"lib-systemd\"},{\"hostPath\":{\"path\":\"/etc/kubernetes\"},\"name\":\"etc-kubernetes\"},{\"hostPath\":{\"path\":\"/etc/cni/net.d/\"},\"name\":\"etc-cni-netd\"}]",
 			"nodeCollector.volumeMounts":                   "[{\"mountPath\":\"/var/lib/etcd\",\"name\":\"var-lib-etcd\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kubelet\",\"name\":\"var-lib-kubelet\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kube-scheduler\",\"name\":\"var-lib-kube-scheduler\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kube-controller-manager\",\"name\":\"var-lib-kube-controller-manager\",\"readOnly\":true},{\"mountPath\":\"/etc/systemd\",\"name\":\"etc-systemd\",\"readOnly\":true},{\"mountPath\":\"/lib/systemd/\",\"name\":\"lib-systemd\",\"readOnly\":true},{\"mountPath\":\"/etc/kubernetes\",\"name\":\"etc-kubernetes\",\"readOnly\":true},{\"mountPath\":\"/etc/cni/net.d/\",\"name\":\"etc-cni-netd\",\"readOnly\":true}]",
-			"nodeCollector.tolerations":                    "[{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\"}]",
 			"scanJob.useGCRServiceAccount":                 "true",
-			"scanJob.podTemplateContainerSecurityContext":  "{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"privileged\":false,\"readOnlyRootFilesystem\":false}",
+			"scanJob.podTemplateContainerSecurityContext":  "{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"privileged\":false,\"readOnlyRootFilesystem\":true}",
 			"scanJob.compressLogs":                         "true",
+			"vulnerabilityReports.scanner":                 "Trivy",
 			"configAuditReports.scanner":                   "Trivy",
 			"compliance.failEntriesLimit":                  "10",
 			"report.recordFailedChecksOnly":                "true",
@@ -344,6 +316,7 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorConfigMap(namespace string) *core
 			"policies.bundle.oci.ref":                      "mirror.gcr.io/aquasec/trivy-checks:1",
 			"policies.bundle.insecure":                     "false",
 			"node.collector.nodeSelector":                  "true",
+			"vulnerabilityReports.scanJobsInSameNamespace": "false",
 		},
 	}
 }
@@ -352,7 +325,7 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorSettingsConfigMap(namespace strin
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &corev1.ConfigMap{
@@ -378,20 +351,19 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorSettingsConfigMap(namespace strin
 			"OPERATOR_METRICS_FINDINGS_ENABLED":                          "true",
 			"OPERATOR_METRICS_VULN_ID_ENABLED":                           "false",
 			"OPERATOR_HEALTH_PROBE_BIND_ADDRESS":                         ":9090",
-			"OPERATOR_TARGET_WORKLOADS":                                  "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job",
 			"OPERATOR_PPROF_BIND_ADDRESS":                                "",
-			"OPERATOR_VULNERABILITY_SCANNER_ENABLED":                     "false",
-			"OPERATOR_SBOM_GENERATION_ENABLED":                           "false",
+			"OPERATOR_VULNERABILITY_SCANNER_ENABLED":                     "true",
+			"OPERATOR_SBOM_GENERATION_ENABLED":                           "true",
 			"OPERATOR_CLUSTER_SBOM_CACHE_ENABLED":                        "false",
 			"OPERATOR_VULNERABILITY_SCANNER_SCAN_ONLY_CURRENT_REVISIONS": "true",
-			"OPERATOR_SCANNER_REPORT_TTL":                                "",
+			"OPERATOR_SCANNER_REPORT_TTL":                                "24h",
 			"OPERATOR_CACHE_REPORT_TTL":                                  "120h",
 			"CONTROLLER_CACHE_SYNC_TIMEOUT":                              "5m",
 			"OPERATOR_CONFIG_AUDIT_SCANNER_ENABLED":                      "true",
 			"OPERATOR_RBAC_ASSESSMENT_SCANNER_ENABLED":                   "true",
-			"OPERATOR_INFRA_ASSESSMENT_SCANNER_ENABLED":                  "false",
+			"OPERATOR_INFRA_ASSESSMENT_SCANNER_ENABLED":                  "true",
 			"OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS":  "true",
-			"OPERATOR_EXPOSED_SECRET_SCANNER_ENABLED":                    "false",
+			"OPERATOR_EXPOSED_SECRET_SCANNER_ENABLED":                    "true",
 			"OPERATOR_METRICS_EXPOSED_SECRET_INFO_ENABLED":               "false",
 			"OPERATOR_METRICS_CONFIG_AUDIT_INFO_ENABLED":                 "false",
 			"OPERATOR_METRICS_RBAC_ASSESSMENT_INFO_ENABLED":              "false",
@@ -406,9 +378,30 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorSettingsConfigMap(namespace strin
 			"OPERATOR_ACCESS_GLOBAL_SECRETS_SERVICE_ACCOUNTS":            "true",
 			"OPERATOR_BUILT_IN_TRIVY_SERVER":                             "false",
 			"TRIVY_SERVER_HEALTH_CHECK_CACHE_EXPIRATION":                 "10h",
-			"OPERATOR_MERGE_RBAC_FINDING_WITH_CONFIG_AUDIT":              "true",
-			"OPERATOR_CLUSTER_COMPLIANCE_ENABLED":                        "false",
+			"OPERATOR_MERGE_RBAC_FINDING_WITH_CONFIG_AUDIT":              "false",
+			"OPERATOR_CLUSTER_COMPLIANCE_ENABLED":                        "true",
 		},
+	}
+}
+
+func (enf *AquaTrivyHelper) CreateTrivyPoliciesConfigMap(namespace string) *corev1.ConfigMap {
+	labels := map[string]string{
+		"app.kubernetes.io/name":       "trivy-operator",
+		"app.kubernetes.io/instance":   "trivy-operator",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
+		"app.kubernetes.io/managed-by": "trivy-operator",
+	}
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trivy-operator-policies-config",
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		// Data intentionally empty.
 	}
 }
 
@@ -416,7 +409,7 @@ func (enf *AquaTrivyHelper) CreateTrivyConfigConfigMap(namespace string) *corev1
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &corev1.ConfigMap{
@@ -430,29 +423,30 @@ func (enf *AquaTrivyHelper) CreateTrivyConfigConfigMap(namespace string) *corev1
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"trivy.repository":      		   "mirror.gcr.io/aquasec/trivy",
-			"trivy.tag":             		   "0.67.0",
-			"trivy.imagePullPolicy": 		   "IfNotPresent",
-			"trivy.severity":                  "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
-			"trivy.slow":                      "true",
-			"trivy.skipJavaDBUpdate":          "false",
-			"trivy.includeDevDeps":            "false",
-			"trivy.imageScanCacheDir":         "/tmp/trivy/.cache",
-			"trivy.filesystemScanCacheDir":    "/var/trivyoperator/trivy-db",
-			"trivy.dbRepository":              "mirror.gcr.io/aquasec/trivy-db",
-			"trivy.javaDbRepository":          "mirror.gcr.io/aquasec/trivy-java-db",
-			"trivy.command":                   "image",
-			"trivy.sbomSources":               "",
-			"trivy.dbRepositoryInsecure":      "false",
-			"trivy.useBuiltinRegoPolicies":    "false",
-			"trivy.useEmbeddedRegoPolicies":   "true",
-			"trivy.supportedConfigAuditKinds": "Workload,Service,Role,ClusterRole,NetworkPolicy,Ingress,LimitRange,ResourceQuota",
-			"trivy.timeout":                   "5m0s",
-			"trivy.mode":                      "Standalone",
-			"trivy.resources.requests.cpu":    "100m",
-			"trivy.resources.requests.memory": "100M",
-			"trivy.resources.limits.cpu":      "500m",
-			"trivy.resources.limits.memory":   "500M",
+			"trivy.repository":                			 "mirror.gcr.io/aquasec/trivy",
+			"trivy.tag":                       			 "0.67.0",
+			"trivy.imagePullPolicy":           			 "IfNotPresent",
+			"trivy.severity":                  			 "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
+			"trivy.slow":                      			 "true",
+			"trivy.skipJavaDBUpdate":          			 "false",
+			"trivy.includeDevDeps":            			 "false",
+			"trivy.imageScanCacheDir":         			 "/tmp/trivy/.cache",
+			"trivy.filesystemScanCacheDir":    			 "/var/trivyoperator/trivy-db",
+			"trivy.dbRepository":              			 "mirror.gcr.io/aquasec/trivy-db",
+			"trivy.javaDbRepository":          			 "mirror.gcr.io/aquasec/trivy-java-db",
+			"trivy.command":                   			 "image",
+			"trivy.sbomSources":               			 "",
+			"trivy.dbRepositoryInsecure":      			 "false",
+			"trivy.useBuiltinRegoPolicies":    			 "false",
+			"trivy.useEmbeddedRegoPolicies":   			 "true",
+			"trivy.supportedConfigAuditKinds": 			 "Workload,Service,Role,ClusterRole,NetworkPolicy,Ingress,LimitRange,ResourceQuota",
+			"trivy.timeout":                   			 "5m0s",
+			"trivy.mode":                      			 "Standalone",
+			"trivy.resources.requests.cpu":    			 "100m",
+			"trivy.resources.requests.memory": 			 "100M",
+			"trivy.resources.limits.cpu":      			 "500m",
+			"trivy.resources.limits.memory":   			 "500M",
+			"trivy.additionalVulnerabilityReportFields": ""
 		},
 	}
 }
@@ -461,7 +455,7 @@ func (enf *AquaTrivyHelper) CreateTrivySecret(namespace, name string) *corev1.Se
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &corev1.Secret{
@@ -494,7 +488,7 @@ func (enf *AquaTrivyHelper) CreateTrivyService(namespace string) *corev1.Service
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "trivy-operator",
 				"app.kubernetes.io/instance":   "trivy-operator",
-				"app.kubernetes.io/version":    "0.29.0",
+				"app.kubernetes.io/version":    "0.29.0-ubi9",
 				"app.kubernetes.io/managed-by": "trivy-operator",
 			},
 		},
@@ -519,7 +513,7 @@ func (enf *AquaTrivyHelper) CreateTrivyRole(namespace string) *rbacv1.Role {
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &rbacv1.Role{
@@ -551,7 +545,7 @@ func (enf *AquaTrivyHelper) CreateTrivyRoleBinding(namespace string) *rbacv1.Rol
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &rbacv1.RoleBinding{
@@ -583,7 +577,7 @@ func (enf *AquaTrivyHelper) CreateTrivyLeaderElectionRole(namespace string) *rba
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &rbacv1.Role{
@@ -615,7 +609,7 @@ func (enf *AquaTrivyHelper) CreateTrivyLeaderElectionRoleBinding(namespace strin
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
 		"app.kubernetes.io/instance":   "trivy-operator",
-		"app.kubernetes.io/version":    "0.29.0",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 		"app.kubernetes.io/managed-by": "trivy-operator",
 	}
 	return &rbacv1.RoleBinding{
@@ -649,9 +643,13 @@ func (enf *AquaTrivyHelper) CreateTrivyDeployment(cr *aquasecurityv1alpha1.AquaT
 	}
 
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr.Name,
+		"app":                          app,
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr.Name,
+		"app.kubernetes.io/name":       "trivy-operator",
+		"app.kubernetes.io/instance":   "trivy-operator",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
+		"app.kubernetes.io/managed-by": "aqua-operator",
 	}
 	annotations := map[string]string{
 		"description":       "Deploy Trivy Deployment",
@@ -665,7 +663,11 @@ func (enf *AquaTrivyHelper) CreateTrivyDeployment(cr *aquasecurityv1alpha1.AquaT
 
 	envVars := enf.getTrivyEnvVars(cr)
 	selectors := map[string]string{
-		"app": "trivy-operator",
+		"app":                          "trivy-operator",
+		"app.kubernetes.io/name":       "trivy-operator",
+		"app.kubernetes.io/instance":   "trivy-operator",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
+		"app.kubernetes.io/managed-by": "aqua-operator",
 	}
 
 	ports := []corev1.ContainerPort{
@@ -715,7 +717,7 @@ func (enf *AquaTrivyHelper) CreateTrivyDeployment(cr *aquasecurityv1alpha1.AquaT
 					},
 					Containers: []corev1.Container{
 						{
-							Name:            "operator",
+							Name:            "trivy-operator",
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
 							VolumeMounts: []corev1.VolumeMount{
@@ -844,6 +846,10 @@ func (ebf *AquaTrivyHelper) getTrivyEnvVars(cr *aquasecurityv1alpha1.AquaTrivy) 
 		{
 			Name:  "OPERATOR_HEALTH_PROBE_BIND_ADDRESS",
 			Value: consts.OperatorHealthProbeBindAddress,
+		},
+		{
+			Name: "OPERATOR_TARGET_WORKLOADS",
+			Value: "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job",
 		},
 	}
 	operatorLogDevMode := corev1.EnvVar{
