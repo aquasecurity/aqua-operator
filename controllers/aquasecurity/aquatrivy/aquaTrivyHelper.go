@@ -285,6 +285,34 @@ func (enf *AquaTrivyHelper) CreateClusterRoleBinding(cr, namespace, name, app, s
 	return crb
 }
 
+func (enf *AquaTrivyHelper) CreateTrivyConfigMap(cr, namespace, name, app string) *corev1.ConfigMap {
+	labels := map[string]string{
+		"app":                app,
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua trivy ConfigMap",
+	}
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Data: map[string]string{
+			"configAuditReports.scanner": "Trivy",
+		},
+	}
+
+	return configMap
+}
+
 func (enf *AquaTrivyHelper) CreateTrivyOperatorConfigMap(namespace string) *corev1.ConfigMap {
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "trivy-operator",
@@ -352,18 +380,18 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorSettingsConfigMap(namespace strin
 			"OPERATOR_METRICS_VULN_ID_ENABLED":                           "false",
 			"OPERATOR_HEALTH_PROBE_BIND_ADDRESS":                         ":9090",
 			"OPERATOR_PPROF_BIND_ADDRESS":                                "",
-			"OPERATOR_VULNERABILITY_SCANNER_ENABLED":                     "true",
-			"OPERATOR_SBOM_GENERATION_ENABLED":                           "true",
+			"OPERATOR_VULNERABILITY_SCANNER_ENABLED":                     "false",
+			"OPERATOR_SBOM_GENERATION_ENABLED":                           "false",
 			"OPERATOR_CLUSTER_SBOM_CACHE_ENABLED":                        "false",
 			"OPERATOR_VULNERABILITY_SCANNER_SCAN_ONLY_CURRENT_REVISIONS": "true",
-			"OPERATOR_SCANNER_REPORT_TTL":                                "24h",
+			"OPERATOR_SCANNER_REPORT_TTL":                                "",
 			"OPERATOR_CACHE_REPORT_TTL":                                  "120h",
 			"CONTROLLER_CACHE_SYNC_TIMEOUT":                              "5m",
 			"OPERATOR_CONFIG_AUDIT_SCANNER_ENABLED":                      "true",
 			"OPERATOR_RBAC_ASSESSMENT_SCANNER_ENABLED":                   "true",
-			"OPERATOR_INFRA_ASSESSMENT_SCANNER_ENABLED":                  "true",
+			"OPERATOR_INFRA_ASSESSMENT_SCANNER_ENABLED":                  "false",
 			"OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS":  "true",
-			"OPERATOR_EXPOSED_SECRET_SCANNER_ENABLED":                    "true",
+			"OPERATOR_EXPOSED_SECRET_SCANNER_ENABLED":                    "false",
 			"OPERATOR_METRICS_EXPOSED_SECRET_INFO_ENABLED":               "false",
 			"OPERATOR_METRICS_CONFIG_AUDIT_INFO_ENABLED":                 "false",
 			"OPERATOR_METRICS_RBAC_ASSESSMENT_INFO_ENABLED":              "false",
@@ -379,7 +407,7 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorSettingsConfigMap(namespace strin
 			"OPERATOR_BUILT_IN_TRIVY_SERVER":                             "false",
 			"TRIVY_SERVER_HEALTH_CHECK_CACHE_EXPIRATION":                 "10h",
 			"OPERATOR_MERGE_RBAC_FINDING_WITH_CONFIG_AUDIT":              "false",
-			"OPERATOR_CLUSTER_COMPLIANCE_ENABLED":                        "true",
+			"OPERATOR_CLUSTER_COMPLIANCE_ENABLED":                        "false",
 		},
 	}
 }
@@ -423,30 +451,30 @@ func (enf *AquaTrivyHelper) CreateTrivyConfigConfigMap(namespace string) *corev1
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"trivy.repository":                			 "mirror.gcr.io/aquasec/trivy",
-			"trivy.tag":                       			 "0.67.0",
-			"trivy.imagePullPolicy":           			 "IfNotPresent",
-			"trivy.severity":                  			 "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
-			"trivy.slow":                      			 "true",
-			"trivy.skipJavaDBUpdate":          			 "false",
-			"trivy.includeDevDeps":            			 "false",
-			"trivy.imageScanCacheDir":         			 "/tmp/trivy/.cache",
-			"trivy.filesystemScanCacheDir":    			 "/var/trivyoperator/trivy-db",
-			"trivy.dbRepository":              			 "mirror.gcr.io/aquasec/trivy-db",
-			"trivy.javaDbRepository":          			 "mirror.gcr.io/aquasec/trivy-java-db",
-			"trivy.command":                   			 "image",
-			"trivy.sbomSources":               			 "",
-			"trivy.dbRepositoryInsecure":      			 "false",
-			"trivy.useBuiltinRegoPolicies":    			 "false",
-			"trivy.useEmbeddedRegoPolicies":   			 "true",
-			"trivy.supportedConfigAuditKinds": 			 "Workload,Service,Role,ClusterRole,NetworkPolicy,Ingress,LimitRange,ResourceQuota",
-			"trivy.timeout":                   			 "5m0s",
-			"trivy.mode":                      			 "Standalone",
-			"trivy.resources.requests.cpu":    			 "100m",
-			"trivy.resources.requests.memory": 			 "100M",
-			"trivy.resources.limits.cpu":      			 "500m",
-			"trivy.resources.limits.memory":   			 "500M",
-			"trivy.additionalVulnerabilityReportFields": ""
+			"trivy.repository":                          "mirror.gcr.io/aquasec/trivy",
+			"trivy.tag":                                 "0.67.0",
+			"trivy.imagePullPolicy":                     "IfNotPresent",
+			"trivy.severity":                            "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
+			"trivy.slow":                                "true",
+			"trivy.skipJavaDBUpdate":                    "false",
+			"trivy.includeDevDeps":                      "false",
+			"trivy.imageScanCacheDir":                   "/tmp/trivy/.cache",
+			"trivy.filesystemScanCacheDir":              "/var/trivyoperator/trivy-db",
+			"trivy.dbRepository":                        "mirror.gcr.io/aquasec/trivy-db",
+			"trivy.javaDbRepository":                    "mirror.gcr.io/aquasec/trivy-java-db",
+			"trivy.command":                             "image",
+			"trivy.sbomSources":                         "",
+			"trivy.dbRepositoryInsecure":                "false",
+			"trivy.useBuiltinRegoPolicies":              "false",
+			"trivy.useEmbeddedRegoPolicies":             "true",
+			"trivy.supportedConfigAuditKinds":           "Workload,Service,Role,ClusterRole,NetworkPolicy,Ingress,LimitRange,ResourceQuota",
+			"trivy.timeout":                             "5m0s",
+			"trivy.mode":                                "Standalone",
+			"trivy.resources.requests.cpu":              "100m",
+			"trivy.resources.requests.memory":           "100M",
+			"trivy.resources.limits.cpu":                "500m",
+			"trivy.resources.limits.memory":             "500M",
+			"trivy.additionalVulnerabilityReportFields": "",
 		},
 	}
 }
@@ -848,7 +876,7 @@ func (ebf *AquaTrivyHelper) getTrivyEnvVars(cr *aquasecurityv1alpha1.AquaTrivy) 
 			Value: consts.OperatorHealthProbeBindAddress,
 		},
 		{
-			Name: "OPERATOR_TARGET_WORKLOADS",
+			Name:  "OPERATOR_TARGET_WORKLOADS",
 			Value: "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job",
 		},
 	}
