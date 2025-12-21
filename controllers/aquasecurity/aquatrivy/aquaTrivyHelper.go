@@ -865,123 +865,16 @@ func (ebf *AquaTrivyHelper) getTrivyEnvVars(cr *aquasecurityv1alpha1.AquaTrivy) 
 		},
 		{
 			Name:  "OPERATOR_EXCLUDE_NAMESPACES",
-			Value: consts.OperatorExcludeNamespaces,
+			Value: "",
 		},
 		{
-			Name:  "OPERATOR_METRICS_BIND_ADDRESS",
-			Value: consts.OperatorMetricsBindAddress,
-		},
-		{
-			Name:  "OPERATOR_HEALTH_PROBE_BIND_ADDRESS",
-			Value: consts.OperatorHealthProbeBindAddress,
+			Name:  "OPERATOR_SERVICE_ACCOUNT",
+			Value: "trivy-operator",
 		},
 		{
 			Name:  "OPERATOR_TARGET_WORKLOADS",
 			Value: "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job",
 		},
 	}
-	operatorLogDevMode := corev1.EnvVar{
-		Name:  "OPERATOR_LOG_DEV_MODE",
-		Value: consts.OperatorLogDevMode,
-	}
-	if cr.Spec.LogDevMode {
-		operatorLogDevMode = corev1.EnvVar{
-			Name:  "OPERATOR_LOG_DEV_MODE",
-			Value: "true",
-		}
-	}
-	result = append(result, operatorLogDevMode)
-
-	operatorConcurrentScanJobsLimit := corev1.EnvVar{
-		Name:  "OPERATOR_CONCURRENT_SCAN_JOBS_LIMIT",
-		Value: consts.OperatorConcurrentScanJobsLimit,
-	}
-
-	if cr.Spec.ConcurrentScanJobsLimit != "" {
-		operatorConcurrentScanJobsLimit = corev1.EnvVar{
-			Name:  "OPERATOR_CONCURRENT_SCAN_JOBS_LIMIT",
-			Value: cr.Spec.ConcurrentScanJobsLimit,
-		}
-	}
-
-	result = append(result, operatorConcurrentScanJobsLimit)
-
-	operatorScanJobRetryAfter := corev1.EnvVar{
-		Name:  "OPERATOR_SCAN_JOB_RETRY_AFTER",
-		Value: consts.OperatorScanJobRetryAfter,
-	}
-
-	if cr.Spec.ScanJobRetryAfter != "" {
-		operatorScanJobRetryAfter = corev1.EnvVar{
-			Name:  "OPERATOR_SCAN_JOB_RETRY_AFTER",
-			Value: cr.Spec.ScanJobRetryAfter}
-	}
-
-	result = append(result, operatorScanJobRetryAfter)
-
-	operatorCisKubernetesBenchmarkEnabled := corev1.EnvVar{
-		Name:  "OPERATOR_CIS_KUBERNETES_BENCHMARK_ENABLED",
-		Value: consts.OperatorCisKubernetesBenchmarkEnabled,
-	}
-
-	if cr.Spec.CisKubernetesBenchmarkEnabled != "" {
-		operatorCisKubernetesBenchmarkEnabled = corev1.EnvVar{
-			Name:  "OPERATOR_CIS_KUBERNETES_BENCHMARK_ENABLED",
-			Value: cr.Spec.CisKubernetesBenchmarkEnabled}
-	}
-
-	result = append(result, operatorCisKubernetesBenchmarkEnabled)
-
-	operatorVulnerabilityScannerEnabled := corev1.EnvVar{
-		Name:  "OPERATOR_VULNERABILITY_SCANNER_ENABLED",
-		Value: consts.OperatorVulnerabilityScannerEnabled,
-	}
-
-	if cr.Spec.VulnerabilityScannerEnabled != "" {
-		operatorVulnerabilityScannerEnabled = corev1.EnvVar{
-			Name:  "OPERATOR_VULNERABILITY_SCANNER_ENABLED",
-			Value: cr.Spec.VulnerabilityScannerEnabled}
-	}
-
-	result = append(result, operatorVulnerabilityScannerEnabled)
-
-	operatorBatchDeleteLimit := corev1.EnvVar{
-		Name:  "OPERATOR_BATCH_DELETE_LIMIT",
-		Value: consts.OperatorBatchDeleteLimit,
-	}
-
-	if cr.Spec.BatchDeleteLimit != "" {
-		operatorBatchDeleteLimit = corev1.EnvVar{
-			Name:  "OPERATOR_BATCH_DELETE_LIMIT",
-			Value: cr.Spec.BatchDeleteLimit}
-	}
-
-	result = append(result, operatorBatchDeleteLimit)
-
-	operatorBatchDeleteDelay := corev1.EnvVar{
-		Name:  "OPERATOR_BATCH_DELETE_DELAY",
-		Value: consts.OperatorBatchDeleteDelay,
-	}
-
-	if cr.Spec.BatchDeleteDelay != "" {
-		operatorBatchDeleteDelay = corev1.EnvVar{
-			Name:  "OPERATOR_BATCH_DELETE_DELAY",
-			Value: cr.Spec.BatchDeleteDelay}
-	}
-
-	result = append(result, operatorBatchDeleteDelay)
-
-	operatorClusterComplianceEnabled := corev1.EnvVar{
-		Name:  "OPERATOR_CLUSTER_COMPLIANCE_ENABLED",
-		Value: consts.OperatorClusterComplianceEnabled,
-	}
-
-	if cr.Spec.OperatorClusterComplianceEnabled != "" {
-		operatorClusterComplianceEnabled = corev1.EnvVar{
-			Name:  "OPERATOR_BATCH_DELETE_DELAY",
-			Value: cr.Spec.BatchDeleteDelay}
-	}
-
-	result = append(result, operatorClusterComplianceEnabled)
 	return result
 }
