@@ -15,6 +15,7 @@ spec:
     categories: []
     shortNames:
       - configaudit
+      - configaudits
   scope: Namespaced
   versions:
     - name: v1alpha1
@@ -31,21 +32,26 @@ spec:
           type: date
           description: The age of the report
           jsonPath: .metadata.creationTimestamp
-        - name: Danger
+        - name: Critical
           type: integer
+          description: The number of failed checks with critical severity
           priority: 1
-          description: The number of checks that failed with Danger status
-          jsonPath: .report.summary.dangerCount
-        - name: Warning
+          jsonPath: .report.summary.criticalCount
+        - name: High
           type: integer
+          description: The number of failed checks with high severity
           priority: 1
-          description: The number of checks that failed with Warning status
-          jsonPath: .report.summary.warningCount
-        - name: Pass
+          jsonPath: .report.summary.highCount
+        - name: Medium
           type: integer
+          description: The number of failed checks with medium severity
           priority: 1
-          description: The number of checks that passed
-          jsonPath: .report.summary.passCount
+          jsonPath: .report.summary.mediumCount
+        - name: Low
+          type: integer
+          description: The number of failed checks with low severity
+          priority: 1
+          jsonPath: .report.summary.lowCount
       served: true
       storage: true
       subresources:

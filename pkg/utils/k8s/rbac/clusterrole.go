@@ -30,6 +30,7 @@ func CreateClusterRole(cr, namespace, name, app, description string, rules []rba
 		"app":                app,
 		"deployedby":         "aqua-operator",
 		"aquasecoperator_cr": cr,
+		"role":				  app,
 	}
 	annotations := map[string]string{
 		"description":              description,
