@@ -330,20 +330,11 @@ func (enf *AquaTrivyHelper) CreateTrivyOperatorConfigMap(namespace string) *core
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"nodeCollector.volumes":                        "[{\"hostPath\":{\"path\":\"/var/lib/etcd\"},\"name\":\"var-lib-etcd\"},{\"hostPath\":{\"path\":\"/var/lib/kubelet\"},\"name\":\"var-lib-kubelet\"},{\"hostPath\":{\"path\":\"/var/lib/kube-scheduler\"},\"name\":\"var-lib-kube-scheduler\"},{\"hostPath\":{\"path\":\"/var/lib/kube-controller-manager\"},\"name\":\"var-lib-kube-controller-manager\"},{\"hostPath\":{\"path\":\"/etc/systemd\"},\"name\":\"etc-systemd\"},{\"hostPath\":{\"path\":\"/lib/systemd\"},\"name\":\"lib-systemd\"},{\"hostPath\":{\"path\":\"/etc/kubernetes\"},\"name\":\"etc-kubernetes\"},{\"hostPath\":{\"path\":\"/etc/cni/net.d/\"},\"name\":\"etc-cni-netd\"}]",
-			"nodeCollector.volumeMounts":                   "[{\"mountPath\":\"/var/lib/etcd\",\"name\":\"var-lib-etcd\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kubelet\",\"name\":\"var-lib-kubelet\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kube-scheduler\",\"name\":\"var-lib-kube-scheduler\",\"readOnly\":true},{\"mountPath\":\"/var/lib/kube-controller-manager\",\"name\":\"var-lib-kube-controller-manager\",\"readOnly\":true},{\"mountPath\":\"/etc/systemd\",\"name\":\"etc-systemd\",\"readOnly\":true},{\"mountPath\":\"/lib/systemd/\",\"name\":\"lib-systemd\",\"readOnly\":true},{\"mountPath\":\"/etc/kubernetes\",\"name\":\"etc-kubernetes\",\"readOnly\":true},{\"mountPath\":\"/etc/cni/net.d/\",\"name\":\"etc-cni-netd\",\"readOnly\":true}]",
-			"scanJob.useGCRServiceAccount":                 "true",
-			"scanJob.podTemplateContainerSecurityContext":  "{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"privileged\":false,\"readOnlyRootFilesystem\":true}",
-			"scanJob.compressLogs":                         "true",
-			"vulnerabilityReports.scanner":                 "Trivy",
-			"configAuditReports.scanner":                   "Trivy",
-			"compliance.failEntriesLimit":                  "10",
-			"report.recordFailedChecksOnly":                "true",
-			"node.collector.imageRef":                      "ghcr.io/aquasecurity/node-collector:0.3.1",
-			"policies.bundle.oci.ref":                      "mirror.gcr.io/aquasec/trivy-checks:1",
-			"policies.bundle.insecure":                     "false",
-			"node.collector.nodeSelector":                  "true",
-			"vulnerabilityReports.scanJobsInSameNamespace": "false",
+			"scanJob.podTemplateContainerSecurityContext": "{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"privileged\":false,\"readOnlyRootFilesystem\":true}",
+			"scanJob.compressLogs":                        "true",
+			"vulnerabilityReports.scanner":                "Trivy",
+			"configAuditReports.scanner":                  "Trivy",
+			"report.recordFailedChecksOnly":               "false",
 		},
 	}
 }
@@ -450,23 +441,15 @@ func (enf *AquaTrivyHelper) CreateTrivyConfigConfigMap(namespace string) *corev1
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"trivy.repository":                          "mirror.gcr.io/aquasec/trivy",
-			"trivy.tag":                                 "0.67.0",
-			"trivy.imagePullPolicy":                     "IfNotPresent",
+			"trivy.repository":                          "ghcr.io/aquasecurity/trivy",
+			"trivy.tag":                                 "0.64.1",
 			"trivy.severity":                            "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
 			"trivy.slow":                                "true",
-			"trivy.skipJavaDBUpdate":                    "false",
-			"trivy.includeDevDeps":                      "false",
-			"trivy.imageScanCacheDir":                   "/tmp/trivy/.cache",
-			"trivy.filesystemScanCacheDir":              "/var/trivyoperator/trivy-db",
-			"trivy.dbRepository":                        "mirror.gcr.io/aquasec/trivy-db",
-			"trivy.javaDbRepository":                    "mirror.gcr.io/aquasec/trivy-java-db",
+			"trivy.dbRepository":                        "ghcr.io/aquasecurity/trivy-db",
 			"trivy.command":                             "image",
-			"trivy.sbomSources":                         "",
 			"trivy.dbRepositoryInsecure":                "false",
 			"trivy.useBuiltinRegoPolicies":              "false",
-			"trivy.useEmbeddedRegoPolicies":             "true",
-			"trivy.supportedConfigAuditKinds":           "Workload,Service,Role,ClusterRole,NetworkPolicy,Ingress,LimitRange,ResourceQuota",
+			"trivy.supportedConfigAuditKinds":           "Workload,Service,Role,RoleBinding,ClusterRole,ClusterRoleBinding,NetworkPolicy,Ingress,LimitRange,ResourceQuota,ConfigMap",
 			"trivy.timeout":                             "5m0s",
 			"trivy.mode":                                "Standalone",
 			"trivy.resources.requests.cpu":              "100m",
@@ -864,7 +847,7 @@ func (ebf *AquaTrivyHelper) getTrivyEnvVars(cr *aquasecurityv1alpha1.AquaTrivy) 
 		},
 		{
 			Name:  "OPERATOR_EXCLUDE_NAMESPACES",
-			Value: "",
+			Value: "kube-system",
 		},
 		{
 			Name:  "OPERATOR_SERVICE_ACCOUNT",
@@ -873,6 +856,122 @@ func (ebf *AquaTrivyHelper) getTrivyEnvVars(cr *aquasecurityv1alpha1.AquaTrivy) 
 		{
 			Name:  "OPERATOR_TARGET_WORKLOADS",
 			Value: "pod,replicaset,replicationcontroller,statefulset,daemonset,cronjob,job",
+		},
+		{
+			Name:  "OPERATOR_LOG_DEV_MODE",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_SCAN_JOB_TIMEOUT",
+			Value: "5m",
+		},
+		{
+			Name:  "OPERATOR_CONCURRENT_SCAN_JOBS_LIMIT",
+			Value: "10",
+		},
+		{
+			Name:  "OPERATOR_SCAN_JOB_RETRY_AFTER",
+			Value: "30s",
+		},
+		{
+			Name:  "OPERATOR_BATCH_DELETE_LIMIT",
+			Value: "10",
+		},
+		{
+			Name:  "OPERATOR_BATCH_DELETE_DELAY",
+			Value: "10s",
+		},
+		{
+			Name:  "OPERATOR_METRICS_BIND_ADDRESS",
+			Value: ":8080",
+		},
+		{
+			Name:  "OPERATOR_METRICS_FINDINGS_ENABLED",
+			Value: "true",
+		},
+		{
+			Name:  "OPERATOR_METRICS_VULN_ID_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_HEALTH_PROBE_BIND_ADDRESS",
+			Value: ":9090",
+		},
+		{
+			Name:  "OPERATOR_VULNERABILITY_SCANNER_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_VULNERABILITY_SCANNER_SCAN_ONLY_CURRENT_REVISIONS",
+			Value: "true",
+		},
+		{
+			Name:  "OPERATOR_SCANNER_REPORT_TTL",
+			Value: "24h",
+		},
+		{
+			Name:  "OPERATOR_SBOM_GENERATION_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_CONFIG_AUDIT_SCANNER_ENABLED",
+			Value: "true",
+		},
+		{
+			Name:  "OPERATOR_CLUSTER_COMPLIANCE_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_RBAC_ASSESSMENT_SCANNER_ENABLED",
+			Value: "true",
+		},
+		{
+			Name:  "OPERATOR_INFRA_ASSESSMENT_SCANNER_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_CONFIG_AUDIT_SCANNER_SCAN_ONLY_CURRENT_REVISIONS",
+			Value: "true",
+		},
+		{
+			Name:  "OPERATOR_EXPOSED_SECRET_SCANNER_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "OPERATOR_WEBHOOK_BROADCAST_URL",
+			Value: "",
+		},
+		{
+			Name:  "OPERATOR_WEBHOOK_BROADCAST_TIMEOUT",
+			Value: "30s",
+		},
+		{
+			Name:  "OPERATOR_PRIVATE_REGISTRY_SCAN_SECRETS_NAMES",
+			Value: "{}",
+		},
+		{
+			Name:  "OPERATOR_ACCESS_GLOBAL_SECRETS_SERVICE_ACCOUNTS",
+			Value: "true",
+		},
+		{
+			Name:  "OPERATOR_BUILT_IN_TRIVY_SERVER",
+			Value: "false",
+		},
+		{
+			Name:  "TRIVY_SERVER_HEALTH_CHECK_CACHE_EXPIRATION",
+			Value: "10h",
+		},
+		{
+			Name:  "OPERATOR_MERGE_RBAC_FINDING_WITH_CONFIG_AUDIT",
+			Value: "true",
+		},
+		{
+			Name:  "CONTROLLER_CACHE_SYNC_TIMEOUT",
+			Value: "5m",
+		},
+		{
+			Name:  "OPERATOR_CLUSTER_SBOM_CACHE_ENABLED",
+			Value: "false",
 		},
 	}
 	return result

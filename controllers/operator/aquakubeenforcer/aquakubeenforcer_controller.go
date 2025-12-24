@@ -798,6 +798,12 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 	// Log the validatingWebhookTimeout value from the CRD before passing it to the helper function
 	reqLogger.Info("ValidatingWebhookTimeout from CRD", "validatingWebhookTimeout", cr.Spec.ValidatingWebhookTimeout)
 
+	validatingWebhookTimeout := cr.Spec.ValidatingWebhookTimeout
+	if validatingWebhookTimeout < 1 || validatingWebhookTimeout > 30 {
+		reqLogger.Info("ValidatingWebhookTimeout out of range; overriding to 15 seconds", "validatingWebhookTimeout", validatingWebhookTimeout, "overriddenTimeout", 15)
+		validatingWebhookTimeout = 15
+	}
+
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	validWebhook := enforcerHelper.CreateValidatingWebhook(
 		cr.Name,
@@ -806,7 +812,7 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 		"ke-validatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
 		r.Certs.CACert,
-		cr.Spec.MutatingWebhookTimeout,
+		validatingWebhookTimeout,
 	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
@@ -821,6 +827,7 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New ValidatingWebhookConfiguration", "ValidatingWebhook.Namespace", validWebhook.Namespace, "ClusterRoleBinding.Name", validWebhook.Name)
 		err = r.Client.Create(context.TODO(), validWebhook)
 		if err != nil {
+			reqLogger.Error(err, "Aqua KubeEnforcer: Failed to create ValidatingWebhookConfiguration", "ValidatingWebhook.Namespace", validWebhook.Namespace, "ValidatingWebhook.Name", validWebhook.Name)
 			return reconcile.Result{Requeue: true}, nil
 		}
 		return reconcile.Result{}, nil
@@ -840,6 +847,12 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 	// Log the MutatingWebhookTimeout value from the CRD before passing it to the helper function
 	reqLogger.Info("MutatingWebhookTimeout from CRD", "mutatingWebhookTimeout", cr.Spec.MutatingWebhookTimeout)
 
+	mutatingWebhookTimeout := cr.Spec.MutatingWebhookTimeout
+	if mutatingWebhookTimeout < 1 || mutatingWebhookTimeout > 30 {
+		reqLogger.Info("MutatingWebhookTimeout out of range; overriding to 15 seconds", "mutatingWebhookTimeout", mutatingWebhookTimeout, "overriddenTimeout", 15)
+		mutatingWebhookTimeout = 15
+	}
+
 	// Define a new MutatingWebhookConfiguration object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	mutateWebhook := enforcerHelper.CreateMutatingWebhook(
@@ -849,7 +862,7 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 		"ke-mutatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
 		r.Certs.CACert,
-		cr.Spec.MutatingWebhookTimeout,
+		mutatingWebhookTimeout,
 	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
@@ -864,6 +877,7 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name, "MutatingWebhook.Timeout")
 		err = r.Client.Create(context.TODO(), mutateWebhook)
 		if err != nil {
+			reqLogger.Error(err, "Aqua KubeEnforcer: Failed to create MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name)
 			return reconcile.Result{Requeue: true}, nil
 		}
 		return reconcile.Result{}, nil
