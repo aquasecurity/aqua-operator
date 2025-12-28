@@ -393,14 +393,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 		},
 	}
 	labels := map[string]string{
-		"app":                			"aqua-kube-enforcer",
-		"deployedby":         			"aqua-operator",
-		"aquasecoperator_cr": 			cr,
-		"role":               			"aqua-kube-enforcer",
-		"app.kubernetes.io/instance": 	"aqua-kube-enforcer",
-    	"app.kubernetes.io/managed-by": "aqua-operator",
-    	"app.kubernetes.io/name": 		"aqua-kube-enforcer",
-    	"app.kubernetes.io/version": 	"2022.4",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description":              "KubeEnforcer Role",
@@ -425,14 +425,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 
 func (enf *AquaKubeEnforcerHelper) CreateRoleBinding(cr, namespace, name, app, sa, role string) *rbacv1.RoleBinding {
 	labels := map[string]string{
-		"app":                			"aqua-kube-enforcer",
-		"deployedby":         			"aqua-operator",
-		"aquasecoperator_cr": 			cr,
-		"role":               			"aqua-kube-enforcer",
-		"app.kubernetes.io/instance": 	"aqua-kube-enforcer",
-    	"app.kubernetes.io/managed-by": "aqua-operator",
-    	"app.kubernetes.io/name": 		"aqua-kube-enforcer",
-    	"app.kubernetes.io/version": 	"2022.4",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Cluster Role Binding",
@@ -467,9 +467,14 @@ func (enf *AquaKubeEnforcerHelper) CreateRoleBinding(cr, namespace, name, app, s
 
 func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, app, keService string, caBundle []byte, validatingWebhookTimeout int) *admissionv1.ValidatingWebhookConfiguration {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua ValidatingWebhookConfiguration",
@@ -490,6 +495,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 				Resources: []string{
 					"pods",
 					"deployments",
+					"deploymentconfigs",
 					"replicasets",
 					"replicationcontrollers",
 					"statefulsets",
@@ -546,14 +552,14 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 
 func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, app, keService string, caBundle []byte, mutatingWebhookTimeout int) *admissionv1.MutatingWebhookConfiguration {
 	labels := map[string]string{
-		"app":                			"aqua-kube-enforcer",
-		"deployedby":         			"aqua-operator",
-		"aquasecoperator_cr": 			cr,
-		"role":               			"aqua-kube-enforcer",
-		"app.kubernetes.io/instance": 	"aqua-kube-enforcer",
-    	"app.kubernetes.io/managed-by": "aqua-operator",
-    	"app.kubernetes.io/name": 		"aqua-kube-enforcer",
-    	"app.kubernetes.io/version": 	"2022.4",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua MutatingWebhookConfiguration",
@@ -669,14 +675,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 
 func (enf *AquaKubeEnforcerHelper) CreateKETokenSecret(cr, namespace, name, app, token string) *corev1.Secret {
 	labels := map[string]string{
-		"app":                			"aqua-kube-enforcer",
-		"deployedby":         			"aqua-operator",
-		"aquasecoperator_cr": 			cr,
-		"role":               			"aqua-kube-enforcer",
-		"app.kubernetes.io/instance": 	"aqua-kube-enforcer",
-    	"app.kubernetes.io/managed-by": "aqua-operator",
-    	"app.kubernetes.io/name": 		"aqua-kube-enforcer",
-    	"app.kubernetes.io/version": 	"2022.4",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua KubeEnfocer token secret",
@@ -731,14 +737,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKESSLSecret(cr, namespace, name, app st
 
 func (enf *AquaKubeEnforcerHelper) CreateKEService(cr, namespace, name, app string) *corev1.Service {
 	labels := map[string]string{
-		"app":                			"aqua-kube-enforcer",
-		"deployedby":         			"aqua-operator",
-		"aquasecoperator_cr": 			cr,
-		"role":               			"aqua-kube-enforcer",
-		"app.kubernetes.io/instance": 	"aqua-kube-enforcer",
-    	"app.kubernetes.io/managed-by": "aqua-operator",
-    	"app.kubernetes.io/name": 		"aqua-kube-enforcer",
-    	"app.kubernetes.io/version": 	"2022.4",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Kube Enforcer Service",
@@ -782,15 +788,15 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 	}
 
 	labels := map[string]string{
-		"app":                			"aqua-kube-enforcer",
-		"deployedby":         			"aqua-operator",
-		"aquasecoperator_cr": 			cr.Name,
-		"aqua.component":     			"kubeenforcer",
-		"role":               			"aqua-kube-enforcer",
-		"app.kubernetes.io/instance": 	"aqua-kube-enforcer",
-    	"app.kubernetes.io/managed-by": "aqua-operator",
-    	"app.kubernetes.io/name": 		"aqua-kube-enforcer",
-    	"app.kubernetes.io/version": 	"2022.4",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr.Name,
+		"aqua.component":               "kubeenforcer",
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description":       "Deploy Kube Enforcer Deployment",
@@ -800,7 +806,6 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 	envVars := enf.getEnvVars(cr)
 	selectors := map[string]string{
 		"app": "aqua-kube-enforcer",
-
 	}
 	selectors_match_labels := map[string]string{
 		"app": "aqua-kube-enforcer",

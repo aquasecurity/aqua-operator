@@ -43,7 +43,6 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 			Resources: []string{
 				"configmaps",
 				"limitranges",
-				"nodes",
 				"pods",
 				"replicationcontrollers",
 				"resourcequotas",
@@ -55,24 +54,8 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 		},
 		{
 			APIGroups: []string{""},
-			Resources: []string{"namespaces"},
-			Verbs:     []string{"get"},
-		},
-		{
-			APIGroups: []string{""},
 			Resources: []string{"pods/log"},
 			Verbs:     []string{"get", "list"},
-		},
-		{
-			APIGroups: []string{
-				"",
-			},
-			Resources: []string{
-				"secrets",
-			},
-			Verbs: []string{
-				"create", "get", "update",
-			},
 		},
 		{
 			APIGroups: []string{
@@ -83,22 +66,6 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 			},
 			Verbs: []string{
 				"get",
-			},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"nodes/proxy"},
-			Verbs:     []string{"get"},
-		},
-		{
-			APIGroups: []string{
-				"",
-			},
-			Resources: []string{
-				"events",
-			},
-			Verbs: []string{
-				"create",
 			},
 		},
 		{
@@ -164,7 +131,7 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 				"jobs",
 			},
 			Verbs: []string{
-				"create", "delete", "get", "list", "watch",
+				"get", "list", "watch",
 			},
 		},
 		{
@@ -190,28 +157,6 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 			},
 			Verbs: []string{
 				"create", "delete", "get", "list", "patch", "update", "watch",
-			},
-		},
-		{
-			APIGroups: []string{
-				"aquasecurity.github.io",
-			},
-			Resources: []string{
-				"clustercompliancereports/status",
-			},
-			Verbs: []string{
-				"get", "patch", "update",
-			},
-		},
-		{
-			APIGroups: []string{
-				"coordination.k8s.io",
-			},
-			Resources: []string{
-				"leases",
-			},
-			Verbs: []string{
-				"create", "get", "update",
 			},
 		},
 	}
@@ -730,16 +675,6 @@ func (enf *AquaTrivyHelper) CreateTrivyDeployment(cr *aquasecurityv1alpha1.AquaT
 							Name:            "trivy-operator",
 							Image:           image,
 							ImagePullPolicy: corev1.PullPolicy(pullPolicy),
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "tmp",
-									MountPath: "/tmp",
-								},
-								{
-									Name:      "trivy-operator-cache",
-									MountPath: "/var/trivyoperator",
-								},
-							},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged:               &privileged,
 								ReadOnlyRootFilesystem:   &readOnlyRootFilesystem,
@@ -775,30 +710,7 @@ func (enf *AquaTrivyHelper) CreateTrivyDeployment(cr *aquasecurityv1alpha1.AquaT
 								FailureThreshold:    3,
 							},
 							Ports: ports,
-							EnvFrom: []corev1.EnvFromSource{
-								{
-									ConfigMapRef: &corev1.ConfigMapEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "trivy-operator-config",
-										},
-									},
-								},
-							},
-							Env: envVars,
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "tmp",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-						{
-							Name: "trivy-operator-cache",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
+							Env:   envVars,
 						},
 					},
 				},

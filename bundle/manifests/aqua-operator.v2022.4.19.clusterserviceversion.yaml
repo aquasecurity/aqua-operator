@@ -9,7 +9,7 @@ metadata:
     categories: Security
     description: The Aqua Security Operator runs within a Openshift cluster and provides a means to deploy and manage Aqua Security cluster and components.
     certified: 'false'
-    containerImage: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18.11
+    containerImage: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18.12
     createdAt: 2020-03-25T08:00:00Z
     support: Aqua Security, Inc.
     repository: https://github.com/aquasecurity/aqua-operator
@@ -631,7 +631,7 @@ spec:
                 serviceAccountName: aqua-operator
                 containers:
                   - name: aqua-operator
-                    image: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18.11
+                    image: aquadev.azurecr.io/aqua-operator:add-trivy-2022.4.18.12
                     imagePullPolicy: Always
                     command:
                       - /manager
