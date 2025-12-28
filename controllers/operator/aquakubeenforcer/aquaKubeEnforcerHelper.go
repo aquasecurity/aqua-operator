@@ -287,10 +287,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKEServiceAccount(cr, namespace, app, na
 
 func (enf *AquaKubeEnforcerHelper) CreateClusterRoleBinding(cr, namespace, name, app, sa, clusterrole string) *rbacv1.ClusterRoleBinding {
 	labels := map[string]string{
-		"app":                "aqua-kube-enforcer",
-		"deployedby":         "aqua-operator",
-		"role":               "aqua-kube-enforcer",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"role":                         "aqua-kube-enforcer",
+		"aquasecoperator_cr":           cr,
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Cluster Role Binding",
@@ -648,10 +652,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 	}
 
 	labels := map[string]string{
-		"app":                "aqua-kube-enforcer",
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
-		"role":               "aqua-kube-enforcer",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua KubeEnfocer ConfigMap",
@@ -807,17 +815,10 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 	selectors := map[string]string{
 		"app": "aqua-kube-enforcer",
 	}
-	selectors_match_labels := map[string]string{
-		"app": "aqua-kube-enforcer",
-	}
 
 	ports := []corev1.ContainerPort{
 		{
 			ContainerPort: 8443,
-			Protocol:      corev1.ProtocolTCP,
-		},
-		{
-			ContainerPort: 8080,
 			Protocol:      corev1.ProtocolTCP,
 		},
 	}
@@ -839,11 +840,11 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 		Spec: appsv1.DeploymentSpec{
 			Replicas: extra.Int32Ptr(int32(cr.Spec.KubeEnforcerService.Replicas)),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: selectors_match_labels,
+				MatchLabels: selectors,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: selectors,
+					Labels: labels,
 					Annotations: map[string]string{
 						"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 					},
