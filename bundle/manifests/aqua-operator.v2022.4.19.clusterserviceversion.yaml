@@ -491,29 +491,6 @@ spec:
                 - aqua-scc
                 - privileged
                 - hostaccess
-        - serviceAccountName: aqua-kube-enforcer-sa
-          rules:
-            - apiGroups:
-                - security.openshift.io
-              resources:
-                - securitycontextconstraints
-              verbs:
-                - use
-              resourceNames:
-                - aqua-kube-enforcer-scc
-                - privileged
-                - hostaccess
-        - serviceAccountName: trivy-operator
-          rules:
-            - apiGroups:
-                - security.openshift.io
-              resources:
-                - securitycontextconstraints
-              verbs:
-                - use
-              resourceNames:
-                - privileged
-                - hostaccess
         - serviceAccountName: aqua-operator
           rules:
             - apiGroups:
@@ -609,6 +586,17 @@ spec:
                 - route
               verbs:
                 - '*'
+            - apiGroups:
+                - security.openshift.io
+              resources:
+                - securitycontextconstraints
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
             - apiGroups:
                 - coordination.k8s.io
               resources:

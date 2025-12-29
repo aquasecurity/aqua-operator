@@ -45,6 +45,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -175,6 +176,13 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	instance.Spec.Infrastructure = common.UpdateAquaInfrastructure(instance.Spec.Infrastructure, consts.AquaKubeEnforcerClusterRoleBidingName, instance.Namespace)
+
+	if strings.ToLower(instance.Spec.Infrastructure.Platform) == consts.OpenShiftPlatform {
+		_, err = r.reconcileKubeEnforcerSCC(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 
 	_, err = r.addKubeEnforcerClusterRole(instance)
 	if err != nil {
@@ -699,6 +707,31 @@ func (r *AquaKubeEnforcerReconciler) createAquaServiceAccount(cr *operatorv1alph
 
 	// Service account already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Service Account Already Exists", "ServiceAccount.Namespace", found.Namespace, "ServiceAccount.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
+}
+
+func (r *AquaKubeEnforcerReconciler) reconcileKubeEnforcerSCC(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Reconcile KubeEnforcer SCC")
+	reqLogger.Info("Start reconciling aqua kube-enforcer SCC")
+
+	enforcerHelper := newAquaKubeEnforcerHelper(cr)
+	desired := enforcerHelper.CreateKubeEnforcerSCC(cr)
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(desired.GroupVersionKind())
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: desired.GetName()}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new SCC", "SCC.Name", desired.GetName())
+		if err := r.Client.Create(context.TODO(), desired); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// SCC exists - follow the same convention as other controller resources (create-if-missing only).
+	reqLogger.Info("Skip reconcile: SCC already exists", "SCC.Name", found.GetName())
 	return reconcile.Result{Requeue: true}, nil
 }
 

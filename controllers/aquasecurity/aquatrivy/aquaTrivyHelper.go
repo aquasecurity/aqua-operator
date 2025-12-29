@@ -169,9 +169,13 @@ func (enf *AquaTrivyHelper) CreateTrivyClusterRole(name string, namespace string
 // CreateServiceAccount Create new service account
 func (enf *AquaTrivyHelper) CreateTrivyServiceAccount(cr, namespace, app, name string) *corev1.ServiceAccount {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "trivy-operator",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"app.kubernetes.io/instance":   "trivy-operator",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "trivy-operator",
+		"app.kubernetes.io/version":    "0.29.0-ubi9",
 	}
 	annotations := map[string]string{
 		"description": "Service account for aqua trivy",

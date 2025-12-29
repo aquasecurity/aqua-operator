@@ -32,6 +32,7 @@ import (
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	version2 "github.com/aquasecurity/aqua-operator/pkg/version"
 	routev1 "github.com/openshift/api/route/v1"
+	securityv1 "github.com/openshift/api/security/v1"
 	"os"
 
 	uzap "go.uber.org/zap"
@@ -74,6 +75,7 @@ func init() {
 	isOpenshift, _ := ocp.VerifyRouteAPI()
 	if isOpenshift {
 		utilruntime.Must(routev1.AddToScheme(scheme))
+		utilruntime.Must(securityv1.AddToScheme(scheme))
 	}
 	//+kubebuilder:scaffold:scheme
 }

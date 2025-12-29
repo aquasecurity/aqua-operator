@@ -14,6 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -262,9 +264,13 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 // CreateServiceAccount Create new service account
 func (enf *AquaKubeEnforcerHelper) CreateKEServiceAccount(cr, namespace, app, name string) *corev1.ServiceAccount {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Service account for aqua kube-enforcer",
@@ -283,6 +289,75 @@ func (enf *AquaKubeEnforcerHelper) CreateKEServiceAccount(cr, namespace, app, na
 	}
 
 	return sa
+}
+
+func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerSCC(cr *operatorv1alpha1.AquaKubeEnforcer) *unstructured.Unstructured {
+	// SCC is cluster-scoped; don't set controller reference to a namespaced CR.
+	user := fmt.Sprintf("system:serviceaccount:%s:%s", cr.Namespace, cr.Spec.Infrastructure.ServiceAccount)
+
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "security.openshift.io/v1",
+			"kind":       "SecurityContextConstraints",
+			"metadata": map[string]interface{}{
+				"name": "aqua-kube-enforcer-scc",
+				"annotations": map[string]interface{}{
+					"kubernetes.io/description":        "aqua scc provides all features of the restricted SCC but allows users to run with any non-root UID and access hostPath. The user must specify the UID or it must be specified on the by the manifest of the container runtime.",
+					"release.openshift.io/create-only": "true",
+				},
+			},
+			"allowHostPorts": false,
+			"priority":       nil,
+			"requiredDropCapabilities": []interface{}{
+				"ALL",
+			},
+			"allowPrivilegedContainer": true,
+			"runAsUser": map[string]interface{}{
+				"type": "RunAsAny",
+			},
+			"users": []interface{}{
+				user,
+			},
+			"allowHostDirVolumePlugin": true,
+			"seccompProfiles": []interface{}{
+				"*",
+			},
+			"allowHostIPC": true,
+			"seLinuxContext": map[string]interface{}{
+				"type": "MustRunAs",
+			},
+			"readOnlyRootFilesystem": false,
+			"fsGroup": map[string]interface{}{
+				"type": "RunAsAny",
+			},
+			"groups":                 []interface{}{},
+			"defaultAddCapabilities": []interface{}{},
+			"supplementalGroups": map[string]interface{}{
+				"type": "RunAsAny",
+			},
+			"volumes": []interface{}{
+				"configMap",
+				"downwardAPI",
+				"emptyDir",
+				"hostPath",
+				"persistentVolumeClaim",
+				"projected",
+				"secret",
+			},
+			"allowHostPID":             true,
+			"allowHostNetwork":         true,
+			"allowPrivilegeEscalation": true,
+			"allowedCapabilities":      nil,
+		},
+	}
+
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "security.openshift.io",
+		Version: "v1",
+		Kind:    "SecurityContextConstraints",
+	})
+
+	return obj
 }
 
 func (enf *AquaKubeEnforcerHelper) CreateClusterRoleBinding(cr, namespace, name, app, sa, clusterrole string) *rbacv1.ClusterRoleBinding {
