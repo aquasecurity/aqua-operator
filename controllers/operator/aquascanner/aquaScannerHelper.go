@@ -99,6 +99,16 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 	if image == "" {
 		image = fmt.Sprintf("%s/%s:%s", registry, repository, tag)
 	}
+	envVars := []corev1.EnvVar{
+		{
+			Name: "AQUA_SCANNER_LOGICAL_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+	}
 	userarg := []string{
 		"--user",
 		"$(AQUA_SCANNER_USERNAME)",
@@ -166,16 +176,7 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "AQUA_SCANNER_LOGICAL_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-							},
+							Env: envVars,
 							EnvFrom: []corev1.EnvFromSource{
 								{
 									SecretRef: &corev1.SecretEnvSource{
@@ -273,6 +274,10 @@ func (as *AquaScannerHelper) newDeployment(cr *v1alpha1.AquaScanner) *appsv1.Dep
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, tokenarg...)
 	} else {
 		deployment.Spec.Template.Spec.Containers[0].Args = append(deployment.Spec.Template.Spec.Containers[0].Args, userarg...)
+	}
+
+	if cr.Spec.Envs != nil {
+		deployment.Spec.Template.Spec.Containers[0].Env = append(deployment.Spec.Template.Spec.Containers[0].Env, cr.Spec.Envs...)
 	}
 
 	if cr.Spec.Login.Insecure {

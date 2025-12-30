@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,10 +32,11 @@ type AquaScannerSpec struct {
 	Infrastructure *AquaInfrastructure `json:"infra"`
 	Common         *AquaCommon         `json:"common"`
 
-	ScannerService    *AquaService `json:"deploy,required"`
-	Login             *AquaLogin   `json:"login,required"`
-	RunAsNonRoot      bool         `json:"runAsNonRoot,omitempty"`
-	ConfigMapChecksum string       `json:"config_map_checksum,omitempty"`
+	ScannerService    *AquaService    `json:"deploy,required"`
+	Login             *AquaLogin      `json:"login,required"`
+	RunAsNonRoot      bool            `json:"runAsNonRoot,omitempty"`
+	ConfigMapChecksum string          `json:"config_map_checksum,omitempty"`
+	Envs              []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // AquaScannerStatus defines the observed state of AquaScanner
