@@ -300,6 +300,7 @@ metadata:
                 "tag": "<<IMAGE TAG>>"
               }
             },
+            "env": [],
             "runAsNonRoot": false,
             "login": {
               "username": "<<YOUR AQUA USER NAME>>",
