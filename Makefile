@@ -180,22 +180,10 @@ rm -rf $$TMP_DIR ;\
 endef
 
 .PHONY: bundle
-bundle: manifests kustomize yq ## Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	@tmp_all=$$(mktemp); tmp_crds=$$(mktemp); tmp_crds_shrunk=$$(mktemp); tmp_other=$$(mktemp); tmp_filtered=$$(mktemp); set -e; \
-		echo ">> Rendering manifests"; \
-		$(KUSTOMIZE) build config/manifests > $$tmp_all; \
-		echo ">> Extracting CRDs"; \
-		$(YQ) eval 'select(.kind == "CustomResourceDefinition")' $$tmp_all > $$tmp_crds; \
-		echo ">> Shrinking CRD schemas"; \
-		$(YQ) eval '.spec.versions |= map(.schema.openAPIV3Schema = {"type":"object","x-kubernetes-preserve-unknown-fields": true})' $$tmp_crds > $$tmp_crds_shrunk; \
-		echo ">> Extracting non-CRD docs"; \
-		$(YQ) eval 'select(.kind != "CustomResourceDefinition")' $$tmp_all > $$tmp_other; \
-		cat $$tmp_other $$tmp_crds_shrunk > $$tmp_filtered; \
-		echo ">> Generating bundle"; \
-		cat $$tmp_filtered | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS); \
-		rm -f $$tmp_all $$tmp_crds $$tmp_crds_shrunk $$tmp_other $$tmp_filtered
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
 	operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
@@ -246,17 +234,3 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
-
-
-YQ = $(shell pwd)/bin/yq
-.PHONY: yq
-yq:
-	@{ \
-	set -e; \
-	OS=$$(uname -s | tr '[:upper:]' '[:lower:]'); \
-	ARCH=$$(uname -m); case $$ARCH in x86_64) ARCH=amd64;; aarch64) ARCH=arm64;; armv7l) ARCH=arm;; esac; \
-	mkdir -p $(dir $(YQ)); \
-	echo "Downloading yq v4 for $$OS/$$ARCH"; \
-	curl -sSL -o $(YQ) https://github.com/mikefarah/yq/releases/download/v4.48.1/yq_$${OS}_$${ARCH}; \
-	chmod +x $(YQ); \
-	}
