@@ -8,9 +8,14 @@ on:
       - 'images/**'
       - 'licenses/**'
       - 'hack/**'
+
+permissions:
+  contents: read
+
 env:
   GO111MODULE: "on"
   PROJECTNAME: "aqua-operator"
+
 jobs:
   test:
     if: contains(github.event.pull_request.labels.*.name, 'safe_to_test')
@@ -36,8 +41,6 @@ jobs:
         # if you are using act to test it locally please set it to v1 because of a bug
         #uses: actions/checkout@v1
         uses: actions/checkout@v3.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - name: Run test
         env:
           LOG_STDOUT: "true"
