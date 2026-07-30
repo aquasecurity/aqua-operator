@@ -14,6 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -98,7 +100,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"configmaps",
 			},
 			Verbs: []string{
-				"get", "list", "watch", "update", "create",
+				"get", "list", "watch",
 			},
 		},
 		{
@@ -126,9 +128,135 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 				"get", "list", "watch",
 			},
 		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"serviceaccounts",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"operator.openshift.io",
+			},
+			Resources: []string{
+				"imagecontentsourcepolicies",
+				"openshiftapiservers",
+				"kubeapiservers",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"config.openshift.io",
+			},
+			Resources: []string{
+				"imagedigestmirrorsets",
+				"imagetagmirrorsets",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"apps.openshift.io",
+			},
+			Resources: []string{
+				"deploymentconfigs",
+			},
+			Verbs: []string{
+				"get", "list", "watch",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"pods",
+				"namespaces",
+			},
+			Verbs: []string{
+				"create", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"pods/exec",
+			},
+			Verbs: []string{
+				"create",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"endpoints",
+			},
+			Verbs: []string{
+				"list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"config.openshift.io",
+			},
+			Resources: []string{
+				"clusteroperators",
+			},
+			Verbs: []string{
+				"get", "list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"security.openshift.io",
+			},
+			Resources: []string{
+				"securitycontextconstraints",
+			},
+			Verbs: []string{
+				"get", "list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"machineconfiguration.openshift.io",
+			},
+			Resources: []string{
+				"machineconfigs",
+				"machineconfigpools",
+			},
+			Verbs: []string{
+				"get", "list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"pods/log",
+			},
+			Verbs: []string{
+				"get",
+			},
+		},
 	}
 
-	crole := rbac2.CreateClusterRole(name, namespace, "aqua-kube-enforcer", fmt.Sprintf("%s-rbac", "aqua-ke"), "Deploy Aqua Discovery Cluster Role", rules)
+	crole := rbac2.CreateClusterRole(name, namespace, "aqua-kube-enforcer", "aqua-kube-enforcer", "Deploy Aqua Discovery Cluster Role", rules)
 
 	return crole
 }
@@ -136,9 +264,13 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerClusterRole(name string, na
 // CreateServiceAccount Create new service account
 func (enf *AquaKubeEnforcerHelper) CreateKEServiceAccount(cr, namespace, app, name string) *corev1.ServiceAccount {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Service account for aqua kube-enforcer",
@@ -159,11 +291,85 @@ func (enf *AquaKubeEnforcerHelper) CreateKEServiceAccount(cr, namespace, app, na
 	return sa
 }
 
+func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerSCC(cr *operatorv1alpha1.AquaKubeEnforcer) *unstructured.Unstructured {
+	// SCC is cluster-scoped; don't set controller reference to a namespaced CR.
+	user := fmt.Sprintf("system:serviceaccount:%s:%s", cr.Namespace, cr.Spec.Infrastructure.ServiceAccount)
+
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "security.openshift.io/v1",
+			"kind":       "SecurityContextConstraints",
+			"metadata": map[string]interface{}{
+				"name": "aqua-kube-enforcer-scc",
+				"annotations": map[string]interface{}{
+					"kubernetes.io/description":        "aqua scc provides all features of the restricted SCC but allows users to run with any non-root UID and access hostPath. The user must specify the UID or it must be specified on the by the manifest of the container runtime.",
+					"release.openshift.io/create-only": "true",
+				},
+			},
+			"allowHostPorts": false,
+			"priority":       nil,
+			"requiredDropCapabilities": []interface{}{
+				"ALL",
+			},
+			"allowPrivilegedContainer": true,
+			"runAsUser": map[string]interface{}{
+				"type": "RunAsAny",
+			},
+			"users": []interface{}{
+				user,
+			},
+			"allowHostDirVolumePlugin": true,
+			"seccompProfiles": []interface{}{
+				"*",
+			},
+			"allowHostIPC": true,
+			"seLinuxContext": map[string]interface{}{
+				"type": "MustRunAs",
+			},
+			"readOnlyRootFilesystem": false,
+			"fsGroup": map[string]interface{}{
+				"type": "RunAsAny",
+			},
+			"groups":                 []interface{}{},
+			"defaultAddCapabilities": []interface{}{},
+			"supplementalGroups": map[string]interface{}{
+				"type": "RunAsAny",
+			},
+			"volumes": []interface{}{
+				"configMap",
+				"downwardAPI",
+				"emptyDir",
+				"hostPath",
+				"persistentVolumeClaim",
+				"projected",
+				"secret",
+			},
+			"allowHostPID":             true,
+			"allowHostNetwork":         true,
+			"allowPrivilegeEscalation": true,
+			"allowedCapabilities":      nil,
+		},
+	}
+
+	obj.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "security.openshift.io",
+		Version: "v1",
+		Kind:    "SecurityContextConstraints",
+	})
+
+	return obj
+}
+
 func (enf *AquaKubeEnforcerHelper) CreateClusterRoleBinding(cr, namespace, name, app, sa, clusterrole string) *rbacv1.ClusterRoleBinding {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"role":                         "aqua-kube-enforcer",
+		"aquasecoperator_cr":           cr,
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Cluster Role Binding",
@@ -242,11 +448,38 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 				"create", "delete",
 			},
 		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"secrets",
+			},
+			Verbs: []string{
+				"create", "delete",
+			},
+		},
+		{
+			APIGroups: []string{
+				"*",
+			},
+			Resources: []string{
+				"configmaps",
+			},
+			Verbs: []string{
+				"create", "update",
+			},
+		},
 	}
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description":              "KubeEnforcer Role",
@@ -271,9 +504,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKubeEnforcerRole(cr, namespace, name, a
 
 func (enf *AquaKubeEnforcerHelper) CreateRoleBinding(cr, namespace, name, app, sa, role string) *rbacv1.RoleBinding {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua Cluster Role Binding",
@@ -308,9 +546,14 @@ func (enf *AquaKubeEnforcerHelper) CreateRoleBinding(cr, namespace, name, app, s
 
 func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, app, keService string, caBundle []byte, validatingWebhookTimeout int) *admissionv1.ValidatingWebhookConfiguration {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua ValidatingWebhookConfiguration",
@@ -331,6 +574,7 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 				Resources: []string{
 					"pods",
 					"deployments",
+					"deploymentconfigs",
 					"replicasets",
 					"replicationcontrollers",
 					"statefulsets",
@@ -387,9 +631,14 @@ func (enf *AquaKubeEnforcerHelper) CreateValidatingWebhook(cr, namespace, name, 
 
 func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, app, keService string, caBundle []byte, mutatingWebhookTimeout int) *admissionv1.MutatingWebhookConfiguration {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua MutatingWebhookConfiguration",
@@ -405,7 +654,7 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 					"*",
 				},
 				APIVersions: []string{
-					"v1",
+					"*",
 				},
 				Resources: []string{
 					"pods",
@@ -454,13 +703,23 @@ func (enf *AquaKubeEnforcerHelper) CreateMutatingWebhook(cr, namespace, name, ap
 
 func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, gwAddress, clusterName string, starboard bool) *corev1.ConfigMap {
 	configMapData := map[string]string{
-		"AQUA_ENABLE_CACHE":            "yes",
-		"AQUA_CACHE_EXPIRATION_PERIOD": "60",
-		"TLS_SERVER_CERT_FILEPATH":     "/certs/aqua_ke.crt",
-		"TLS_SERVER_KEY_FILEPATH":      "/certs/aqua_ke.key",
-		"AQUA_GATEWAY_SECURE_ADDRESS":  gwAddress,
-		"AQUA_TLS_PORT":                "8443",
-		"CLUSTER_NAME":                 clusterName,
+		"AQUA_ENABLE_CACHE":              "yes",
+		"AQUA_CACHE_EXPIRATION_PERIOD":   "60",
+		"TLS_SERVER_CERT_FILEPATH":       "/certs/aqua_ke.crt",
+		"TLS_SERVER_KEY_FILEPATH":        "/certs/aqua_ke.key",
+		"AQUA_GATEWAY_SECURE_ADDRESS":    gwAddress,
+		"AQUA_TLS_PORT":                  "8443",
+		"CLUSTER_NAME":                   clusterName,
+		"AQUA_WATCH_CONFIG_AUDIT_REPORT": "true",
+		"AQUA_LOGICAL_NAME":              "",
+		"SCALOCK_LOG_LEVEL":              "INFO",
+		"AQUA_HEALTH_MONITOR_PORT":       "8080",
+		"AQUA_KB_ME_REGISTRY_NAME":       "aqua-kube-enforcer-registry-secret",
+		"AQUA_ME_IMAGE_NAME":             "aquadev.azurecr.io/microenforcer:2022.4",
+		"AQUA_KB_IMAGE_NAME":             "registry.aquasec.com/kube-bench:v0.11.2",
+		"AQUA_KB_SCAN_TAINTED_NODES":     "true",
+		"AQUA_NODE_LABELS_TO_SKIP_KB":    "",
+		"AQUA_KAP_ADD_ALL_CONTROL":       "true",
 	}
 	if starboard {
 		configMapData["AQUA_KAP_ADD_ALL_CONTROL"] = "true"
@@ -468,9 +727,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 	}
 
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua KubeEnfocer ConfigMap",
@@ -494,9 +758,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKEConfigMap(cr, namespace, name, app, g
 
 func (enf *AquaKubeEnforcerHelper) CreateKETokenSecret(cr, namespace, name, app, token string) *corev1.Secret {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Aqua KubeEnfocer token secret",
@@ -551,9 +820,14 @@ func (enf *AquaKubeEnforcerHelper) CreateKESSLSecret(cr, namespace, name, app st
 
 func (enf *AquaKubeEnforcerHelper) CreateKEService(cr, namespace, name, app string) *corev1.Service {
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr,
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr,
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description": "Deploy Kube Enforcer Service",
@@ -597,10 +871,15 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 	}
 
 	labels := map[string]string{
-		"app":                app,
-		"deployedby":         "aqua-operator",
-		"aquasecoperator_cr": cr.Name,
-		"aqua.component":     "kubeenforcer",
+		"app":                          "aqua-kube-enforcer",
+		"deployedby":                   "aqua-operator",
+		"aquasecoperator_cr":           cr.Name,
+		"aqua.component":               "kubeenforcer",
+		"role":                         "aqua-kube-enforcer",
+		"app.kubernetes.io/instance":   "aqua-kube-enforcer",
+		"app.kubernetes.io/managed-by": "aqua-operator",
+		"app.kubernetes.io/name":       "aqua-kube-enforcer",
+		"app.kubernetes.io/version":    "2022.4",
 	}
 	annotations := map[string]string{
 		"description":       "Deploy Kube Enforcer Deployment",
@@ -615,10 +894,6 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 	ports := []corev1.ContainerPort{
 		{
 			ContainerPort: 8443,
-			Protocol:      corev1.ProtocolTCP,
-		},
-		{
-			ContainerPort: 8080,
 			Protocol:      corev1.ProtocolTCP,
 		},
 	}
@@ -644,7 +919,7 @@ func (enf *AquaKubeEnforcerHelper) CreateKEDeployment(cr *operatorv1alpha1.AquaK
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: selectors,
+					Labels: labels,
 					Annotations: map[string]string{
 						"ConfigMapChecksum": cr.Spec.ConfigMapChecksum,
 					},
@@ -892,4 +1167,52 @@ func (ebf *AquaKubeEnforcerHelper) newStarboard(cr *operatorv1alpha1.AquaKubeEnf
 		},
 	}
 	return aquasb
+}
+
+// Trivy functions
+
+func (ebf *AquaKubeEnforcerHelper) newTrivy(cr *operatorv1alpha1.AquaKubeEnforcer) *v1alpha1.AquaTrivy {
+	_, registry, repository, tag := extra.GetImageData("kube-enforcer", cr.Spec.Infrastructure.Version, cr.Spec.KubeEnforcerService.ImageData, cr.Spec.AllowAnyVersion)
+
+	labels := map[string]string{
+		"app":                cr.Name + "-kube-enforcer",
+		"deployedby":         "aqua-operator",
+		"aquasecoperator_cr": cr.Name,
+	}
+	annotations := map[string]string{
+		"description": "Deploy Aqua Trivy",
+	}
+
+	aquatrivy := &v1alpha1.AquaTrivy{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "aquasecurity.github.io/v1alpha1",
+			Kind:       "AquaTrivy",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: v1alpha1.AquaTrivySpec{
+			Infrastructure:                cr.Spec.DeployTrivy.Infrastructure,
+			AllowAnyVersion:               cr.Spec.DeployTrivy.AllowAnyVersion,
+			TrivyService:                  cr.Spec.DeployTrivy.TrivyService,
+			Config:                        cr.Spec.DeployTrivy.Config,
+			RegistryData:                  cr.Spec.DeployTrivy.RegistryData,
+			ImageData:                     cr.Spec.DeployTrivy.ImageData,
+			Envs:                          cr.Spec.DeployTrivy.Envs,
+			KubeEnforcerVersion:           fmt.Sprintf("%s/%s:%s", registry, repository, tag),
+			LogDevMode:                    cr.Spec.DeployTrivy.LogDevMode,
+			ConcurrentScanJobsLimit:       cr.Spec.DeployTrivy.ConcurrentScanJobsLimit,
+			ScanJobRetryAfter:             cr.Spec.DeployTrivy.ScanJobRetryAfter,
+			MetricsBindAddress:            cr.Spec.DeployTrivy.MetricsBindAddress,
+			HealthProbeBindAddress:        cr.Spec.DeployTrivy.HealthProbeBindAddress,
+			CisKubernetesBenchmarkEnabled: cr.Spec.DeployTrivy.CisKubernetesBenchmarkEnabled,
+			VulnerabilityScannerEnabled:   cr.Spec.DeployTrivy.VulnerabilityScannerEnabled,
+			BatchDeleteLimit:              cr.Spec.DeployTrivy.BatchDeleteLimit,
+			BatchDeleteDelay:              cr.Spec.DeployTrivy.BatchDeleteLimit,
+		},
+	}
+	return aquatrivy
 }

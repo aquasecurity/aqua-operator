@@ -80,6 +80,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - aquasecurity.aquasec.com
+  resources:
+  - aquatrivies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - aquasecurity.aquasec.com
+  resources:
+  - aquatrivies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - aquasecurity.aquasec.com
+  resources:
+  - aquatrivies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - authorization.k8s.io
   resources:
   - clusterrolebindings

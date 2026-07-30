@@ -45,6 +45,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -176,6 +177,13 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	instance.Spec.Infrastructure = common.UpdateAquaInfrastructure(instance.Spec.Infrastructure, consts.AquaKubeEnforcerClusterRoleBidingName, instance.Namespace)
 
+	if strings.ToLower(instance.Spec.Infrastructure.Platform) == consts.OpenShiftPlatform {
+		_, err = r.reconcileKubeEnforcerSCC(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	_, err = r.addKubeEnforcerClusterRole(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -247,8 +255,34 @@ func (r *AquaKubeEnforcerReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.DeployStarboard != nil {
+	if instance.Spec.DeployTrivy != nil {
+		r.installAquaTrivy(instance)
+	} else if instance.Spec.DeployStarboard != nil {
 		r.installAquaStarboard(instance)
+	} else {
+		// default to Trivy if no scanner specified
+		defaultService := &operatorv1alpha1.AquaService{
+			Replicas: 1,
+			ImageData: &operatorv1alpha1.AquaImage{
+				Registry:   "docker.io/aquasec",
+				Repository: "trivy-operator",
+				PullPolicy: "IfNotPresent",
+				Tag:        consts.TrivyVersion,
+			},
+		}
+		instance.Spec.DeployTrivy = &operatorv1alpha1.AquaTrivyDetails{
+			AllowAnyVersion: true,
+			Infrastructure: &operatorv1alpha1.AquaInfrastructure{
+				Version:        consts.TrivyVersion,
+				ServiceAccount: consts.TrivyServiceAccount,
+			},
+			Config: operatorv1alpha1.AquaStarboardConfig{
+				ImagePullSecret: "trivy-registry",
+			},
+			TrivyService: defaultService,
+			ImageData:    defaultService.ImageData,
+		}
+		r.installAquaTrivy(instance)
 	}
 
 	return ctrl.Result{}, nil
@@ -676,6 +710,31 @@ func (r *AquaKubeEnforcerReconciler) createAquaServiceAccount(cr *operatorv1alph
 	return reconcile.Result{Requeue: true}, nil
 }
 
+func (r *AquaKubeEnforcerReconciler) reconcileKubeEnforcerSCC(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Reconcile KubeEnforcer SCC")
+	reqLogger.Info("Start reconciling aqua kube-enforcer SCC")
+
+	enforcerHelper := newAquaKubeEnforcerHelper(cr)
+	desired := enforcerHelper.CreateKubeEnforcerSCC(cr)
+
+	found := &unstructured.Unstructured{}
+	found.SetGroupVersionKind(desired.GroupVersionKind())
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: desired.GetName()}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new SCC", "SCC.Name", desired.GetName())
+		if err := r.Client.Create(context.TODO(), desired); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// SCC exists - follow the same convention as other controller resources (create-if-missing only).
+	reqLogger.Info("Skip reconcile: SCC already exists", "SCC.Name", found.GetName())
+	return reconcile.Result{Requeue: true}, nil
+}
+
 func (r *AquaKubeEnforcerReconciler) addKubeEnforcerRole(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
 	reqLogger := log.WithValues("KubeEnforcer Requirements Phase", "Create Aqua KubeEnforcer Role")
 	reqLogger.Info("Start creating kube-enforcer role")
@@ -772,6 +831,12 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 	// Log the validatingWebhookTimeout value from the CRD before passing it to the helper function
 	reqLogger.Info("ValidatingWebhookTimeout from CRD", "validatingWebhookTimeout", cr.Spec.ValidatingWebhookTimeout)
 
+	validatingWebhookTimeout := cr.Spec.ValidatingWebhookTimeout
+	if validatingWebhookTimeout < 1 || validatingWebhookTimeout > 30 {
+		reqLogger.Info("ValidatingWebhookTimeout out of range; overriding to 15 seconds", "validatingWebhookTimeout", validatingWebhookTimeout, "overriddenTimeout", 15)
+		validatingWebhookTimeout = 15
+	}
+
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	validWebhook := enforcerHelper.CreateValidatingWebhook(
 		cr.Name,
@@ -780,7 +845,7 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 		"ke-validatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
 		r.Certs.CACert,
-		cr.Spec.MutatingWebhookTimeout,
+		validatingWebhookTimeout,
 	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
@@ -795,6 +860,7 @@ func (r *AquaKubeEnforcerReconciler) addKEValidatingWebhook(cr *operatorv1alpha1
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New ValidatingWebhookConfiguration", "ValidatingWebhook.Namespace", validWebhook.Namespace, "ClusterRoleBinding.Name", validWebhook.Name)
 		err = r.Client.Create(context.TODO(), validWebhook)
 		if err != nil {
+			reqLogger.Error(err, "Aqua KubeEnforcer: Failed to create ValidatingWebhookConfiguration", "ValidatingWebhook.Namespace", validWebhook.Namespace, "ValidatingWebhook.Name", validWebhook.Name)
 			return reconcile.Result{Requeue: true}, nil
 		}
 		return reconcile.Result{}, nil
@@ -814,6 +880,12 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 	// Log the MutatingWebhookTimeout value from the CRD before passing it to the helper function
 	reqLogger.Info("MutatingWebhookTimeout from CRD", "mutatingWebhookTimeout", cr.Spec.MutatingWebhookTimeout)
 
+	mutatingWebhookTimeout := cr.Spec.MutatingWebhookTimeout
+	if mutatingWebhookTimeout < 1 || mutatingWebhookTimeout > 30 {
+		reqLogger.Info("MutatingWebhookTimeout out of range; overriding to 15 seconds", "mutatingWebhookTimeout", mutatingWebhookTimeout, "overriddenTimeout", 15)
+		mutatingWebhookTimeout = 15
+	}
+
 	// Define a new MutatingWebhookConfiguration object
 	enforcerHelper := newAquaKubeEnforcerHelper(cr)
 	mutateWebhook := enforcerHelper.CreateMutatingWebhook(
@@ -823,7 +895,7 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 		"ke-mutatingwebhook",
 		consts.AquaKubeEnforcerClusterRoleBidingName,
 		r.Certs.CACert,
-		cr.Spec.MutatingWebhookTimeout,
+		mutatingWebhookTimeout,
 	)
 
 	// Set AquaKubeEnforcer instance as the owner and controller
@@ -838,6 +910,7 @@ func (r *AquaKubeEnforcerReconciler) addKEMutatingWebhook(cr *operatorv1alpha1.A
 		reqLogger.Info("Aqua KubeEnforcer: Creating a New MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name, "MutatingWebhook.Timeout")
 		err = r.Client.Create(context.TODO(), mutateWebhook)
 		if err != nil {
+			reqLogger.Error(err, "Aqua KubeEnforcer: Failed to create MutatingWebhookConfiguration", "MutatingWebhook.Namespace", mutateWebhook.Namespace, "MutatingWebhook.Name", mutateWebhook.Name)
 			return reconcile.Result{Requeue: true}, nil
 		}
 		return reconcile.Result{}, nil
@@ -1137,6 +1210,60 @@ func (r *AquaKubeEnforcerReconciler) installAquaStarboard(cr *operatorv1alpha1.A
 
 	// AquaStarboard already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Aqua Starboard Exists", "AquaStarboard.Namespace", found.Namespace, "AquaStarboard.Name", found.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+}
+
+// Trivy functions
+func (r *AquaKubeEnforcerReconciler) installAquaTrivy(cr *operatorv1alpha1.AquaKubeEnforcer) (reconcile.Result, error) {
+	reqLogger := log.WithValues("KubeEnforcer AquaTrivy Phase", "Install Aqua Trivy")
+	reqLogger.Info("Start installing AquaTrivy")
+
+	aquaTrivyHelper := newAquaKubeEnforcerHelper(cr)
+	aquatrivy := aquaTrivyHelper.newTrivy(cr)
+
+	if err := controllerutil.SetControllerReference(cr, aquatrivy, r.Scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	found := &v1alpha1.AquaTrivy{}
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: aquatrivy.Name, Namespace: aquatrivy.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a New Aqua AquaTrivy", "AquaTrivy.Namespace", aquatrivy.Namespace, "AquaTrivy.Name", aquatrivy.Name)
+		err = r.Client.Create(context.TODO(), aquatrivy)
+		if err != nil {
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+		}
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+	} else if err != nil {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+	}
+
+	if found != nil {
+		size := aquatrivy.Spec.TrivyService.Replicas
+		if found.Spec.TrivyService.Replicas != size {
+			found.Spec.TrivyService.Replicas = size
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update aqua trivy replicas.", "AquaTrivy.Namespace", found.Namespace, "AquaTrivy.Name", found.Name)
+				return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, err
+			}
+			return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
+		}
+
+		update := !reflect.DeepEqual(aquatrivy.Spec, found.Spec)
+		reqLogger.Info("Checking for AquaTrivy Upgrade", "aquatrivy", aquatrivy.Spec, "found", found.Spec, "update bool", update)
+		if update {
+			found.Spec = *(aquatrivy.Spec.DeepCopy())
+			err = r.Client.Update(context.Background(), found)
+			if err != nil {
+				reqLogger.Error(err, "Aqua Kube-enforcer: Failed to update AquaTrivy.", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+	}
+
+	reqLogger.Info("Skip reconcile: Aqua Trivy Exists", "AquaTrivy.Namespace", found.Namespace, "AquaTrivy.Name", found.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(0)}, nil
 }
 

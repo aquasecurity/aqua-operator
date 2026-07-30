@@ -39,6 +39,7 @@ type AquaKubeEnforcerSpec struct {
 	Envs                   []corev1.EnvVar        `json:"env,omitempty"`
 	Mtls                   bool                   `json:"mtls,omitempty"`
 	DeployStarboard        *AquaStarboardDetails  `json:"starboard,omitempty"`
+	DeployTrivy            *AquaTrivyDetails      `json:"trivy,omitempty"`
 	ConfigMapChecksum      string                 `json:"config_map_checksum,omitempty"`
 
 	// Add the new fields here
