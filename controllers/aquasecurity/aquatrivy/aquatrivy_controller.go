@@ -52,9 +52,9 @@ type AquaTrivyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=aquasecurity.aquasec.com,resources=aquatrivies,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=aquasecurity.aquasec.com,resources=aquatrivies/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=aquasecurity.aquasec.com,resources=aquatrivies/finalizers,verbs=update
+//+kubebuilder:rbac:groups=aquasecurity.github.io,resources=aquatrivies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=aquasecurity.github.io,resources=aquatrivies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=aquasecurity.github.io,resources=aquatrivies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
