@@ -33,6 +33,9 @@ spec:
         - --leader-elect
         image: controller:latest
         name: manager
+        env:
+        - name: WATCH_NAMESPACE
+          value: ""
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
