@@ -217,21 +217,22 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaCsp) *v1alpha1.Aq
 		"description": "Deploy Aqua KubeEnforcer",
 	}
 
-	AquaStarboardDetails := v1alpha1.AquaStarboardDetails{
+	AquaTrivyDetails := v1alpha1.AquaTrivyDetails{
 		AllowAnyVersion: true,
 		Infrastructure: &v1alpha1.AquaInfrastructure{
-			Version:        consts.StarboardVersion,
-			ServiceAccount: "starboard-operator",
+			Version:        consts.TrivyVersion,
+			ServiceAccount: consts.TrivyServiceAccount,
 		},
 		Config: v1alpha1.AquaStarboardConfig{
-			ImagePullSecret: "starboard-registry",
+			ImagePullSecret: "trivy-registry",
 		},
-		StarboardService: &v1alpha1.AquaService{
+		TrivyService: &v1alpha1.AquaService{
 			Replicas: 1,
 			ImageData: &v1alpha1.AquaImage{
 				Registry:   "docker.io/aquasec",
-				Repository: "starboard-operator",
+				Repository: "trivy-operator",
 				PullPolicy: "IfNotPresent",
+				Tag:        consts.TrivyVersion,
 			},
 		},
 	}
@@ -261,7 +262,7 @@ func (csp *AquaCspHelper) newAquaKubeEnforcer(cr *v1alpha1.AquaCsp) *v1alpha1.Aq
 				Tag:        tag,
 				PullPolicy: "Always",
 			},
-			DeployStarboard: &AquaStarboardDetails,
+			DeployTrivy: &AquaTrivyDetails,
 		},
 	}
 

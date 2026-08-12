@@ -1,6 +1,6 @@
 domain: aquasec.com
 layout:
-- go.kubebuilder.io/v3
+- go.kubebuilder.io/v4
 multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
@@ -78,6 +78,15 @@ resources:
   domain: aquasec.com
   group: aquasecurity
   kind: AquaStarboard
+  path: github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: aquasec.com
+  group: aquasecurity
+  kind: AquaTrivy
   path: github.com/aquasecurity/aqua-operator/apis/aquasecurity/v1alpha1
   version: v1alpha1
 version: "3"

@@ -21,18 +21,24 @@ func UpdateAquaInfrastructureFull(infra *operatorv1alpha1.AquaInfrastructure, na
 		}
 
 		if len(infra.ServiceAccount) == 0 {
-			if image == "starboard" {
+			switch image {
+			case "starboard":
 				infra.ServiceAccount = consts.StarboardServiceAccount
-			} else {
+			case "trivy":
+				infra.ServiceAccount = consts.TrivyServiceAccount
+			default:
 				infra.ServiceAccount = fmt.Sprintf(consts.ServiceAccount, name)
 			}
 
 		}
 
 		if len(infra.Version) == 0 {
-			if image == "starboard" {
+			switch image {
+			case "starboard":
 				infra.Version = consts.StarboardVersion
-			} else {
+			case "trivy":
+				infra.Version = consts.TrivyVersion
+			default:
 				infra.Version = consts.LatestVersion
 			}
 		}
@@ -46,10 +52,21 @@ func UpdateAquaInfrastructureFull(infra *operatorv1alpha1.AquaInfrastructure, na
 			}
 		}
 	} else {
+		serviceAccount := fmt.Sprintf(consts.ServiceAccount, name)
+		version := consts.LatestVersion
+		switch image {
+		case "starboard":
+			serviceAccount = consts.StarboardServiceAccount
+			version = consts.StarboardVersion
+		case "trivy":
+			serviceAccount = consts.TrivyServiceAccount
+			version = consts.TrivyVersion
+		}
+
 		infra = &operatorv1alpha1.AquaInfrastructure{
-			ServiceAccount: fmt.Sprintf(consts.ServiceAccount, name),
+			ServiceAccount: serviceAccount,
 			Namespace:      namespace,
-			Version:        consts.LatestVersion,
+			Version:        version,
 			Platform:       "openshift",
 			Requirements:   false,
 		}

@@ -54,7 +54,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - aquasecurity.aquasec.com
+  - aquasecurity.github.io
   resources:
   - aquastarboards
   verbs:
@@ -66,15 +66,41 @@ rules:
   - update
   - watch
 - apiGroups:
-  - aquasecurity.aquasec.com
+  - aquasecurity.github.io
   resources:
   - aquastarboards/finalizers
   verbs:
   - update
 - apiGroups:
-  - aquasecurity.aquasec.com
+  - aquasecurity.github.io
   resources:
   - aquastarboards/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - aquasecurity.github.io
+  resources:
+  - aquatrivies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - aquasecurity.github.io
+  resources:
+  - aquatrivies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - aquasecurity.github.io
+  resources:
+  - aquatrivies/status
   verbs:
   - get
   - patch

@@ -1,0 +1,75 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: aqua-oprator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: AquaCsp is the Schema for the aquacsps API
+      displayName: Aqua Csp
+      kind: AquaCsp
+      name: aquacsps.operator.aquasec.com
+      version: v1alpha1
+    - description: AquaDatabase is the Schema for the aquadatabases API
+      displayName: Aqua Database
+      kind: AquaDatabase
+      name: aquadatabases.operator.aquasec.com
+      version: v1alpha1
+    - description: AquaEnforcer is the Schema for the aquaenforcers API
+      displayName: Aqua Enforcer
+      kind: AquaEnforcer
+      name: aquaenforcers.operator.aquasec.com
+      version: v1alpha1
+    - description: AquaGateway is the Schema for the aquagateways API
+      displayName: Aqua Gateway
+      kind: AquaGateway
+      name: aquagateways.operator.aquasec.com
+      version: v1alpha1
+    - description: AquaKubeEnforcer is the Schema for the aquakubeenforcers API
+      displayName: Aqua Kube Enforcer
+      kind: AquaKubeEnforcer
+      name: aquakubeenforcers.operator.aquasec.com
+      version: v1alpha1
+    - description: AquaScanner is the Schema for the aquascanners API
+      displayName: Aqua Scanner
+      kind: AquaScanner
+      name: aquascanners.operator.aquasec.com
+      version: v1alpha1
+    - description: AquaServer is the Schema for the aquaservers API
+      displayName: Aqua Server
+      kind: AquaServer
+      name: aquaservers.operator.aquasec.com
+      version: v1alpha1
+  description: test
+  displayName: test
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - test
+  links:
+  - name: Aqua Oprator
+    url: https://aqua-oprator.domain
+  maturity: alpha
+  provider:
+    name: test
+    url: test
+  version: 0.0.0

@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/aquasecurity/aqua-operator/controllers/aquasecurity/aquastarboard"
+	"github.com/aquasecurity/aqua-operator/controllers/aquasecurity/aquatrivy"
 	"github.com/aquasecurity/aqua-operator/controllers/ocp"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquacsp"
 	"github.com/aquasecurity/aqua-operator/controllers/operator/aquadatabase"
@@ -31,6 +32,7 @@ import (
 	"github.com/aquasecurity/aqua-operator/pkg/utils/extra"
 	version2 "github.com/aquasecurity/aqua-operator/pkg/version"
 	routev1 "github.com/openshift/api/route/v1"
+	securityv1 "github.com/openshift/api/security/v1"
 	"os"
 
 	uzap "go.uber.org/zap"
@@ -73,6 +75,7 @@ func init() {
 	isOpenshift, _ := ocp.VerifyRouteAPI()
 	if isOpenshift {
 		utilruntime.Must(routev1.AddToScheme(scheme))
+		utilruntime.Must(securityv1.AddToScheme(scheme))
 	}
 	//+kubebuilder:scaffold:scheme
 }
@@ -174,6 +177,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AquaStarboard")
+		os.Exit(1)
+	}
+	if err = (&aquatrivy.AquaTrivyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AquaTrivy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
